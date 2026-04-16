@@ -101,7 +101,8 @@ function eventTitleClass(level: "high" | "medium" | "other"): string {
   const base = "text-lg font-semibold leading-snug mb-2 transition-colors";
   if (level === "high") {
     // Soft coral red；悬停保持同色（避免 group-hover 把标题洗成别的色）
-    return `${base} text-[#E55B5B] dark:text-[#F08080] group-hover:text-[#E55B5B] dark:group-hover:text-[#F08080]`;
+    // 血红色（深饱和红），避免偏橙/偏粉的“新闻浅红”
+    return `${base} text-[#8B0000] dark:text-[#C62828] group-hover:text-[#8B0000] dark:group-hover:text-[#C62828]`;
   }
   if (level === "medium") {
     // 更深饱和蓝（参考客户端「一般」标签）；悬停不变色
