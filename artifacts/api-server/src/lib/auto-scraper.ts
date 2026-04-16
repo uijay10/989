@@ -1,6 +1,6 @@
 // VERSION: v2.0_migrated_2026
 // Unified scraper: all 11 Groq + 1 DeepSeek instances
-// Single flow: combined keywords → AI classify → section + 7×24快讯 dual-publish
+// Single flow: system keywords (DB scrape_keywords → DEFAULT_KEYWORDS) → AI classify → section + 7×24快讯 dual-publish
 // All plate-specific scraping logic has been removed and replaced with this unified approach.
 
 import Parser from "rss-parser";

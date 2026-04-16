@@ -34,13 +34,34 @@ async function existsBySourceUrl(sourceUrl: string, section: string): Promise<bo
   return (rows.rows as unknown[]).length > 0;
 }
 
+async function existsByTitle(section: string, title: string, since: Date): Promise<boolean> {
+  const norm = title.trim().toLowerCase();
+  if (!norm) return false;
+  const rows = await db.execute(sql`
+    SELECT 1
+    FROM posts
+    WHERE section = ${section}
+      AND created_at >= ${since}
+      AND LOWER(TRIM(title)) = ${norm}
+    LIMIT 1
+  `);
+  return (rows.rows as unknown[]).length > 0;
+}
+
 async function insertArticle(a: BackupArticle, section: string, dryRun: boolean): Promise<boolean> {
   const title = a.title.trim();
   const content = (a.content ?? "").trim();
   if (!title) return false;
 
   const sourceUrl = (a.source_url ?? "").trim() || null;
-  if (sourceUrl && (await existsBySourceUrl(sourceUrl, section))) return false;
+  if (sourceUrl) {
+    if (await existsBySourceUrl(sourceUrl, section)) return false;
+  } else {
+    // Best-effort dedup for legacy lines without source_url: exact title match in same section.
+    // Use a wide window so repeated imports don't duplicate content.
+    const since = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+    if (await existsByTitle(section, title, since)) return false;
+  }
 
   if (dryRun) return true;
 
@@ -115,7 +136,6 @@ export async function importBackupToDb(opts: ImportOptions = {}): Promise<Import
         stats.inserted += 1;
         insertedAny = true;
       } else {
-        // Only count duplicate when it has a source_url and exists already.
         stats.skippedDuplicate += 1;
       }
     }

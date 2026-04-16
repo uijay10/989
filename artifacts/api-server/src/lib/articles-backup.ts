@@ -13,14 +13,23 @@ export type BackupArticle = {
 };
 
 function defaultBackupPath(): string {
-  // api-server runs from artifacts/api-server; repo root is two levels up
+  // Keep legacy default, but don't assume a fixed cwd in hosted environments.
   return resolve(process.cwd(), "../../articles_backup.json");
 }
 
 export function readArticlesBackupFile(pathOverride?: string): BackupArticle[] {
-  const path = (pathOverride ?? process.env.ARTICLES_BACKUP_FILE ?? defaultBackupPath()).trim();
+  const explicit = (pathOverride ?? process.env.ARTICLES_BACKUP_FILE ?? "").trim();
+  const candidates = [
+    explicit,
+    defaultBackupPath(),
+    resolve(process.cwd(), "articles_backup.json"),
+    resolve(process.cwd(), "../articles_backup.json"),
+    resolve(process.cwd(), "../../articles_backup.json"),
+    resolve(process.cwd(), "../../../articles_backup.json"),
+  ].filter(Boolean);
+
+  const path = candidates.find((p) => existsSync(p)) ?? "";
   if (!path) return [];
-  if (!existsSync(path)) return [];
 
   const raw = readFileSync(path, "utf-8");
   const lines = raw.split(/\r?\n/).filter(Boolean);
