@@ -57,6 +57,25 @@ function getSectionLabel(section: string, lang: string): string {
   return map[section] ?? section;
 }
 
+function normalizeText(s: string): string {
+  return s.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function getEventDisplayKey(e: Web3Event): string | null {
+  const title = normalizeText(e.title || "");
+  if (!title) return null;
+  let host = "";
+  const rawUrl = e.source_url ?? "";
+  if (rawUrl) {
+    try {
+      host = new URL(rawUrl).hostname.toLowerCase();
+    } catch {
+      host = rawUrl.toLowerCase();
+    }
+  }
+  return `title:${title}::${host}`;
+}
+
 const CAT_I18N: Record<string, string> = {
   "快讯":       "nav_flash",
   "测试网":     "nav_testnet",
@@ -611,7 +630,16 @@ export function EventList({ sectionSlug, sectionName }: { sectionSlug?: string; 
     primarySorted = [...base].sort((a, b) => getTime(b) - getTime(a));
   }
 
-  const filtered = primarySorted;   // 严格按时间排序，不再打散
+  // 显示层再做一层「标题 + 域名」去重，折叠导入历史在多个板块重复的文章
+  const seenDisplayKeys = new Set<string>();
+  const filtered: Web3Event[] = [];
+  for (const e of primarySorted) {
+    const key = getEventDisplayKey(e);
+    if (!key || !seenDisplayKeys.has(key)) {
+      if (key) seenDisplayKeys.add(key);
+      filtered.push(e);
+    }
+  }
 
   const doAdminPin = async () => {
     if (!address || !pinTargetId) return;
