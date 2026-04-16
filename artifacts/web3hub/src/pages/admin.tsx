@@ -86,6 +86,9 @@ export default function AdminPage() {
   const [scrapeSources, setScrapeSources] = useState<any[]>([]);
   const [scrapeKeywordText, setScrapeKeywordText] = useState("");
   const [scrapeMsg, setScrapeMsg] = useState("");
+  const [backupImportLoading, setBackupImportLoading] = useState(false);
+  const [backupImportConfirm, setBackupImportConfirm] = useState(false);
+  const [backupImportStats, setBackupImportStats] = useState<any | null>(null);
   const [newSrcName, setNewSrcName] = useState("");
   const [newSrcUrl, setNewSrcUrl] = useState("");
   const [newSrcPriority, setNewSrcPriority] = useState("2");
@@ -134,6 +137,39 @@ export default function AdminPage() {
       const kws = (kwRes.keywords as Array<{ keyword: string }>).map(k => k.keyword);
       setScrapeKeywordText(kws.join(", "));
     }
+  }
+
+  async function dryRunBackupImport() {
+    setBackupImportLoading(true);
+    setBackupImportStats(null);
+    const res = await scrapePost("/backup/import", { maxItems: 50000, dryRun: true });
+    setBackupImportLoading(false);
+    if (res.ok) {
+      setBackupImportStats(res.stats);
+      setScrapeMsg("✓ 已完成预检（Dry Run），确认后可执行导入");
+      setBackupImportConfirm(true);
+    } else {
+      setScrapeMsg(`❌ ${res.error ?? "预检失败"}`);
+    }
+    setTimeout(() => setScrapeMsg(""), 6000);
+  }
+
+  async function runBackupImport() {
+    if (!backupImportConfirm) {
+      setScrapeMsg("❌ 请先执行 Dry Run 并勾选确认");
+      setTimeout(() => setScrapeMsg(""), 4000);
+      return;
+    }
+    setBackupImportLoading(true);
+    const res = await scrapePost("/backup/import", { maxItems: 50000, dryRun: false });
+    setBackupImportLoading(false);
+    if (res.ok) {
+      setBackupImportStats(res.stats);
+      setScrapeMsg("✓ 历史文章导入完成（已写入数据库，并同步发布到 7×24 快讯）");
+    } else {
+      setScrapeMsg(`❌ ${res.error ?? "导入失败"}`);
+    }
+    setTimeout(() => setScrapeMsg(""), 8000);
   }
 
   // triggerBackfill removed
@@ -829,6 +865,47 @@ export default function AdminPage() {
               {scrapeMsg}
             </div>
           )}
+
+          {/* Import legacy articles_backup.json into DB */}
+          <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="font-semibold text-sm">导入历史文章（articles_backup.json）</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">把历史内容写入数据库，并同步发布到 7×24 快讯（一次性操作）</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={dryRunBackupImport}
+                  disabled={backupImportLoading}
+                  className="px-3 py-1.5 rounded-xl border border-border text-sm font-semibold hover:bg-muted disabled:opacity-50"
+                >
+                  Dry Run
+                </button>
+                <button
+                  onClick={runBackupImport}
+                  disabled={backupImportLoading || !backupImportConfirm}
+                  className="px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
+                >
+                  导入
+                </button>
+              </div>
+            </div>
+
+            <label className="flex items-center gap-2 text-xs text-muted-foreground select-none">
+              <input
+                type="checkbox"
+                checked={backupImportConfirm}
+                onChange={(e) => setBackupImportConfirm(e.target.checked)}
+              />
+              我已执行 Dry Run 并确认导入历史文章
+            </label>
+
+            {backupImportStats && (
+              <div className="text-xs text-muted-foreground font-mono bg-muted/40 rounded-xl p-3 overflow-x-auto">
+                {JSON.stringify(backupImportStats)}
+              </div>
+            )}
+          </div>
 
           {/* One-time Backfill (deprecated) */}
 
