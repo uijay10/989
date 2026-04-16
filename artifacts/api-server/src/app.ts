@@ -422,7 +422,7 @@ if (process.env.NODE_ENV !== "test" && process.env.DISABLE_SCRAPE_CRON !== "true
 if (process.env.NODE_ENV === "production") {
   const publicPath = path.resolve(process.cwd(), "artifacts/web3hub/dist/public");
   app.use(express.static(publicPath));
-  app.get("*", (_req, res) => {
+  app.use((_req, res) => {
     res.sendFile(path.join(publicPath, "index.html"));
   });
 }
