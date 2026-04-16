@@ -249,17 +249,10 @@ initDeepSeekDailyBudget();
 
 // ── Scrape scheduler ──────────────────────────────────────────────────────────
 //
-//  Main cron  (all plates EXCEPT 快讯)
-//    Interval   : 2 hours (12 runs/day)
-//    Provider   : Groq first (11 keys round-robin, freeOnly) → DeepSeek fallback only when ALL
-//                 Groq keys daily-exhausted ($0.50/day cap still enforced inside ai-provider)
-//    Max/run    : KEYWORD_GRAB_CONFIG.maxArticlesPerRun (200 — no DeepSeek conservation needed)
-//    Goal       : burn all 11 Groq keys daily; DeepSeek only covers the tail
-//
-//  Flash cron  (快讯 plate only) — TWO independent scrapers, no fallback between them:
-//    Groq flash  : every 30min, freeOnly=true (Groq ONLY — skips if unavailable, DS covers it)
-//    DS flash    : every 10min, paidOnly=true (DeepSeek ONLY — always runs independently)
-//    Max/run     : 10 articles each
+//  v2.0_migrated_2026 unified cron
+//    - Exactly 11× Groq + 1× DeepSeek instances are allowed to scrape/publish.
+//    - No plate-specific scrapers. A single unified flow runs on a fixed cadence.
+//    - Keyword source: DB scrape_keywords (enabled=true) → DEFAULT_KEYWORDS fallback.
 //
 //  Set DISABLE_SCRAPE_CRON=true in dev to reserve all quota for prod.
 //
@@ -322,15 +315,14 @@ async function acquireCronLeader(): Promise<boolean> {
 //
 //  Two independent cycles replacing all old plate-specific scrapers:
 //
-//  [Groq cycle]    Every 30 min (48 runs/day)
-//                  freeOnly=true — 11 Groq keys rotate via ai-provider round-robin
-//                  Each key used ~4-5 times/day (well under 1000/day limit per key)
-//                  Falls back to DeepSeek only if ALL Groq keys daily-exhausted
+//  [Groq cycle]     Every 30 min (48 runs/day)
+//                   freeOnly=true — uses Groq1..Groq11 (11 instances)
+//                   Uses the system keyword list (DB scrape_keywords → DEFAULT_KEYWORDS).
 //
 //  [DeepSeek cycle] Every 60 min (24 runs/day)
-//                  paidOnly=true — uses DeepSeek exclusively
-//                  Hourly budget cap: $0.50/24 = ~$0.020833/hour
-//                  Skips run automatically when hourly cap is reached
+//                   paidOnly=true — uses DeepSeek exclusively
+//                   Hourly budget cap: $0.50/24 = ~$0.020833/hour
+//                   Skips run automatically when hourly cap is reached
 //
 //  Both cycles use ALL combined keywords → AI classify →
 //  dual-publish to matched section(s) + 7×24快讯
@@ -387,6 +379,7 @@ if (process.env.NODE_ENV !== "test" && process.env.DISABLE_SCRAPE_CRON !== "true
     console.log(
       "[cron] v2.0_migrated_2026 unified scheduler started — " +
       "Groq every 30min (11 keys, freeOnly) + DeepSeek every 60min (paidOnly, $0.020833/h cap). " +
+      "Keyword source: DB scrape_keywords → DEFAULT_KEYWORDS. " +
       "All articles dual-published to matched section + 7×24快讯."
     );
 

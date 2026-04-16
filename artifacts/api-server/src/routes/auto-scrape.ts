@@ -6,6 +6,8 @@ import { verifyAdminToken } from "../lib/admin-token";
 import { runUnifiedScrape, runKeywordScrape, isKeywordScrapeRunning, KEYWORD_GRAB_CONFIG, DEFAULT_KEYWORDS, SCRAPE_CONFIG } from "../lib/auto-scraper";
 import type { UnifiedScrapeOptions as KeywordScrapeOptions } from "../lib/auto-scraper";
 import { getDailyQuotaStats, areFreeProvidersDailyExhausted } from "../lib/ai-provider";
+import { readArticlesBackupFile } from "../lib/articles-backup";
+import { importBackupToDb } from "../lib/import-backup";
 
 const router: IRouter = Router();
 
@@ -41,39 +43,6 @@ router.post("/run", checkScrapeAuth, async (req, res) => {
   res.json({ ok: true, message: "Unified scrape started (mode: deepseek, dual-publish)" });
 });
 
-// Backfill: custom time window, all combined keywords
-// Body: { hours?: number, freeOnly?: boolean, maxArticlesPerRun?: number }
-router.post("/backfill", checkScrapeAuth, async (req, res) => {
-  if (isKeywordScrapeRunning()) {
-    res.status(409).json({ error: "Scrape already running — try again in a moment" });
-    return;
-  }
-
-  const body = req.body as Record<string, unknown>;
-  const hoursRaw = Number(body?.hours ?? 240);
-  const overrideWindowHours = hoursRaw > 0 ? hoursRaw : 240;
-  const freeOnly = body?.freeOnly === true;
-  const maxArticlesPerRun = Number(body?.maxArticlesPerRun ?? 500);
-
-  runUnifiedScrape({
-    overrideWindowHours,
-    freeOnly,
-    paidOnly: !freeOnly,
-    maxArticlesPerRun,
-    ignoreDailyLimit: true,
-  })
-    .then(summary => { console.log("[unified-scrape] /backfill done:", summary); })
-    .catch(e => { console.error("[unified-scrape] /backfill error:", e); });
-
-  res.json({
-    ok: true,
-    message: `Backfill started — all keywords, dual-publish, last ${overrideWindowHours}h`,
-    overrideWindowHours,
-    freeOnly,
-    maxArticlesPerRun,
-  });
-});
-
 // Trigger with optional window override (Groq mode)
 router.post("/keyword", checkScrapeAuth, async (req, res) => {
   if (isKeywordScrapeRunning()) {
@@ -102,6 +71,56 @@ router.post("/keyword", checkScrapeAuth, async (req, res) => {
 
 router.get("/keyword/config", requireAdmin, (_req, res) => {
   res.json({ config: SCRAPE_CONFIG, version: SCRAPE_CONFIG.VERSION });
+});
+
+// Read historical articles from articles_backup.json (JSONL) for verification/debug.
+// Auth: SCRAPE_INTERNAL_KEY header/query OR admin credentials (same as scrape triggers).
+router.get("/backup", checkScrapeAuth, (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(String(req.query.page ?? "1")) || 1);
+    const limit = Math.min(200, Math.max(1, parseInt(String(req.query.limit ?? "50")) || 50));
+    const category = String(req.query.category ?? "all");
+    const offset = (page - 1) * limit;
+
+    const all = readArticlesBackupFile()
+      .filter((a) => (a.author_type ?? "ai") === "ai")
+      .filter((a) => category === "all" || (a.section ?? "other") === category)
+      .sort((a, b) => {
+        const at = a.created_at ? Date.parse(a.created_at) : 0;
+        const bt = b.created_at ? Date.parse(b.created_at) : 0;
+        if (bt !== at) return bt - at;
+        return Number(b.id) - Number(a.id);
+      });
+
+    const items = all.slice(offset, offset + limit);
+    res.json({
+      page,
+      limit,
+      total: all.length,
+      hasMore: offset + items.length < all.length,
+      items,
+    });
+  } catch (e: unknown) {
+    res.status(500).json({ error: String(e) });
+  }
+});
+
+// Import historical articles from articles_backup.json into PostgreSQL.
+// This is a one-time operation to restore legacy content visibility.
+// Auth: SCRAPE_INTERNAL_KEY header/query OR admin credentials.
+router.post("/backup/import", checkScrapeAuth, async (req, res) => {
+  try {
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const maxItems = Number(body.maxItems ?? 50000);
+    const dryRun = body.dryRun === true;
+    const stats = await importBackupToDb({
+      maxItems: Number.isFinite(maxItems) ? maxItems : 50000,
+      dryRun,
+    });
+    res.json({ ok: true, dryRun, stats });
+  } catch (e: unknown) {
+    res.status(500).json({ ok: false, error: String(e) });
+  }
 });
 
 router.get("/status", requireAdmin, async (_req, res) => {
