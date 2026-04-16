@@ -68,11 +68,12 @@ function getDedupKey(item: FeedItem): string {
 
 function getTitleColorClass(importance: FeedItem["importance"]): string {
   const v = (importance ?? "").toString().trim().toLowerCase();
-  // Back-end uses "high|medium|low" (importance column). Be tolerant of aliases.
+  // Back-end may use "high|medium|low" OR Chinese labels ("重要"/"一般"/"普通").
   // Use Tailwind's `!` to override global link/title styles that may force a color.
-  if (v === "high" || v === "important" || v === "critical") return "!text-red-600 dark:!text-red-400";
-  if (v === "medium" || v === "normal" || v === "general") return "!text-blue-600 dark:!text-blue-400";
-  return "!text-gray-900 dark:!text-white";
+  if (v === "high" || v === "important" || v === "critical" || v === "重要") return "!text-red-600 dark:!text-red-400";
+  if (v === "medium" || v === "normal" || v === "general" || v === "一般") return "!text-blue-600 dark:!text-blue-400";
+  // 普通/low/empty → keep existing default (usually black)
+  return "";
 }
 
 const Unified724Feed: React.FC = () => {
