@@ -61,9 +61,33 @@ function normalizeText(s: string): string {
   return s.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+function semanticTitleKey(raw: string): string {
+  const t = normalizeText(raw || "")
+    .replace(/[’'"]/g, "")
+    .replace(/[^a-z0-9\u4e00-\u9fff\s-]/g, " ")
+    .replace(/\b(19|20)\d{2}\b/g, " ")
+    .replace(/\b\d+(?:\.\d+)?\b/g, " ");
+
+  const stop = new Set([
+    "a","an","and","are","as","at","be","by","for","from","has","have","in","into","is","it","its","of","on","or","s","says","to","the","this","that","these","those","with","will","vs","via",
+    "best","top","latest","update","news","revealed","reveals","lead","leads","goes","live","launch","launched","crosses","cross","potential","deadline","act","committee","senate","us","u","u.s",
+    "今日","最新","快讯","速报","公告","消息","更新","曝光","透露","宣布",
+  ]);
+
+  const parts = t.split(/[\s-]+/g).filter(Boolean);
+  const kept: string[] = [];
+  for (const p of parts) {
+    if (p.length <= 2) continue;
+    if (stop.has(p)) continue;
+    if (!kept.includes(p)) kept.push(p);
+    if (kept.length >= 8) break;
+  }
+  return kept.join("-");
+}
+
 function getEventDisplayKey(e: Web3Event): string | null {
-  const title = normalizeText(e.title || "");
-  if (!title) return null;
+  const sem = semanticTitleKey(e.title || "");
+  if (!sem) return null;
   let host = "";
   const rawUrl = e.source_url ?? "";
   if (rawUrl) {
@@ -73,7 +97,7 @@ function getEventDisplayKey(e: Web3Event): string | null {
       host = rawUrl.toLowerCase();
     }
   }
-  return `title:${title}::${host}`;
+  return `sem:${sem}::${host}`;
 }
 
 const CAT_I18N: Record<string, string> = {
@@ -630,7 +654,7 @@ export function EventList({ sectionSlug, sectionName }: { sectionSlug?: string; 
     primarySorted = [...base].sort((a, b) => getTime(b) - getTime(a));
   }
 
-  // 显示层再做一层「标题 + 域名」去重，折叠导入历史在多个板块重复的文章
+  // 显示层：按「标题语义指纹 + 域名」去重（相似标题、同站多篇软文、多板块重复会折叠）
   const seenDisplayKeys = new Set<string>();
   const filtered: Web3Event[] = [];
   for (const e of primarySorted) {
