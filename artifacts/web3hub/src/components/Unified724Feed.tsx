@@ -92,6 +92,22 @@ function getTitleColorClass(importance: FeedItem["importance"]): string {
   return "";
 }
 
+function deriveImportanceFromText(text: string): FeedItem["importance"] | undefined {
+  const t = text;
+  // Prefer explicit markers commonly embedded in summaries by the AI formatter.
+  if (/(重要|高|hot)/i.test(t)) return "high";
+  if (/(一般|中|normal)/i.test(t)) return "medium";
+  return undefined;
+}
+
+function resolveImportance(item: FeedItem): FeedItem["importance"] | undefined {
+  const direct = item.importance;
+  if (direct) return direct;
+  const fromSummary = deriveImportanceFromText(item.summary ?? "");
+  if (fromSummary) return fromSummary;
+  return deriveImportanceFromText(item.title ?? "");
+}
+
 function getTitleStyle(importance: FeedItem["importance"]): React.CSSProperties | undefined {
   const v = (importance ?? "").toString().trim().toLowerCase();
   // Inline style as the ultimate override when global CSS/link styles win.
@@ -315,16 +331,16 @@ const Unified724Feed: React.FC = () => {
               <span className="text-xs text-gray-500">{item.time}</span>
             </div>
             <h3
-              className={`text-xl font-semibold leading-tight mb-2 ${getTitleColorClass(item.importance)}`}
-              style={getTitleStyle(item.importance)}
+              className={`text-xl font-semibold leading-tight mb-2 ${getTitleColorClass(resolveImportance(item))}`}
+              style={getTitleStyle(resolveImportance(item))}
             >
               {item.link ? (
                 <a
                   href={item.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`hover:underline ${getTitleColorClass(item.importance)}`}
-                  style={getTitleStyle(item.importance)}
+                  className={`hover:underline ${getTitleColorClass(resolveImportance(item))}`}
+                  style={getTitleStyle(resolveImportance(item))}
                 >
                   {item.title}
                 </a>
