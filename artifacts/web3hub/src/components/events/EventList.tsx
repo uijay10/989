@@ -76,12 +76,43 @@ const CAT_I18N: Record<string, string> = {
   "漏洞赏金":     "nav_bugbounty",
 };
 
-function importanceDot(importance?: string) {
-  switch (importance?.toLowerCase()) {
-    case "高": case "high":   return "bg-red-500";
-    case "中": case "medium": return "bg-amber-400";
-    default:                  return null;
+/** Align with feed / DB: English + Chinese; anything else → no Hot·Normal badge & default title color. */
+function normalizeEventImportance(imp?: string | null): "high" | "medium" | "other" {
+  if (imp == null) return "other";
+  const s0 = String(imp).trim().replace(/\u00a0/g, " ");
+  if (!s0) return "other";
+  const lower = s0.toLowerCase();
+  if (["high", "critical", "important", "urgent", "severe", "major"].includes(lower)) return "high";
+  if (["medium", "normal", "general", "moderate", "average"].includes(lower)) return "medium";
+  if (s0 === "高" || s0 === "重要" || s0 === "紧急" || s0 === "极高") return "high";
+  if (s0 === "中" || s0 === "一般" || s0 === "中等" || s0 === "中度") return "medium";
+  if (["low", "minor", "trivial"].includes(lower) || s0 === "低" || s0 === "普通" || s0 === "次要") return "other";
+  return "other";
+}
+
+function importanceDot(importance?: string | null) {
+  const level = normalizeEventImportance(importance);
+  if (level === "high") return "bg-red-500";
+  if (level === "medium") return "bg-amber-400";
+  return null;
+}
+
+function eventTitleClass(level: "high" | "medium" | "other"): string {
+  const base = "text-lg font-semibold leading-snug mb-2 transition-colors";
+  if (level === "high") {
+    return `${base} text-[#b91c1c] dark:text-red-400 group-hover:text-[#991b1b] dark:group-hover:text-red-300`;
   }
+  if (level === "medium") {
+    return `${base} text-[#1d4ed8] dark:text-blue-400 group-hover:text-[#1e3a8a] dark:group-hover:text-blue-300`;
+  }
+  return `${base} text-slate-800 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400`;
+}
+
+function importanceSortRank(imp?: string | null): number {
+  const l = normalizeEventImportance(imp);
+  if (l === "high") return 0;
+  if (l === "medium") return 1;
+  return 2;
 }
 
 function EventRow({
@@ -114,13 +145,11 @@ function EventRow({
   const cats = event.category ?? [];
   const srcLabel = formatSourceLabel(event.source_url);
   const relTime = formatRelativeTime(event.crawl_time ?? event.start_time, lang);
+  const impLevel = normalizeEventImportance(event.importance);
   const dot = importanceDot(event.importance);
-  const iLabel = event.importance
-    ? (event.importance === "高" || event.importance === "high"
-        ? (zh ? "重要" : "Hot")
-        : event.importance === "中" || event.importance === "medium"
-        ? (zh ? "一般" : "Normal")
-        : "")
+  const iLabel =
+    impLevel === "high" ? (zh ? "重要" : "Hot")
+    : impLevel === "medium" ? (zh ? "一般" : "Normal")
     : "";
 
   const isUserPost = event.authorType && event.authorType !== "ai";
@@ -174,7 +203,7 @@ function EventRow({
         )}
       </div>
 
-      <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 leading-snug mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+      <h3 className={eventTitleClass(impLevel)}>
         {event.title}
       </h3>
 
@@ -547,7 +576,6 @@ export function EventList({ sectionSlug, sectionName }: { sectionSlug?: string; 
     }
   }, [loadingMore, checkScrollBottom]);
 
-  const importanceOrder: Record<string, number> = { "高": 0, "high": 0, "中": 1, "medium": 1 };
   const getTime = (e: Web3Event) =>
     e.crawl_time ? new Date(e.crawl_time).getTime()
     : e.start_time ? new Date(e.start_time).getTime()
@@ -572,8 +600,8 @@ export function EventList({ sectionSlug, sectionName }: { sectionSlug?: string; 
     primarySorted = seededShuffle(base, sessionSeed.current);
   } else if (sortBy === "importance") {
     primarySorted = [...base].sort((a, b) => {
-      const ia = importanceOrder[a.importance ?? ""] ?? 2;
-      const ib = importanceOrder[b.importance ?? ""] ?? 2;
+      const ia = importanceSortRank(a.importance);
+      const ib = importanceSortRank(b.importance);
       if (ia !== ib) return ia - ib;
       return getTime(b) - getTime(a);
     });
