@@ -70,8 +70,24 @@ function getTitleColorClass(importance: FeedItem["importance"]): string {
   const v = (importance ?? "").toString().trim().toLowerCase();
   // Back-end may use "high|medium|low" OR Chinese labels ("重要"/"一般"/"普通").
   // Use Tailwind's `!` to override global link/title styles that may force a color.
-  if (v === "high" || v === "important" || v === "critical" || v === "重要") return "!text-red-600 dark:!text-red-400";
-  if (v === "medium" || v === "normal" || v === "general" || v === "一般") return "!text-blue-600 dark:!text-blue-400";
+  if (
+    v === "high" ||
+    v === "important" ||
+    v === "critical" ||
+    v === "重要" ||
+    v === "高"
+  ) {
+    return "!text-red-600 dark:!text-red-400";
+  }
+  if (
+    v === "medium" ||
+    v === "normal" ||
+    v === "general" ||
+    v === "一般" ||
+    v === "中"
+  ) {
+    return "!text-blue-600 dark:!text-blue-400";
+  }
   // 普通/low/empty → keep existing default (usually black)
   return "";
 }
@@ -79,8 +95,8 @@ function getTitleColorClass(importance: FeedItem["importance"]): string {
 function getTitleStyle(importance: FeedItem["importance"]): React.CSSProperties | undefined {
   const v = (importance ?? "").toString().trim().toLowerCase();
   // Inline style as the ultimate override when global CSS/link styles win.
-  if (v === "high" || v === "important" || v === "critical" || v === "重要") return { color: "#dc2626" }; // red-600
-  if (v === "medium" || v === "normal" || v === "general" || v === "一般") return { color: "#2563eb" }; // blue-600
+  if (v === "high" || v === "important" || v === "critical" || v === "重要" || v === "高") return { color: "#dc2626" }; // red-600
+  if (v === "medium" || v === "normal" || v === "general" || v === "一般" || v === "中") return { color: "#2563eb" }; // blue-600
   return undefined;
 }
 
