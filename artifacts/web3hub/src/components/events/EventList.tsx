@@ -100,7 +100,8 @@ function importanceDot(importance?: string | null) {
 function eventTitleClass(level: "high" | "medium" | "other"): string {
   const base = "text-lg font-semibold leading-snug mb-2 transition-colors";
   if (level === "high") {
-    return `${base} text-[#b91c1c] dark:text-red-400 group-hover:text-[#991b1b] dark:group-hover:text-red-300`;
+    // Soft coral red (参考新闻客户端「重要」色)，避免过深的酒红 / 描边感
+    return `${base} text-[#E55B5B] dark:text-[#F08080] group-hover:text-[#D64A4A] dark:group-hover:text-[#E88888]`;
   }
   if (level === "medium") {
     return `${base} text-[#1d4ed8] dark:text-blue-400 group-hover:text-[#1e3a8a] dark:group-hover:text-blue-300`;
