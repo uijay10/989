@@ -49,6 +49,32 @@ Schema is managed with Drizzle ORM. To push schema changes:
 pnpm --filter @workspace/db run push
 ```
 
+## AI Scraping System (v2.0_migrated_2026)
+
+### Architecture
+- **Instances**: 11 Groq keys (free, round-robin) + 1 DeepSeek key (paid, budget-controlled)
+- **Keywords**: All existing keywords combined into a single unified pool — no plate-specific routing
+- **Classification**: AI classifies each article into one or more sections
+- **Dual-publish**: Every article is published to its matched section(s) AND always also to 7×24快讯 (724news)
+- **Fallback**: Articles that are clearly Web3 but don't match any specific section → published to 724news only
+- **Non-Web3**: Rejected entirely (not published anywhere)
+
+### Schedule
+- **Groq cycle**: Every 30 minutes — `freeOnly=true`, max 100 articles/run
+- **DeepSeek cycle**: Every 60 minutes — `paidOnly=true`, max 50 articles/run
+- **DB leader lock**: Only one server instance runs the cron at a time
+
+### Budget Control
+- **DeepSeek daily cap**: $0.50/day (persisted in DB `ai_cost_daily`, resets at UTC midnight)
+- **DeepSeek hourly cap**: $0.50/24 = ~$0.020833/hour (in-memory, resets each UTC clock-hour)
+- **Groq**: Free tier, 11 keys × 1000 req/day = 11000/day. At 48 runs/day each run uses ~4 calls per key → well within limits
+
+### Key Files
+- `artifacts/api-server/src/lib/auto-scraper.ts` — v2.0 unified scraper (`runUnifiedScrape`)
+- `artifacts/api-server/src/lib/ai-provider.ts` — provider routing, Groq rotation, DeepSeek daily+hourly budget
+- `artifacts/api-server/src/app.ts` — cron scheduler (Groq 30min + DeepSeek 60min)
+- `artifacts/api-server/src/routes/auto-scrape.ts` — admin HTTP API
+
 ## Key Features
 
 - 15 navigation sections (Testnet, IDO, Security, etc.)

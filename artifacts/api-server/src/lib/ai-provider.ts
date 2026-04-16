@@ -42,18 +42,48 @@ function incrementGroqSlot(): void {
   for (const [k] of groqSlotCounts) { if (k < cutoff) groqSlotCounts.delete(k); }
 }
 
-// ==================== DeepSeek 每日成本控制 ====================
-// 每日预算上限：$0.50/天（按自然日 UTC 0:00 重置）
-// 快讯 DeepSeek（Groq窗口耗尽后）：~133次/天 × 10篇 × $0.0026/次 ≈ $0.35/天
-// 其他9个板块（主 cron）：12次/天 × 50篇 × $0.013/次 ≈ $0.16/天
-// 理论峰值 ≈ $0.51/天；实际因去重通常只有 $0.10–0.25/天
-// 到达上限后当天停止调用，UTC 0:00 自动重置
-// 花费持久化到数据库（ai_cost_daily 表），重启后不归零
-const DEEPSEEK_TOTAL_BUDGET = 0.50;   // 每日总上限 $0.50
+// ==================== DeepSeek 每日+每小时成本控制 ====================
+// v2.0_migrated_2026: 每日 $0.50 均分到 24 小时 → 每小时 $0.020833
+// 每日预算（UTC 0:00 重置，持久化到数据库）
+// 每小时预算（内存跟踪，每个整点小时重置）
+const DEEPSEEK_TOTAL_BUDGET  = 0.50;                           // 每日总上限 $0.50
+const DEEPSEEK_HOURLY_BUDGET = DEEPSEEK_TOTAL_BUDGET / 24;    // 每小时上限 ~$0.020833
 
 let deepseekTotalDailyCost = 0;
-let deepseekCostResetAt = 0;
+let deepseekCostResetAt    = 0;
 let deepseekBudgetInitialized = false;
+
+// ── Hourly tracking (in-memory, resets at each UTC clock-hour) ────────────────
+let deepseekHourlyStart = 0;  // Unix-ms of current tracking hour's start
+let deepseekHourlyCost  = 0;  // spending in the current hour window
+
+function getHourStart(): number {
+  return Math.floor(Date.now() / (60 * 60 * 1000)) * (60 * 60 * 1000);
+}
+
+function resetHourlyIfNeeded(): void {
+  const hs = getHourStart();
+  if (hs !== deepseekHourlyStart) {
+    if (deepseekHourlyCost > 0) {
+      console.log(`[DeepSeek Hourly] 新小时窗口重置。上一小时花费: $${deepseekHourlyCost.toFixed(5)}`);
+    }
+    deepseekHourlyStart = hs;
+    deepseekHourlyCost  = 0;
+  }
+}
+
+/**
+ * True when the current UTC clock-hour has NOT yet hit $0.020833.
+ * Exported so auto-scraper can gate DeepSeek-only runs before starting a batch.
+ */
+export function isDeepSeekHourlyBudgetAvailable(): boolean {
+  resetHourlyIfNeeded();
+  const available = deepseekHourlyCost < DEEPSEEK_HOURLY_BUDGET;
+  if (!available) {
+    console.warn(`[DeepSeek Hourly] 当前小时额度已满 ($${deepseekHourlyCost.toFixed(5)} / $${DEEPSEEK_HOURLY_BUDGET.toFixed(5)})`);
+  }
+  return available;
+}
 
 function todayUtc(): string {
   return new Date().toISOString().slice(0, 10); // YYYY-MM-DD
@@ -160,7 +190,12 @@ function recordDeepSeekCost(_category: string, inputTokens: number, outputTokens
   // DeepSeek-chat: 输入 $0.27/1M，输出 $1.10/1M
   const cost = (inputTokens * 0.27 + outputTokens * 1.10) / 1_000_000;
   deepseekTotalDailyCost += cost;
-  console.log(`[DeepSeek Cost] 本次 $${cost.toFixed(5)} | 今日累计 $${deepseekTotalDailyCost.toFixed(4)} / $${DEEPSEEK_TOTAL_BUDGET}`);
+  resetHourlyIfNeeded();
+  deepseekHourlyCost += cost;
+  console.log(
+    `[DeepSeek Cost] 本次 $${cost.toFixed(5)} | 今日累计 $${deepseekTotalDailyCost.toFixed(4)} / $${DEEPSEEK_TOTAL_BUDGET} | ` +
+    `本小时 $${deepseekHourlyCost.toFixed(5)} / $${DEEPSEEK_HOURLY_BUDGET.toFixed(5)}`
+  );
   persistDeepSeekCost();
 }
 
