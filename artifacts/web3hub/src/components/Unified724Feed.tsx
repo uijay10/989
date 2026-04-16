@@ -16,6 +16,7 @@ interface FeedItem {
   category: string;
   source?: string;
   link?: string;
+  importance?: string | null;
 }
 
 type DisplayFeedItem = FeedItem & { _categories?: string[] };
@@ -63,6 +64,14 @@ function getDedupKey(item: FeedItem): string {
   const title = normalizeText(item.title || "");
   const summary = normalizeText(item.summary || "");
   return `text:${title}::${summary.slice(0, 240)}`;
+}
+
+function getTitleColorClass(importance: FeedItem["importance"]): string {
+  const v = (importance ?? "").toString().trim().toLowerCase();
+  // Back-end uses "high|medium|low" (importance column). Be tolerant of aliases.
+  if (v === "high" || v === "important" || v === "critical") return "text-red-600 dark:text-red-400";
+  if (v === "medium" || v === "normal" || v === "general") return "text-blue-600 dark:text-blue-400";
+  return "text-gray-900 dark:text-white";
 }
 
 const Unified724Feed: React.FC = () => {
@@ -279,7 +288,7 @@ const Unified724Feed: React.FC = () => {
               ))}
               <span className="text-xs text-gray-500">{item.time}</span>
             </div>
-            <h3 className="text-xl font-semibold leading-tight mb-2">
+            <h3 className={`text-xl font-semibold leading-tight mb-2 ${getTitleColorClass(item.importance)}`}>
               {item.link ? (
                 <a href={item.link} target="_blank" rel="noopener noreferrer" className="hover:underline">
                   {item.title}
