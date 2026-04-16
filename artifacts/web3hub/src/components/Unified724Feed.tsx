@@ -60,53 +60,82 @@ function getDedupKey(item: FeedItem): string {
   return `text:${title}::${summary.slice(0, 240)}`;
 }
 
-function getTitleColorClass(importance: FeedItem["importance"]): string {
-  const v = (importance ?? "").toString().trim().toLowerCase();
-  // Back-end may use "high|medium|low" OR Chinese labels ("重要"/"一般"/"普通").
-  // Use Tailwind's `!` to override global link/title styles that may force a color.
-  if (
-    v === "high" ||
-    v === "important" ||
-    v === "critical" ||
-    v === "重要" ||
-    v === "高"
-  ) {
-    return "!text-red-600 dark:!text-red-400";
+type ImportanceLevel = "high" | "medium" | "low";
+
+/** Map DB / AI free-text to a stable level; many old rows store Chinese or mixed casing. */
+function normalizeImportanceValue(raw: unknown): ImportanceLevel | null {
+  if (raw === null || raw === undefined) return null;
+  const s0 = String(raw).trim().replace(/\u00a0/g, " ");
+  if (!s0) return null;
+  const lower = s0.toLowerCase();
+
+  if (["high", "critical", "important", "major", "severe", "urgent"].includes(lower)) return "high";
+  if (["medium", "normal", "general", "moderate", "avg", "average"].includes(lower)) return "medium";
+  if (["low", "minor", "trivial"].includes(lower)) return "low";
+
+  if (s0 === "高" || s0 === "重要" || s0 === "紧急" || s0 === "极高") return "high";
+  if (s0 === "中" || s0 === "一般" || s0 === "中等" || s0 === "中度") return "medium";
+  if (s0 === "低" || s0 === "普通" || s0 === "次要") return "low";
+
+  if (/重要|紧急|极高|[高中](?:级|风险|优先|权重)|热点|\bhigh\b|\burgent\b|\bcritical\b/i.test(s0)) {
+    if (/低(?:级|风险|优先|于)?|普通|次要|\blow\b|\bminor\b/i.test(s0)) return "low";
+    return "high";
   }
-  if (
-    v === "medium" ||
-    v === "normal" ||
-    v === "general" ||
-    v === "一般" ||
-    v === "中"
-  ) {
-    return "!text-blue-600 dark:!text-blue-400";
-  }
-  // 普通/low/empty → keep existing default (usually black)
-  return "";
+  if (/中等|一般|中度|中性|\bmedium\b|\bnormal\b|\bmoderate\b/i.test(s0)) return "medium";
+  if (/低(?:级|风险|优先|于)?|普通|次要|轻微|\blow\b|\bminor\b/i.test(s0)) return "low";
+
+  return null;
 }
 
-function deriveImportanceFromText(text: string): FeedItem["importance"] | undefined {
-  const t = text;
-  // Prefer explicit markers commonly embedded in summaries by the AI formatter.
-  if (/(重要|高|hot)/i.test(t)) return "high";
-  if (/(一般|中|normal)/i.test(t)) return "medium";
-  return undefined;
+function inferImportanceFromContent(text: string): ImportanceLevel | null {
+  const t = text.trim();
+  if (!t) return null;
+
+  const tagged = t.match(/importance["'\s:：]+([a-z\u4e00-\u9fff]{1,24})/i);
+  if (tagged?.[1]) {
+    const v = normalizeImportanceValue(tagged[1]);
+    if (v) return v;
+  }
+
+  if (/\bhigh\b|\burgent\b|\bcritical\b|重要|高优先级|极高|紧急/i.test(t)) return "high";
+  if (/\bmedium\b|\bnormal\b|\bmoderate\b|一般|中等|中度/i.test(t)) return "medium";
+  if (/\blow\b|\bminor\b|普通|次要|轻微/i.test(t)) return "low";
+
+  return null;
 }
 
-function resolveImportance(item: FeedItem): FeedItem["importance"] | undefined {
-  const direct = item.importance;
-  if (direct) return direct;
-  const fromSummary = deriveImportanceFromText(item.summary ?? "");
+function resolveImportanceLevel(item: FeedItem): ImportanceLevel | null {
+  const fromField = normalizeImportanceValue(item.importance);
+  if (fromField) return fromField;
+  const fromSummary = inferImportanceFromContent(item.summary ?? "");
   if (fromSummary) return fromSummary;
-  return deriveImportanceFromText(item.title ?? "");
+  return inferImportanceFromContent(item.title ?? "");
 }
 
-function getTitleStyle(importance: FeedItem["importance"]): React.CSSProperties | undefined {
-  const v = (importance ?? "").toString().trim().toLowerCase();
-  // Inline style as the ultimate override when global CSS/link styles win.
-  if (v === "high" || v === "important" || v === "critical" || v === "重要" || v === "高") return { color: "#dc2626" }; // red-600
-  if (v === "medium" || v === "normal" || v === "general" || v === "一般" || v === "中") return { color: "#2563eb" }; // blue-600
+/** Deeper blue / red than default link blue so differences are obvious in light mode. */
+function titleBlockClass(level: ImportanceLevel | null): string {
+  const base = "text-xl font-semibold leading-tight mb-2";
+  if (level === "high") return `${base} text-[#b91c1c]`;
+  if (level === "medium") return `${base} text-[#1d4ed8]`;
+  return `${base} text-gray-900 dark:text-zinc-100`;
+}
+
+function titleLinkClass(level: ImportanceLevel | null): string {
+  const base = "hover:underline";
+  if (level === "high") return `${base} text-[#b91c1c]`;
+  if (level === "medium") return `${base} text-[#1d4ed8]`;
+  return `${base} text-gray-900 dark:text-zinc-100`;
+}
+
+function titleInlineStyle(level: ImportanceLevel | null): React.CSSProperties | undefined {
+  if (level === "high") {
+    const c = "#b91c1c";
+    return { color: c, WebkitTextFillColor: c };
+  }
+  if (level === "medium") {
+    const c = "#1d4ed8";
+    return { color: c, WebkitTextFillColor: c };
+  }
   return undefined;
 }
 
@@ -310,7 +339,9 @@ const Unified724Feed: React.FC = () => {
         {displayItems.length === 0 && !loading && (
           <div className="py-16 text-center text-gray-400">暂无内容</div>
         )}
-        {displayItems.map((item) => (
+        {displayItems.map((item) => {
+          const impLevel = resolveImportanceLevel(item);
+          return (
           <div key={item.id} className="border border-gray-200 dark:border-zinc-700 rounded-2xl p-6 hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3 mb-3">
               {(item._categories?.length ? item._categories : [item.category]).map((cat) => (
@@ -325,16 +356,16 @@ const Unified724Feed: React.FC = () => {
               <span className="text-xs text-gray-500">{item.time}</span>
             </div>
             <h3
-              className={`text-xl font-semibold leading-tight mb-2 ${getTitleColorClass(resolveImportance(item))}`}
-              style={getTitleStyle(resolveImportance(item))}
+              className={titleBlockClass(impLevel)}
+              style={titleInlineStyle(impLevel)}
             >
               {item.link ? (
                 <a
                   href={item.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`hover:underline ${getTitleColorClass(resolveImportance(item))}`}
-                  style={getTitleStyle(resolveImportance(item))}
+                  className={titleLinkClass(impLevel)}
+                  style={titleInlineStyle(impLevel)}
                 >
                   {item.title}
                 </a>
@@ -346,7 +377,8 @@ const Unified724Feed: React.FC = () => {
               <p className="text-gray-600 dark:text-zinc-400 text-[15px] leading-relaxed">{item.summary}</p>
             )}
           </div>
-        ))}
+        );
+        })}
       </div>
 
       {/* 无限滚动触发器 */}
