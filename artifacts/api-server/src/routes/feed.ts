@@ -7,29 +7,35 @@ const router: IRouter = Router();
 
 router.get("/", async (req, res) => {
   try {
-    const page   = Math.max(1, parseInt(req.query.page  as string) || 1);
-    const limit  = Math.min(100, parseInt(req.query.limit as string) || 30);
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, parseInt(req.query.limit as string) || 30);
     const category = (req.query.category as string) || "all";
     const offset = (page - 1) * limit;
 
-    const conditions: ReturnType<typeof eq>[] = [eq(postsTable.authorType, "ai")];
+    const conditions: ReturnType<typeof eq>[] = [
+      eq(postsTable.authorType, "ai"),
+    ];
     if (category !== "all") {
       conditions.push(eq(postsTable.section, category));
     }
     const where = and(...conditions);
 
     const [countResult, rows] = await Promise.all([
-      db.select({ count: sql<number>`count(*)` }).from(postsTable).where(where),
-      db.select({
-        id:         postsTable.id,
-        title:      postsTable.title,
-        content:    postsTable.content,
-        createdAt:  postsTable.createdAt,
-        section:    postsTable.section,
-        authorName: postsTable.authorName,
-        sourceUrl:  postsTable.sourceUrl,
-        importance: postsTable.importance,
-      })
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(postsTable)
+        .where(where),
+      db
+        .select({
+          id: postsTable.id,
+          title: postsTable.title,
+          content: postsTable.content,
+          createdAt: postsTable.createdAt,
+          section: postsTable.section,
+          authorName: postsTable.authorName,
+          sourceUrl: postsTable.sourceUrl,
+          importance: postsTable.importance,
+        })
         .from(postsTable)
         .where(where)
         .orderBy(desc(postsTable.createdAt))
@@ -37,7 +43,7 @@ router.get("/", async (req, res) => {
         .offset(offset),
     ]);
 
-    const total  = Number(countResult[0]?.count ?? 0);
+    const total = Number(countResult[0]?.count ?? 0);
     const hasMore = offset + rows.length < total;
 
     // Fallback: when DB is empty/unavailable, serve from local JSONL backup (best-effort).
@@ -45,7 +51,9 @@ router.get("/", async (req, res) => {
     if (total === 0 && rows.length === 0) {
       const backup = readArticlesBackupFile()
         .filter((a) => (a.author_type ?? "ai") === "ai")
-        .filter((a) => category === "all" || (a.section ?? "other") === category)
+        .filter(
+          (a) => category === "all" || (a.section ?? "other") === category,
+        )
         .sort((a, b) => {
           const at = a.created_at ? Date.parse(a.created_at) : 0;
           const bt = b.created_at ? Date.parse(b.created_at) : 0;
@@ -62,10 +70,13 @@ router.get("/", async (req, res) => {
           id: String(r.id),
           title: r.title,
           summary: r.content ? r.content.slice(0, 200) : "",
-          time: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+          time: r.created_at
+            ? new Date(r.created_at).toISOString()
+            : new Date().toISOString(),
           category: r.section || "other",
           source: r.author_name ?? undefined,
           link: r.source_url ?? undefined,
+          importance: (r as any).importance ?? null, // ✅ 新增：fallback 也返回 importance
         })),
         hasMore: backupHasMore,
         total: backupTotal,
@@ -73,14 +84,14 @@ router.get("/", async (req, res) => {
     }
 
     res.json({
-      items: rows.map(r => ({
-        id:       String(r.id),
-        title:    r.title,
-        summary:  r.content ? r.content.slice(0, 200) : "",
-        time:     r.createdAt.toISOString(),
+      items: rows.map((r) => ({
+        id: String(r.id),
+        title: r.title,
+        summary: r.content ? r.content.slice(0, 200) : "",
+        time: r.createdAt.toISOString(),
         category: r.section || "other",
-        source:   r.authorName,
-        link:     r.sourceUrl,
+        source: r.authorName,
+        link: r.sourceUrl,
         importance: r.importance ?? null,
       })),
       hasMore,
