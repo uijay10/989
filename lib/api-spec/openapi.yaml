@@ -1,0 +1,569 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: Web3Hub API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: users
+    description: User operations
+  - name: projects
+    description: Project operations
+  - name: posts
+    description: Post operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /users/me:
+    get:
+      operationId: getMe
+      tags: [users]
+      summary: Get current user profile
+      parameters:
+        - name: wallet
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: Not found
+
+  /users/upsert:
+    post:
+      operationId: upsertUser
+      tags: [users]
+      summary: Upsert user by wallet address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertUserRequest"
+      responses:
+        "200":
+          description: User upserted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/checkin:
+    post:
+      operationId: checkin
+      tags: [users]
+      summary: Daily check-in for points
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                wallet:
+                  type: string
+              required: [wallet]
+      responses:
+        "200":
+          description: Check-in result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckinResponse"
+
+  /projects:
+    get:
+      operationId: getProjects
+      tags: [projects]
+      summary: Get all projects
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectsResponse"
+
+    post:
+      operationId: createProject
+      tags: [projects]
+      summary: Create a new project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProjectRequest"
+      responses:
+        "201":
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  /projects/pinned:
+    get:
+      operationId: getPinnedProjects
+      tags: [projects]
+      summary: Get pinned/featured projects
+      responses:
+        "200":
+          description: List of pinned projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+
+  /projects/{id}:
+    get:
+      operationId: getProject
+      tags: [projects]
+      summary: Get a single project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Project detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  /posts:
+    get:
+      operationId: getPosts
+      tags: [posts]
+      summary: Get posts
+      parameters:
+        - name: section
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: authorType
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of posts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostsResponse"
+
+    post:
+      operationId: createPost
+      tags: [posts]
+      summary: Create a new post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePostRequest"
+      responses:
+        "201":
+          description: Post created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+
+  /posts/{id}/like:
+    post:
+      operationId: likePost
+      tags: [posts]
+      summary: Like a post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                wallet:
+                  type: string
+              required: [wallet]
+      responses:
+        "200":
+          description: Like result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  likes:
+                    type: integer
+                required: [likes]
+
+  /spaces/apply:
+    post:
+      operationId: applySpace
+      tags: [users]
+      summary: Apply to create a space
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplySpaceRequest"
+      responses:
+        "200":
+          description: Application submitted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required: [message]
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        wallet:
+          type: string
+        username:
+          type: string
+          nullable: true
+        avatar:
+          type: string
+          nullable: true
+        points:
+          type: integer
+        energy:
+          type: integer
+        spaceStatus:
+          type: string
+          nullable: true
+        spaceType:
+          type: string
+          nullable: true
+        inviteCode:
+          type: string
+          nullable: true
+        inviteCount:
+          type: integer
+        lastCheckin:
+          type: string
+          nullable: true
+        twitter:
+          type: string
+          nullable: true
+        telegram:
+          type: string
+          nullable: true
+        discord:
+          type: string
+          nullable: true
+        language:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+      required:
+        - id
+        - wallet
+        - points
+        - energy
+        - inviteCount
+        - createdAt
+
+    UpsertUserRequest:
+      type: object
+      properties:
+        wallet:
+          type: string
+        username:
+          type: string
+          nullable: true
+        avatar:
+          type: string
+          nullable: true
+        twitter:
+          type: string
+          nullable: true
+        telegram:
+          type: string
+          nullable: true
+        discord:
+          type: string
+          nullable: true
+        language:
+          type: string
+          nullable: true
+      required: [wallet]
+
+    CheckinResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        points:
+          type: integer
+        nextCheckin:
+          type: string
+          nullable: true
+        message:
+          type: string
+      required: [success, points, message]
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        logo:
+          type: string
+          nullable: true
+        tagline:
+          type: string
+          nullable: true
+        chain:
+          type: string
+          nullable: true
+        tags:
+          type: string
+          nullable: true
+        website:
+          type: string
+          nullable: true
+        twitter:
+          type: string
+          nullable: true
+        ownerWallet:
+          type: string
+        isPinned:
+          type: boolean
+        pinnedUntil:
+          type: string
+          nullable: true
+        status:
+          type: string
+        latestPostTitle:
+          type: string
+          nullable: true
+        latestPostAt:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - ownerWallet
+        - isPinned
+        - status
+        - createdAt
+
+    CreateProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        logo:
+          type: string
+          nullable: true
+        tagline:
+          type: string
+          nullable: true
+        chain:
+          type: string
+          nullable: true
+        tags:
+          type: string
+          nullable: true
+        website:
+          type: string
+          nullable: true
+        twitter:
+          type: string
+          nullable: true
+        ownerWallet:
+          type: string
+      required: [name, ownerWallet]
+
+    ProjectsResponse:
+      type: object
+      properties:
+        projects:
+          type: array
+          items:
+            $ref: "#/components/schemas/Project"
+        total:
+          type: integer
+        page:
+          type: integer
+        totalPages:
+          type: integer
+      required: [projects, total, page, totalPages]
+
+    Post:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        section:
+          type: string
+        authorWallet:
+          type: string
+        authorName:
+          type: string
+          nullable: true
+        authorAvatar:
+          type: string
+          nullable: true
+        authorType:
+          type: string
+          nullable: true
+        likes:
+          type: integer
+        comments:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - title
+        - content
+        - section
+        - authorWallet
+        - likes
+        - comments
+        - createdAt
+
+    PostsResponse:
+      type: object
+      properties:
+        posts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Post"
+        total:
+          type: integer
+        page:
+          type: integer
+        totalPages:
+          type: integer
+      required: [posts, total, page, totalPages]
+
+    CreatePostRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        section:
+          type: string
+        authorWallet:
+          type: string
+      required: [title, content, section, authorWallet]
+
+    ApplySpaceRequest:
+      type: object
+      properties:
+        wallet:
+          type: string
+        type:
+          type: string
+          enum: [kol, project, developer]
+        twitter:
+          type: string
+          nullable: true
+        tweetLink:
+          type: string
+          nullable: true
+        projectName:
+          type: string
+          nullable: true
+        projectTwitter:
+          type: string
+          nullable: true
+        docsLink:
+          type: string
+          nullable: true
+        github:
+          type: string
+          nullable: true
+        linkedin:
+          type: string
+          nullable: true
+      required: [wallet, type]

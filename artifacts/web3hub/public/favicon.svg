@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Blue rounded square background -->
+  <rect width="64" height="64" rx="14" fill="#1a6ff4"/>
+  <!-- Top diamond layer (hollow) -->
+  <polygon points="32,7 57,20 32,29 7,20" fill="none" stroke="white" stroke-width="4" stroke-linejoin="round"/>
+  <!-- Middle chevron bar -->
+  <polyline points="9,33 32,42 55,33" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Bottom chevron bar -->
+  <polyline points="12,44 32,53 52,44" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

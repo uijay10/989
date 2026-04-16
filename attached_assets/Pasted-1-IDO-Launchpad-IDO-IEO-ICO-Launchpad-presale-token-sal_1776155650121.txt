@@ -1,0 +1,26 @@
+1. IDO/Launchpad英文：
+IDO, IEO, ICO, Launchpad, presale, token sale, TGE, token launch, token listing, NFT mint, mainnet launch, fair launch, community sale, whitelist sale, public sale, IGO, liquidity bootstrap, bonding curve launch, pink sale, dx sale, gamified IDO中文：
+代币发行, IDO, 代币TGE, 预售, NFT铸造, 主网上线, 代币上市, 公平发行, 社区销售, 白名单销售, 公售, 游戏发行, 流动性启动, 绑定曲线, PinkSale, 打新, 新币首发2. 融资公告英文：
+funding round, seed round, Series A/B/C, pre-seed, strategic investment, raises funding, raises million, crypto VC, web3 VC, a16z, binance labs, coinbase ventures, pantera capital, paradigm…, closed funding round, venture funding, institutional investment, crypto investment, web3 investment, led by, participated by, extension round, bridge round中文：
+融资公告, 完成融资, A/B轮融资, 种子轮融资, 战略投资, 领投, 跟投…, 完成数百万融资, 机构投资, Web3投资, 领投机构, 战略融资, 融资完成, 获得投资3. 活动奖励 / On-chain Rewards & Airdrop英文：
+airdrop, token airdrop, quest reward, on-chain quest, points farming, earn tokens, referral reward, loyalty program, galxe, layer3, zealy, intract, retroactive reward…, points program, XP farming, quest campaign, daily tasks, loyalty points, season rewards, retroactive airdrop, farming campaign, engagement reward, social quest, on-chain activity reward中文：
+空投, 链上任务, 撸空投, 积分奖励, 每日签到, 撸毛, 打新…, 积分 farming, 积分任务, 赛季奖励, 每日任务, 忠诚度积分, 反向空投, 撸积分, 任务奖励, 社区任务, 链上互动奖励4. Meme 热点（你之前说不需要发，可保留或删除）英文：
+meme coin, memecoin, meme token, meme season, viral meme, solana meme, pump.fun launch, meme coin launch中文：
+meme币, 土狗币, 模因币, meme季, 病毒 meme, Solana meme, 土狗, 新meme币5. 政策监管英文：
+SEC, CFTC, FATF, MiCA, FCA, MAS, crypto regulation, stablecoin bill, Bitcoin ETF, Ethereum ETF, CBDC, crypto tax, exchange license, crypto crackdown…, crypto bill, digital asset regulation, ETF approval, stablecoin regulation, licensing requirements, enforcement action, regulatory clarity, MiCA compliance, travel rule中文：
+加密监管, 比特币ETF, 稳定币监管, 合规, 监管动态, 加密税务, 交易所牌照…, 加密法案, 数字资产监管, ETF批准, 稳定币法案, 牌照要求, 执法行动, 监管明确性, MiCA合规6. 测试网英文：
+testnet, devnet, incentivized testnet, testnet reward, testnet airdrop, open beta, closed beta, alpha launch, faucet, pre-mainnet…, incentivized testnet, testnet campaign, testnet points, testnet quest, public testnet, devnet launch, beta testnet, faucet claim, pre-mainnet test中文：
+测试网, 激励测试网, 公测, 内测, 测试网奖励, 测试币, 水龙头…, 激励测试网, 测试网积分, 测试网任务, 公测, 内测, 测试网活动, 水龙头领取, 主网前测试7. 节点招募英文：
+node operator, validator node, node recruitment, node sale, node NFT, genesis node, DePIN, staking reward, helium node, io.net, filecoin node…, run a node, become validator, node sale, node license, DePIN node, hardware node, mining node, operator recruitment, staking node中文：
+节点招募, 验证者节点, 节点奖励, 节点预售, DePIN节点, 创世节点…, 运行节点, 成为验证者, 节点销售, DePIN节点, 硬件节点, 节点招募, 质押节点, 节点预售8. 代币解锁英文：
+token unlock, vesting schedule, token release, unlock event, cliff unlock, linear vesting, token cliff, unlock schedule, massive unlock, unlock pressure中文：
+代币解锁, 归属计划, 代币释放, 锁仓到期, 悬崖解锁, 线性释放, 大额解锁, 解锁压力, 解锁日程9. 招聘英文：
+web3/crypto/blockchain hiring & jobs, solidity developer, smart contract developer, ZK developer, community manager, ambassador program, dao contributor, hackathon team…, web3 job, crypto career, solidity engineer, ZK engineer, growth hacker, marketing lead, BD manager, remote web3 job, ambassador recruitment中文：
+Web3招聘, 大使招募, 社区招募, DC版主, 电报版主, DAO贡献者, 高管…, Web3职位, 加密招聘, Solidity工程师, 增长黑客, 商务经理, 远程Web3工作, 大使招募10. 开发者漏洞奖金英文：
+immunefi, hackenproof, bug bounty, whitehat, vulnerability reward, smart contract bug, audit contest, hackathon, ethglobal, devcon, developer grant…, bug bounty program, security audit contest, code4rena, immunefi bounty, vulnerability disclosure, audit competition中文：
+漏洞赏金, 白帽黑客, 智能合约漏洞, 黑客松, 安全审计, 开发者资助…, 漏洞赏金计划, 安全审计竞赛, Code4rena, Immunefi赏金, 漏洞披露11. 捐赠/赞助英文：
+grants, grant program, gitcoin, retro pgf, quadratic funding, RPGF, optimism/arbitrum/ethereum foundation grants, accelerator, incubator, fellowship…, ecosystem grant, foundation grant, developer grant, accelerator program, incubator program, fellowship program, quadratic funding, public goods funding中文：
+资助计划, 孵化器, 加速器, 赞助, 捐赠, 生态资助, Gitcoin资助…, 生态资助, 开发者资助, 加速器计划, 孵化器, 研究员计划, 公共物品资助12. 行业动态（兜底板块）英文：
+crypto, web3, blockchain, DeFi, NFT, market update, project update, partnership, exploit, TVL change, RWA news, AI crypto…, market update, partnership announcement, integration, collaboration, exploit news, TVL surge, protocol upgrade, major announcement中文：
+加密货币, 区块链, 行业新闻, 市场动态, 安全事件, 合作动态…, 市场更新, 合作公告, 集成上线, 重大升级, 安全事件, TVL增长, 协议升级
+

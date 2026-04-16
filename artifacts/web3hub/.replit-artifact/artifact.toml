@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Web3Hub"
+version = "1.0.0"
+id = "artifacts/web3hub"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+localPort = 23067
+name = "web"
+paths = ["/"]
+
+[services.development]
+run = "pnpm --filter @workspace/web3hub run dev"
+
+[services.env]
+PORT = "23067"
+BASE_PATH = "/"
+
+[services.production]
+build = ["pnpm", "--filter", "@workspace/web3hub", "run", "build"]
+publicDir = "artifacts/web3hub/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"

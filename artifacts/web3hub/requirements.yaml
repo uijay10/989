@@ -1,0 +1,24 @@
+packages:
+  "framer-motion": "For page transitions and interactive hover effects"
+  "wagmi": "For Web3 wallet connection"
+  "viem": "Dependency for wagmi"
+  "@web3modal/wagmi": "For out-of-the-box wallet connection UI"
+  "@tanstack/react-query": "Already in base but ensuring correct version for wagmi"
+  "date-fns": "For formatting dates in timelines"
+  "lucide-react": "For UI icons"
+  "clsx": "Utility for Tailwind classes"
+  "tailwind-merge": "Utility for Tailwind classes"
+  "@hookform/resolvers": "For Zod form validation"
+  "react-hook-form": "For form state management"
+
+images:
+  - path: "artifacts/web3hub/public/images/hero-mesh.png"
+    description: "Very subtle light gray and white 3D geometric mesh background, clean minimal style, abstract professional web3"
+    aspect_ratio: "21:9"
+  - path: "artifacts/web3hub/public/images/default-avatar.png"
+    description: "Minimalist abstract gradient circle avatar, modern blue and pink hues"
+    aspect_ratio: "1:1"
+
+notes:
+  - Using @web3modal/wagmi with the provided placeholder project ID
+  - Generating standard CRUD components based on the OpenAPI schema

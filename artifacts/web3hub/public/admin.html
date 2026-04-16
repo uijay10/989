@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>管理员面板 – 正在跳转</title>
+  <script>
+    var base = window.location.pathname.split("/admin.html")[0];
+    if (!base || base === "") base = "";
+    window.location.replace(base + "/profile");
+  </script>
+  <style>
+    body { font-family: sans-serif; display: flex; align-items: center; justify-content: center;
+           height: 100vh; margin: 0; background: #0f172a; color: #94a3b8; }
+    p { font-size: 14px; }
+    a { color: #60a5fa; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <p>正在跳转到管理员面板… <a href="./profile">点击这里</a></p>
+</body>
+</html>

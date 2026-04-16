@@ -1,0 +1,87 @@
+"快讯": {
+  keywords: [
+    // ── 传统金融 × 区块链 (TradFi × Crypto) ──────────────────────────────
+    "银行区块链", "银行数字资产", "银行稳定币", "银行代币化",
+    "投行加密", "投行数字资产", "高盛区块链", "摩根区块链",
+    "资本市场代币化", "资本市场区块链",
+    "资管加密", "资管数字资产", "基金代币化",
+    "PE区块链", "VC加密", "对冲基金加密", "对冲基金比特币",
+    "债券代币化", "债券上链", "国债代币化", "企业债上链",
+    "衍生品加密", "衍生品区块链",
+    "KYC区块链", "AML加密", "合规加密", "监管科技",
+
+    // ── 关键交叉赛道 English ──────────────────────────────────────────────
+    "RWA tokenization", "real world assets tokenization",
+    "asset tokenization", "tokenized assets", "tokenized bonds",
+    "tokenized securities", "tokenized treasury", "tokenized real estate",
+    "tokenized fund", "tokenized equity",
+    "BTC ETF", "Bitcoin ETF", "Ethereum ETF", "crypto ETF",
+    "spot Bitcoin ETF", "spot Ethereum ETF", "ETF approval crypto",
+    "stablecoin regulation", "stablecoin legislation", "stablecoin bill",
+    "stablecoin reserve", "stablecoin backing", "USDT regulation", "USDC regulation",
+    "crypto custody", "institutional crypto custody", "digital asset custody",
+    "institutional adoption crypto", "institutional Bitcoin", "institutional Ethereum",
+    "corporate crypto", "corporate Bitcoin", "enterprise blockchain",
+    "on-chain finance", "hybrid finance", "TradFi DeFi",
+    "CBDC", "central bank digital currency", "digital dollar", "digital euro",
+    "digital yuan", "CBDC cross-border", "CBDC interoperability", "CBDC pilot",
+    "STO security token", "security token offering",
+    "permissioned blockchain", "private blockchain", "enterprise blockchain",
+
+    // ── 稳定币地缘政治 ────────────────────────────────────────────────────
+    "stablecoin geopolitics", "USD stablecoin dominance",
+    "stablecoin sanctions", "stablecoin sanctions bypass",
+    "dollar stablecoin hegemony", "stablecoin sovereignty",
+    "GENIUS Act", "STABLE Act", "stablecoin law",
+
+    // ── 中文关键词 ─────────────────────────────────────────────────────────
+    "现实世界资产", "资产代币化", "资产上链",
+    "债券代币化", "国债代币化", "证券代币化", "房地产代币化",
+    "黄金代币化", "股权代币化",
+    "央行数字货币", "数字人民币", "数字欧元", "数字美元",
+    "CBDC跨境", "CBDC试点", "CBDC互操作",
+    "稳定币监管", "稳定币立法", "稳定币法案",
+    "美元稳定币", "稳定币储备", "稳定币制裁", "稳定币地缘",
+    "GENIUS法案", "稳定币霸权",
+    "机构加密", "机构入场", "机构比特币", "机构托管",
+    "企业比特币", "上市公司买币",
+    "传统金融加密", "华尔街区块链", "银行入场",
+
+    // ── 新增：机构与华尔街深度参与（2026高频） ───────────────────────
+    "institutional crypto adoption", "pension fund bitcoin", "sovereign wealth fund crypto",
+    "endowment fund crypto", "family office bitcoin", "401k crypto",
+    "wall street crypto", "goldman sachs crypto", "jpmorgan crypto", "bofa crypto",
+    "morgan stanley crypto", "citi crypto", "barclays blockchain",
+    "华尔街入场加密", "养老金比特币", "主权基金加密", "家族办公室比特币",
+
+    // ── 新增：Web3 基础设施与 TradFi 融合 ─────────────────────────────
+    "layer 2 tradfi", "L2 settlement", "onchain treasury", "onchain capital markets",
+    "blockchain settlement", "DVP blockchain", "delivery versus payment blockchain",
+    "atomic settlement", "T+0 settlement blockchain", "real-time settlement DLT",
+    "post-trade blockchain", "clearing blockchain", "depository blockchain",
+    "区块链结算", "原子结算", "T+0区块链", "后交易区块链",
+
+    // ── 新增：监管与政策（广义） ───────────────────────────────────────
+    "crypto regulation bill", "digital asset regulation", "crypto market structure",
+    "crypto licensing", "virtual asset service provider", "VASP regulation",
+    "travel rule crypto", "FATF crypto", "crypto tax ruling", "crypto tax policy",
+    "crypto ban lift", "crypto legalization",
+    "加密监管法案", "虚拟资产监管", "加密税收政策",
+
+    // ── 新增：地缘政治与国际博弈（2026核心） ─────────────────────────
+    "crypto geopolitics", "bitcoin diplomacy", "crypto sanctions evasion",
+    "US crypto policy", "EU crypto regulation", "UK crypto regulation",
+    "China crypto policy", "Hong Kong web3 hub", "Singapore crypto hub",
+    "crypto strategic reserve", "bitcoin strategic reserve", "national bitcoin reserve",
+    "BRICS crypto", "BRICS blockchain", "de-dollarization crypto",
+    "比特币外交", "加密制裁绕过", "国家比特币储备", "战略比特币储备",
+    "香港Web3", "新加坡加密枢纽",
+
+    // ── 新增：重大事件与市场驱动（2026最新） ─────────────────────────
+    "bitcoin halving", "ethereum upgrade", "ethereum Pectra", "solana etf filing",
+    "xrp etf", "crypto etf inflow", "crypto etf outflow", "bitcoin reserve bill",
+    "crypto super PAC", "crypto lobbying", "trump bitcoin", "trump crypto policy",
+    "特朗普加密", "加密游说"
+  ],
+  maxPerPlate: 600,
+},

@@ -1,0 +1,125 @@
+2026-04-12T06:29:06Z info: Deployment: 3e2cdfc2-2224-4b05-bfd0-dcc7c8ab4eb2
+2026-04-12T06:29:06Z info: Build: 196164c0-6fbf-4814-8776-052869d075d1
+2026-04-12T06:29:07Z info: Running Security Scan
+2026-04-12T06:29:21Z info: Security Scan Complete
+2026-04-12T06:29:25Z info: Installing packages
+--> uv lock
+
+Using CPython 3.11.14 interpreter at: /nix/store/flbj8bq2vznkcwss7sm0ky8rd0k6kar7-python-wrapped-0.1.0/bin/python3
+--> uv sync
+
+Using CPython 3.11.14 interpreter at: 
+Creating virtual environment at: .pythonlibs
+Resolved 20 packages in 0.70ms
+
+Downloading pydantic-core (2.0MiB)
+
+ Downloading pydantic-core
+
+Prepared 19 packages in 649ms
+
++ annotated-types==0.7.0
+
+0
+
++ 
+==4
+.14
+
+ 
++
+==4.15.0
+ + typing-inspection==0.4.2
+ + urllib3==2.6.3
+
+--> pnpm install
+
+Scope: all 9 workspace projects
+
+
+   ╭──────────────────────────────────────────╮
+   │                                          │
+   │   Update available! 10.26.1 → 10.33.0.   │
+   │   Changelog: https://pnpm.io/v/10.33.0   │
+   │     To update, run: pnpm add -g pnpm     │
+   │                                          │
+   ╰──────────────────────────────────────────╯
+
+
+
+   ╭──────────────────────────────────────────╮
+   │                                          │
+   │   Update available! 10.26.1 → 10.33.0.   │
+   │   Changelog: https://pnpm.io/v/10.33.0   │
+   │     To update, run: pnpm add -g pnpm     │
+   │                                          │
+   ╰──────────────────────────────────────────╯
+
+
+Lockfile is up to date, resolution step is skipped
+
+Lockfile is up to date, resolution step is skipped
+
+Already up to date
+
+. preinstall$ sh -c 'rm -f package-lock.json yarn.lock; case "$npm_config_user_agent" in pnpm/*) ;; *) echo "Use pnpm instead" >&2; exit 1 ;; esac'
+
+. preinstall$ sh -c 'rm -f package-lock.json yarn.lock; case "$npm_config_user_agent" in pnpm/*) ;; *) echo "Use pnpm instead" >&2; exit 1 ;; esac'
+
+. preinstall: Done
+
+. preinstall: Done
+
+Done in 3.4s using pnpm v10.26.1
+
+Done in 3.4s using pnpm v10.26.1
+
+2026-04-12T06:29:31Z info: Starting Build
+Version 10.26.1 (compiled to binary; bundled Node.js v24.12.0)
+Usage: pnpm [command] [flags]
+       pnpm [ -h | --help | -v | --version ]
+
+These are common pnpm commands used in various situations, use 'pnpm help -a' to list all commands
+
+Manage your dependencies:
+      add                  Installs a package and any packages that it depends
+                           on. By default, any new package is installed as a
+                           prod dependency
+   i, install              Install all dependencies for a project
+  ln, link                 Connect the local project to another one
+  rm, remove               Removes packages from node_modules and from the
+                           project's package.json
+      unlink               Unlinks a package. Like yarn unlink but pnpm
+                           re-installs the dependency after removing the
+                           external link
+  up, update               Updates packages to their latest version based on the
+                           specified range
+
+Review your dependencies:
+      audit                Checks for known security issues with the installed
+                           packages
+  ls, list                 Print all the versions of packages that are
+                           installed, as well as their dependencies, in a
+                           tree-structure
+      outdated             Check for outdated packages
+      why                  Shows all packages that depend on the specified
+                           package
+
+Run your scripts:
+      create               Create a project from a "create-*" or "@foo/create-*"
+                           starter kit
+      dlx                  Fetches a package from the registry without
+                           installing it as a dependency, hot loads it, and runs
+                           whatever default command binary it exposes
+      exec                 Executes a shell command in scope of a project
+      run                  Runs a defined package script
+
+Other:
+   c, config               Manage the pnpm configuration files
+      init                 Create a package.json file
+      publish              Publishes a package to the registry
+      self-update          Updates pnpm to the latest version
+
+Options:
+  -r, --recursive          Run the command for each project in the workspace.
+

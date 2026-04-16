@@ -1,0 +1,98 @@
+调整后的板块列表（共减少到 9 个板块）：IDO/Launchpad/融资公告
+（原 1 + 原 2 合并）
+活动奖励
+（原 3，保持不变）
+政策监管
+（原 5，保持不变）
+测试网
+（原 6，保持不变）
+节点招募/招聘人才
+（原 7 + 原 9 合并）
+开发者漏洞奖金/捐赠/赞助
+（原 10 + 原 11 合并）
+行业动态
+（原 12，保持不变）
+
+已删除且不再抓取/发布的板块：代币解锁（原 8）
+Meme 热点（原 4）
+
+推荐的 TypeScript 配置写法（直接复制到你的代码中）由于你的项目是 Node.js + TypeScript，我建议把板块配置统一放在一个 config.ts 或 keywords.ts 文件里，方便后续维护。ts
+// src/config/keywords.ts   （推荐新建或替换原有配置）
+
+export interface CategoryConfig {
+  name: string;           // 板块显示名称（用于发布、UI、通知等）
+  keywords: string[];     // 该板块使用的查询关键词（可放1-2条最优组合query）
+  enabled: boolean;       // 是否启用抓取
+}
+
+export const CATEGORIES: CategoryConfig[] = [
+  {
+    name: "IDO/Launchpad/融资公告",
+    keywords: [
+      '(IDO OR Launchpad OR presale OR TGE OR "token sale" OR "mainnet launch") (crypto OR web3) OR (代币发行 OR 预售 OR 主网上线)',
+      '(funding round OR "Series A" OR "Series B" OR "raises funding" OR "crypto VC" OR a16z OR "binance labs") OR (完成融资 OR A轮融资 OR 种子轮 OR 战略投资)'
+    ],
+    enabled: true
+  },
+  {
+    name: "活动奖励",
+    keywords: [
+      '(airdrop OR "token airdrop" OR "points farming" OR galxe OR zealy OR layer3) OR (空投 OR 撸空投 OR 积分奖励 OR 链上任务)'
+    ],
+    enabled: true
+  },
+  {
+    name: "政策监管",
+    keywords: [
+      '(SEC OR CFTC OR MiCA OR "Bitcoin ETF" OR "crypto regulation" OR "stablecoin bill") OR (加密监管 OR 比特币ETF OR 稳定币监管)'
+    ],
+    enabled: true
+  },
+  {
+    name: "测试网",
+    keywords: [
+      '(testnet OR "incentivized testnet" OR faucet OR "testnet airdrop") OR (测试网 OR 激励测试网 OR 测试网奖励)'
+    ],
+    enabled: true
+  },
+  {
+    name: "节点招募/招聘人才",
+    keywords: [
+      '(node operator OR validator node OR DePIN OR "genesis node" OR "node recruitment") OR (节点招募 OR DePIN节点 OR 验证者节点)',
+      '(web3 hiring OR solidity developer OR "smart contract developer" OR "community manager" OR ambassador) OR (Web3招聘 OR 大使招募 OR DAO贡献者)'
+    ],
+    enabled: true
+  },
+  {
+    name: "开发者漏洞奖金/捐赠/赞助",
+    keywords: [
+      '(immunefi OR hackenproof OR "bug bounty" OR "smart contract bug") OR (漏洞赏金 OR 白帽黑客)',
+      '(grants OR gitcoin OR "quadratic funding" OR RPGF OR accelerator) OR (资助计划 OR Gitcoin资助 OR 生态资助)'
+    ],
+    enabled: true
+  },
+  {
+    name: "行业动态",
+    keywords: [
+      '(crypto OR web3 OR blockchain OR DeFi OR NFT OR exploit OR "market update" OR partnership) OR (加密货币 OR 行业新闻 OR 安全事件 OR 合作动态)'
+    ],
+    enabled: true
+  }
+];
+
+// 辅助函数：获取所有启用的板块名称（用于日志、通知等）
+export function getEnabledCategoryNames(): string[] {
+  return CATEGORIES.filter(c => c.enabled).map(c => c.name);
+}
+
+使用建议在你的抓取逻辑中，循环 CATEGORIES 中 enabled: true 的项。
+每类只使用 1~2 条关键词（已精简），避免查询过长导致 API 限流。
+如果你的 DeepSeek / Groq prompt 中有分类逻辑，需要同步更新，让模型按照新的 9 个板块名称进行分类（而不是旧的12个）。
+删除的两个板块（代币解锁、Meme热点）相关代码/定时任务可以直接移除或注释掉。
+
+需要我帮你：修改具体的抓取函数代码（如何循环新配置）？
+更新 DeepSeek 的分类 Prompt 模板（让它适配新板块名称）？
+还是直接给出完整的 keywords.ts + 使用示例？
+
+直接告诉我下一步需要哪部分，我立刻给你对应代码。
+

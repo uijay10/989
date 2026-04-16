@@ -1,0 +1,432 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@keyframes flashGreen {
+  0%   { color: #10b981; }
+  60%  { color: #10b981; }
+  100% { color: inherit; }
+}
+
+@keyframes flashRed {
+  0%   { color: #ef4444; }
+  60%  { color: #ef4444; }
+  100% { color: inherit; }
+}
+
+html {
+  font-size: 90%;
+  zoom: 0.9;
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+@theme inline {
+  --font-sans: "MiSans", "Alibaba PuHuiTi", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-display: "MiSans", "Alibaba PuHuiTi", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --color-background: 0 0% 100%;
+  --color-foreground: 222 47% 11%;
+  
+  --color-primary: 221 83% 53%;
+  --color-primary-foreground: 210 40% 98%;
+  
+  --color-accent: 330 81% 60%;
+  --color-accent-foreground: 210 40% 98%;
+  
+  --color-secondary: 210 40% 96%;
+  --color-secondary-foreground: 222 47% 11%;
+  
+  --color-muted: 210 40% 96%;
+  --color-muted-foreground: 215 16% 47%;
+  
+  --color-border: 214 32% 91%;
+  --color-input: 214 32% 91%;
+  --color-ring: 221 83% 53%;
+
+  --color-card: 0 0% 100%;
+  --color-card-foreground: 222 47% 11%;
+  --color-card-border: 214 32% 91%;
+
+  --color-popover: 0 0% 100%;
+  --color-popover-foreground: 222 47% 11%;
+  --color-popover-border: 214 32% 91%;
+
+  --color-destructive: 0 84% 60%;
+  --color-destructive-foreground: 210 40% 98%;
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+}
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222 47% 11%;
+  --border: 214 32% 91%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --primary: 221 83% 53%;
+  --primary-foreground: 210 40% 98%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 47%;
+  --accent: 330 81% 60%;
+  --accent-foreground: 210 40% 98%;
+}
+
+/* ── Dark mode overrides ── */
+.dark {
+  color-scheme: dark;
+  --background: 222 47% 5%;
+  --foreground: 210 40% 96%;
+  --border: 217 33% 18%;
+  --card: 222 47% 8%;
+  --card-foreground: 210 40% 96%;
+  --primary: 221 83% 63%;
+  --primary-foreground: 222 47% 5%;
+  --muted: 217 33% 14%;
+  --muted-foreground: 215 20% 58%;
+  --accent: 330 81% 60%;
+  --accent-foreground: 210 40% 98%;
+}
+
+.dark body {
+  background-color: hsl(222, 47%, 5%);
+  color: hsl(210, 40%, 96%);
+}
+
+.dark .glass-panel {
+  background: rgba(15, 20, 40, 0.85) !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+
+.dark .bg-white {
+  background-color: hsl(222, 47%, 8%) !important;
+}
+
+.dark .bg-white\/95 {
+  background-color: rgba(15, 20, 40, 0.95) !important;
+}
+
+.dark .bg-card {
+  background-color: hsl(222, 47%, 8%);
+}
+
+.dark footer {
+  background-color: rgba(15, 20, 40, 0.97) !important;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground antialiased font-sans;
+    font-family: "MiSans", "Alibaba PuHuiTi", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    font-feature-settings: "kern" 1, "tnum" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-weight: 400;
+  }
+
+  h1, h2, h3 {
+    font-family: "MiSans", "Alibaba PuHuiTi", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    font-feature-settings: "kern" 1;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.35;
+  }
+
+  h4, h5, h6 {
+    font-family: "MiSans", "Alibaba PuHuiTi", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+
+  p {
+    line-height: 1.65;
+    font-weight: 400;
+  }
+
+  /* Ensure ALL text elements inherit */
+  p, span, a, button, input, select, textarea, label, li, td, th, div {
+    font-family: inherit;
+  }
+
+  /* Nav links */
+  header nav a,
+  header a,
+  nav a {
+    font-family: "MiSans", "Alibaba PuHuiTi", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    font-weight: 500;
+  }
+
+  /* Monospace for wallet addresses, hashes, numbers */
+  .font-mono,
+  [class*="font-mono"] {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0em;
+  }
+
+  /* Numbers and stats */
+  [class*="text-"] span.mono,
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+
+@layer utilities {
+  .text-neon {
+    color: #00FF9F;
+    text-shadow: 0 0 8px rgba(0, 255, 159, 0.65), 0 0 20px rgba(0, 255, 159, 0.3);
+  }
+  
+  .glass-panel {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-lg;
+  }
+  
+  .pink-btn {
+    @apply bg-[#FF69B4] text-white hover:bg-[#FF69B4]/90 shadow-md shadow-[#FF69B4]/20 transition-all duration-200 active:scale-95 font-medium;
+  }
+
+  /* ── Crypto / DeFi badge style ── */
+  .badge-crypto {
+    font-family: "MiSans", "Alibaba PuHuiTi", "Noto Sans SC", "PingFang SC", sans-serif;
+    font-weight: 600;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* ── Section nav link style (nav bar rows) ── */
+  .crypto-nav-link {
+    font-family: "MiSans", "Alibaba PuHuiTi", "Noto Sans SC", "PingFang SC", sans-serif;
+    font-weight: 500;
+    font-size: 0.8125rem;
+    letter-spacing: 0.02em;
+    transition: color 0.15s, opacity 0.15s;
+  }
+
+  /* ── Gradient headline text ── */
+  .text-gradient-crypto {
+    background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #38bdf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── Data / number monospace display ── */
+  .data-value {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+}
+
+@keyframes fade-out {
+  0% { opacity: 1; transform: scale(1); }
+  70% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.9); visibility: hidden; }
+}
+
+.animate-fade-out {
+  animation: fade-out 5s ease-out forwards;
+}
+
+/* ── Pinned Zone: Aurora border glow — vivid gold/violet/cyan/pink cycle ── */
+@keyframes pinned-border-glow {
+  0%   { box-shadow: 0 0 10px 3px rgba(251,191,36,0.55),  0 0 28px 8px rgba(251,191,36,0.18);  border-color: rgba(251,191,36,0.85); }
+  25%  { box-shadow: 0 0 10px 3px rgba(167,139,250,0.55), 0 0 28px 8px rgba(167,139,250,0.18); border-color: rgba(167,139,250,0.85); }
+  50%  { box-shadow: 0 0 10px 3px rgba(34,211,238,0.55),  0 0 28px 8px rgba(34,211,238,0.18);  border-color: rgba(34,211,238,0.85); }
+  75%  { box-shadow: 0 0 10px 3px rgba(251,113,133,0.55), 0 0 28px 8px rgba(251,113,133,0.18); border-color: rgba(251,113,133,0.85); }
+  100% { box-shadow: 0 0 10px 3px rgba(251,191,36,0.55),  0 0 28px 8px rgba(251,191,36,0.18);  border-color: rgba(251,191,36,0.85); }
+}
+
+@keyframes shimmer-border {
+  0%   { box-shadow: 0 0 4px 1px rgba(251,191,36,0.25),  0 0 10px 3px rgba(251,191,36,0.08);  border-color: rgba(251,191,36,0.4); }
+  33%  { box-shadow: 0 0 4px 1px rgba(167,139,250,0.25), 0 0 10px 3px rgba(167,139,250,0.08); border-color: rgba(167,139,250,0.4); }
+  66%  { box-shadow: 0 0 4px 1px rgba(34,211,238,0.25),  0 0 10px 3px rgba(34,211,238,0.08);  border-color: rgba(34,211,238,0.4); }
+  100% { box-shadow: 0 0 4px 1px rgba(251,191,36,0.25),  0 0 10px 3px rgba(251,191,36,0.08);  border-color: rgba(251,191,36,0.4); }
+}
+
+@keyframes pinned-zone-pulse {
+  0%, 100% { box-shadow: 0 0 18px 4px rgba(251,191,36,0.18), 0 0 40px 10px rgba(167,139,250,0.10); }
+  50%       { box-shadow: 0 0 28px 8px rgba(34,211,238,0.22), 0 0 55px 15px rgba(251,113,133,0.12); }
+}
+
+@keyframes title-glow {
+  0%, 100% { text-shadow: 0 0 8px rgba(251,191,36,0.7),  0 0 20px rgba(251,191,36,0.3); }
+  50%       { text-shadow: 0 0 12px rgba(167,139,250,0.8), 0 0 28px rgba(167,139,250,0.35); }
+}
+
+@keyframes scan-line {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(400%); }
+}
+
+.shimmer-cell {
+  border: 1.5px dashed rgba(251,191,36,0.28);
+  animation: shimmer-border 8s ease-in-out infinite;
+}
+
+.pinned-card {
+  border: 2px solid rgba(251,191,36,0.7);
+  animation: pinned-border-glow 5s ease-in-out infinite;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.pinned-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 60%);
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.pinned-zone-wrapper {
+  border-radius: 20px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(251,191,36,0.04) 0%, rgba(167,139,250,0.04) 50%, rgba(34,211,238,0.04) 100%);
+  border: 1.5px solid rgba(251,191,36,0.22);
+  animation: pinned-zone-pulse 6s ease-in-out infinite;
+}
+
+.pinned-title-glow {
+  animation: title-glow 3s ease-in-out infinite;
+  background: linear-gradient(90deg, #fbbf24, #a78bfa, #22d3ee, #fbbf24);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@keyframes lucky-shimmer {
+  0%   { box-shadow: 0 0 4px rgba(251,191,36,0.5), 0 0 0px rgba(251,191,36,0); }
+  50%  { box-shadow: 0 0 10px rgba(251,191,36,0.9), 0 0 18px rgba(251,191,36,0.35); }
+  100% { box-shadow: 0 0 4px rgba(251,191,36,0.5), 0 0 0px rgba(251,191,36,0); }
+}
+
+.daily-lucky-btn {
+  animation: lucky-shimmer 1.8s ease-in-out infinite;
+}
+
+@keyframes slow-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+.animate-slow-blink {
+  animation: slow-blink 2.4s ease-in-out infinite;
+}
+
+/* ── Promo Banner ── */
+@keyframes promo-glow {
+  0%, 100% { box-shadow: 0 0 10px rgba(255,215,0,0.2), 0 0 24px rgba(168,85,247,0.12); }
+  50%       { box-shadow: 0 0 22px rgba(255,215,0,0.45), 0 0 45px rgba(168,85,247,0.22), 0 0 70px rgba(255,105,180,0.10); }
+}
+@keyframes promo-sweep {
+  0%   { transform: translateX(-120%); }
+  100% { transform: translateX(220%); }
+}
+@keyframes promo-star {
+  0%, 100% { opacity: 0;   transform: scale(0.4) rotate(0deg);   }
+  50%       { opacity: 1;   transform: scale(1)   rotate(180deg); }
+}
+@keyframes promo-shine {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center;  }
+}
+.promo-banner {
+  animation: promo-glow 3s ease-in-out infinite;
+}
+.promo-sweep {
+  animation: promo-sweep 4.5s ease-in-out infinite;
+}
+.promo-text-shine {
+  background: linear-gradient(90deg, #FFD700 0%, #fffde7 35%, #FFD700 55%, #FFA500 80%, #FFD700 100%);
+  background-size: 250% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: promo-shine 3s linear infinite;
+}
+.promo-star-1 { animation: promo-star 2.2s ease-in-out infinite 0s; }
+.promo-star-2 { animation: promo-star 2.2s ease-in-out infinite 0.5s; }
+.promo-star-3 { animation: promo-star 2.2s ease-in-out infinite 1.0s; }
+.promo-star-4 { animation: promo-star 2.2s ease-in-out infinite 1.5s; }
+.promo-star-5 { animation: promo-star 2.2s ease-in-out infinite 1.9s; }
+.promo-star-6 { animation: promo-star 2.2s ease-in-out infinite 0.7s; }
+
+/* ── 重要动态 fixed numbered list ─────────────────────────── */
+.fixed-number-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+  margin-left: 6px;
+  border-left: none;
+  position: relative;
+}
+
+.fixed-number-list::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 1px;
+  background: #3b82f6;
+}
+
+.fixed-number-list::after {
+  content: "";
+  position: absolute;
+  left: -4px;
+  bottom: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3b82f6;
+  border: 2px solid #f8fafc;
+}
+
+.fixed-number-list li {
+  position: relative;
+  padding-left: 16px;
+  min-height: 52px;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: flex-start;
+  line-height: 1.5;
+  font-size: 13px;
+  color: #1f2937;
+}
+
+.fixed-number-list li::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3b82f6;
+  border: 2px solid #f8fafc;
+}
+
+.fixed-number-list li a {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

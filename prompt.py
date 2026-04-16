@@ -1,3 +1,4 @@
+# prompt.py
 # Web3 Release AI Event Extraction Prompt (English Version)
 
 WEB3_EXTRACTION_PROMPT = """
@@ -7,7 +8,7 @@ The platform has the following 12 fixed categories. You must strictly choose fro
 Testnet, IDO/Launchpad, Presale, Funding Announcement, Airdrop, Hiring, Node Recruitment, Mainnet Launch, Token Unlock, Exchange Listing, On-chain Task, Developer Zone
 
 Task:
-From the content provided below, extract valid events that match the above categories.
+From the content provided below, extract valid events that match the above categories. 
 Only extract events that are **upcoming, ongoing, or ended within the last 7 days**. Completely outdated events should be ignored.
 
 Output requirements:
@@ -43,4 +44,3 @@ Strict rules:
 Now process the following webpage content:
 {{PAGE_CONTENT}}
 """
-

@@ -1,0 +1,30 @@
+import { Router, type IRouter } from "express";
+import healthRouter from "./health";
+import usersRouter from "./users";
+import projectsRouter from "./projects";
+import postsRouter from "./posts";
+import spacesRouter from "./spaces";
+import adminRouter from "./admin";
+import notificationsRouter from "./notifications";
+import aiRouter from "./ai";
+import autoScrapeRouter from "./auto-scrape";
+import contactRouter from "./contact";
+import feedsRouter from "./feeds";
+import feedRouter from "./feed";
+const router: IRouter = Router();
+
+router.use(healthRouter);
+router.use("/users", usersRouter);
+router.use("/projects", projectsRouter);
+router.use("/posts", postsRouter);
+router.use("/spaces", spacesRouter);
+router.use("/admin", adminRouter);
+router.use("/notifications", notificationsRouter);
+router.use("/ai", aiRouter);
+router.use("/auto-scrape", autoScrapeRouter);
+router.use("/contact", contactRouter);
+router.use("/admin/contact", contactRouter);
+router.use("/feeds", feedsRouter);
+router.use("/feed", feedRouter);
+
+export default router;

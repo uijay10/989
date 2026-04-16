@@ -1,0 +1,36 @@
+// ── 新增：机构与华尔街深度参与 ──────────────────────────────
+"institutional crypto adoption", "pension fund bitcoin", "sovereign wealth fund crypto",
+"endowment fund crypto", "family office bitcoin", "401k crypto",
+"wall street crypto", "goldman sachs crypto", "jpmorgan crypto", "bofa crypto",
+"morgan stanley crypto", "citi crypto", "barclays blockchain",
+
+// ── 新增：Web3 基础设施与传统金融融合 ─────────────────────
+"layer 2 tradfi", "L2 settlement", "onchain treasury", "onchain capital markets",
+"blockchain settlement", "DVP blockchain", "delivery versus payment blockchain",
+"atomic settlement", "T+0 settlement blockchain", "real-time settlement DLT",
+"post-trade blockchain", "clearing blockchain", "depository blockchain",
+
+// ── 新增：监管与政策（非稳定币/CBDC 方向） ─────────────────
+"crypto regulation bill", "digital asset regulation", "crypto market structure",
+"crypto licensing", "virtual asset service provider", "VASP regulation",
+"travel rule crypto", "FATF crypto", "crypto tax ruling", "crypto tax policy",
+"crypto ban lift", "crypto legalization",
+
+// ── 新增：地缘政治与国际博弈 ───────────────────────────────
+"crypto geopolitics", "bitcoin diplomacy", "crypto sanctions evasion",
+"US crypto policy", "EU crypto regulation", "UK crypto regulation",
+"China crypto policy", "Hong Kong web3 hub", "Singapore crypto hub",
+"crypto strategic reserve", "bitcoin strategic reserve", "national bitcoin reserve",
+"BRICS crypto", "BRICS blockchain", "de-dollarization crypto",
+
+// ── 新增：重大事件与市场驱动词 ─────────────────────────────
+"bitcoin halving", "ethereum upgrade", "ethereum Pectra", "solana etf filing",
+"xrp etf", "crypto etf inflow", "crypto etf outflow", "bitcoin reserve bill",
+"crypto super PAC", "crypto lobbying", "trump bitcoin", "trump crypto policy",
+
+// ── 新增：中文补充（高时效） ────────────────────────────────
+"华尔街入场加密", "养老金比特币", "主权基金加密", "家族办公室比特币",
+"区块链结算", "原子结算", "T+0区块链", "后交易区块链",
+"加密监管法案", "虚拟资产监管", "加密税收政策",
+"比特币外交", "加密制裁绕过", "国家比特币储备", "战略比特币储备",
+"特朗普加密", "香港Web3", "新加坡加密枢纽", "加密游说",

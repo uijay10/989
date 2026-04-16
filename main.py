@@ -1,7 +1,6 @@
-def main() -> None:
+def main():
     print("Web3 Release monorepo — Python tooling entrypoint.")
 
 
 if __name__ == "__main__":
     main()
-

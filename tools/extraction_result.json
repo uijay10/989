@@ -1,0 +1,55 @@
+[
+  {
+    "title": "Colosseum Frontier 黑客松在线报名",
+    "project_name": "Solana",
+    "description": "由 Colosseum 和 Solana 联合主办的线上黑客松现已开放报名。活动时间为 2026年4月6日至5月11日。这是一个面向全球开发者的重要活动，旨在鼓励在 Solana 区块链上构建创新应用，参与者有机会获得资助和行业关注。",
+    "category": [
+      "开发者专区"
+    ],
+    "start_time": "2026-04-06T00:00:00Z",
+    "end_time": "2026-05-11T23:59:59Z",
+    "source_url": "https://solana.com",
+    "importance": "high",
+    "ai_confidence": 0.95,
+    "tags": [
+      "Solana",
+      "Hackathon"
+    ]
+  },
+  {
+    "title": "Solana Accelerate USA 线下活动",
+    "project_name": "Solana",
+    "description": "Solana Accelerate USA 线下活动将于 2026年5月5日在美国迈阿密海滩举行。这是一个连接开发者、创业者和投资者的线下聚会，旨在促进 Solana 生态的交流与合作。",
+    "category": [
+      "开发者专区"
+    ],
+    "start_time": "2026-05-05T00:00:00Z",
+    "end_time": null,
+    "source_url": "https://solana.com",
+    "importance": "medium",
+    "ai_confidence": 0.92,
+    "tags": [
+      "Solana",
+      "Event",
+      "USA"
+    ]
+  },
+  {
+    "title": "Solana Breakpoint 2026 年度大会",
+    "project_name": "Solana",
+    "description": "Solana 年度旗舰大会 Breakpoint 2026 将于 2026年11月15日在英国伦敦举行。这是 Solana 生态最重要的活动之一，将汇集全球的开发者、项目和爱好者，共同探讨区块链技术的未来。",
+    "category": [
+      "开发者专区"
+    ],
+    "start_time": "2026-11-15T00:00:00Z",
+    "end_time": null,
+    "source_url": "https://solana.com",
+    "importance": "medium",
+    "ai_confidence": 0.92,
+    "tags": [
+      "Solana",
+      "Conference",
+      "London"
+    ]
+  }
+]

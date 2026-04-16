@@ -1,0 +1,18 @@
+[
+  {
+    "title": "示例事件（模拟）",
+    "project_name": "示例项目",
+    "description": "已成功从 https://solana.com 抓取 4704 字符。设置 GROQ_API_KEY 后将使用真实 AI 分析。",
+    "category": [
+      "测试网"
+    ],
+    "start_time": null,
+    "end_time": null,
+    "source_url": "https://solana.com",
+    "importance": "medium",
+    "ai_confidence": 0.0,
+    "tags": [
+      "Web3"
+    ]
+  }
+]
