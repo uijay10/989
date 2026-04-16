@@ -65,7 +65,7 @@ function ChangeBadge({ pct }: { pct: number | null }) {
     <span className={`inline-flex items-center gap-0.5 text-[10px] font-bold px-1 py-0.5 rounded leading-none tabular-nums ${
       up
         ? "bg-emerald-500/15 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400"
-        : "bg-[#8B0000]/12 text-[#8B0000] dark:bg-[#8B0000]/20 dark:text-[#E57373]"
+        : "bg-[#EF4444]/12 text-[#EF4444] dark:bg-[#EF4444]/20 dark:text-[#F87171]"
     }`}>
       {up ? "▲" : "▼"}{Math.abs(pct).toFixed(2)}%
     </span>
@@ -219,7 +219,7 @@ export function PriceTicker() {
           const priceCls = flash === "up"
             ? "text-emerald-500 dark:text-emerald-400 animate-[flashGreen_2s_ease-out_forwards]"
             : flash === "down"
-            ? "text-[#8B0000] dark:text-[#E57373] animate-[flashRed_2s_ease-out_forwards]"
+            ? "text-[#EF4444] dark:text-[#F87171] animate-[flashRed_2s_ease-out_forwards]"
             : "text-slate-800 dark:text-slate-200";
           return (
             <div key={symbol} className="flex items-center gap-1 shrink-0">

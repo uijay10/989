@@ -52,12 +52,18 @@ function normalizeText(s: string): string {
 }
 
 function getDedupKey(item: FeedItem): string {
-  // Prefer source URL (the most stable identity across dual-publish)
-  if (item.link && item.link.trim()) return `url:${item.link.trim()}`;
-  // Fallback: title + summary (best-effort)
+  // Primary key：标题 + 摘要文本；URL 只参与域名，避免同一篇新闻因为不同路径而重复
   const title = normalizeText(item.title || "");
   const summary = normalizeText(item.summary || "");
-  return `text:${title}::${summary.slice(0, 240)}`;
+  let host = "";
+  if (item.link && item.link.trim()) {
+    try {
+      host = new URL(item.link.trim()).hostname.toLowerCase();
+    } catch {
+      host = item.link.trim().toLowerCase();
+    }
+  }
+  return `text:${title}::${summary.slice(0, 240)}::${host}`;
 }
 
 type ImportanceLevel = "high" | "medium" | "low";
@@ -115,21 +121,21 @@ function resolveImportanceLevel(item: FeedItem): ImportanceLevel | null {
 /** Deeper blue / red than default link blue so differences are obvious in light mode. */
 function titleBlockClass(level: ImportanceLevel | null): string {
   const base = "text-xl font-semibold leading-tight mb-2";
-  if (level === "high") return `${base} text-[#8B0000]`;
-  if (level === "medium") return `${base} text-[#0052D9]`;
+  if (level === "high") return `${base} text-[#EF4444] dark:text-[#F87171]`;
+  if (level === "medium") return `${base} text-[#0052D9] dark:text-[#5B9FFF]`;
   return `${base} text-gray-900 dark:text-zinc-100`;
 }
 
 function titleLinkClass(level: ImportanceLevel | null): string {
   const base = "hover:underline";
-  if (level === "high") return `${base} text-[#8B0000]`;
-  if (level === "medium") return `${base} text-[#0052D9]`;
+  if (level === "high") return `${base} text-[#EF4444] dark:text-[#F87171]`;
+  if (level === "medium") return `${base} text-[#0052D9] dark:text-[#5B9FFF]`;
   return `${base} text-gray-900 dark:text-zinc-100`;
 }
 
 function titleInlineStyle(level: ImportanceLevel | null): React.CSSProperties | undefined {
   if (level === "high") {
-    const c = "#8B0000";
+    const c = "#EF4444";
     return { color: c, WebkitTextFillColor: c };
   }
   if (level === "medium") {
