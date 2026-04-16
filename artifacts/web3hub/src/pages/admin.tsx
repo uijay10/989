@@ -4,7 +4,7 @@ import { isAdmin } from "@/lib/admin";
 import { useLang } from "@/lib/i18n";
 import { useLocation } from "wouter";
 import {
-  Users, ClipboardList, Star, Ban, Download,
+  Users, ClipboardList, Star, Ban,
   CheckCircle, XCircle, RefreshCw, Pin, Send,
   ChevronDown, AlertCircle, ShieldOff, Cpu, Trash2, Calendar,
   Handshake, Rss, Plus, Filter, Mail, MailOpen, Reply, Circle
@@ -90,26 +90,7 @@ export default function AdminPage() {
   const [newSrcUrl, setNewSrcUrl] = useState("");
   const [newSrcPriority, setNewSrcPriority] = useState("2");
 
-  // Backfill state — all 12 sections
-  const BACKFILL_PLATES = [
-    "快讯", "IDO/Launchpad", "融资公告", "活动奖励", "政策监管",
-    "测试网", "节点招募", "招聘", "开发者漏洞奖金", "捐赠/赞助",
-  ];
-  const BACKFILL_PLATE_LABELS: Record<string, string> = {
-    "快讯": "⚡快讯",
-    "IDO/Launchpad": "IDO",
-    "融资公告": "融资",
-    "活动奖励": "活动",
-    "政策监管": "政策",
-    "测试网": "测试网",
-    "节点招募": "节点",
-    "招聘": "招聘",
-    "开发者漏洞奖金": "Dev/漏洞",
-    "捐赠/赞助": "资助",
-  };
-  const [backfillSelected, setBackfillSelected] = useState<string[]>([...BACKFILL_PLATES]);
-  const [backfillHours, setBackfillHours] = useState(240);
-  const [backfillLoading, setBackfillLoading] = useState(false);
+  // Backfill (one-time bulk publishing) is deprecated.
 
   // ─── Messages state ───────────────────────────────────────────────────────
   const [messages, setMessages] = useState<any[]>([]);
@@ -155,19 +136,7 @@ export default function AdminPage() {
     }
   }
 
-  async function triggerBackfill() {
-    if (backfillSelected.length === 0) { setScrapeMsg("❌ 请至少选择一个板块"); setTimeout(() => setScrapeMsg(""), 3000); return; }
-    setBackfillLoading(true);
-    const res = await scrapePost("/backfill", {
-      plates: backfillSelected,
-      hours: backfillHours,
-      freeOnly: false,         // allow DeepSeek for large backfills
-      maxArticlesPerRun: 500,  // more articles per run for initial fill
-    });
-    setBackfillLoading(false);
-    setScrapeMsg(res.ok ? `✓ 已启动补发：${backfillSelected.join("、")}（${backfillHours}h 内）` : `❌ ${res.error ?? "Unknown error"}`);
-    setTimeout(() => setScrapeMsg(""), 6000);
-  }
+  // triggerBackfill removed
 
   async function loadScrapeLogs(runId: string) {
     setScrapeLogsRunId(runId);
@@ -861,43 +830,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* One-time Backfill */}
-          <div className="bg-card border border-primary/30 rounded-2xl p-5 space-y-4">
-            <div>
-              <h3 className="font-semibold text-sm flex items-center gap-2">
-                <Download className="w-4 h-4 text-primary" />一次性补发（平台初期内容补充）
-              </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">针对指定板块抓取最近 N 天的历史文章并发布，不影响正常定时任务</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {BACKFILL_PLATES.map(plate => {
-                const selected = backfillSelected.includes(plate);
-                return (
-                  <button key={plate}
-                    onClick={() => setBackfillSelected(prev => selected ? prev.filter(p => p !== plate) : [...prev, plate])}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${selected ? "bg-green-500 text-white border-green-500" : "bg-background text-muted-foreground border-border hover:border-green-500/50"}`}>
-                    {BACKFILL_PLATE_LABELS[plate] ?? plate}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="flex items-center gap-3">
-              <label className="text-xs text-muted-foreground whitespace-nowrap">时间窗口</label>
-              <select value={backfillHours} onChange={e => setBackfillHours(Number(e.target.value))}
-                className="px-3 py-1.5 rounded-xl border border-border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none">
-                <option value={168}>最近 7 天</option>
-                <option value={240}>最近 10 天</option>
-                <option value={360}>最近 15 天</option>
-                <option value={480}>最近 20 天</option>
-                <option value={720}>最近 30 天</option>
-              </select>
-              <button onClick={triggerBackfill} disabled={backfillLoading || backfillSelected.length === 0}
-                className="px-5 py-1.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 flex items-center gap-1.5">
-                {backfillLoading ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" />运行中…</> : <><Download className="w-3.5 h-3.5" />启动补发</>}
-              </button>
-              <span className="text-xs text-muted-foreground">已选 {backfillSelected.length}/{BACKFILL_PLATES.length} 板块</span>
-            </div>
-          </div>
+          {/* One-time Backfill (deprecated) */}
 
           {/* Run History */}
           <div className="bg-card border border-border rounded-2xl p-5 space-y-3">

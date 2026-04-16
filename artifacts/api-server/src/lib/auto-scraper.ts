@@ -683,10 +683,8 @@ function hasUsableProvider(paidOnly: boolean, freeOnly: boolean): boolean {
 // ── Run state ──────────────────────────────────────────────────────────────────
 let globalGroqRunning  = false;
 let globalDsRunning    = false;
-let globalBackfillRunning = false;
 
 export function isScrapeRunning(): boolean { return globalGroqRunning || globalDsRunning; }
-export function isBackfillRunning(): boolean { return globalBackfillRunning; }
 // Alias for routes backward compat
 export function isKeywordScrapeRunning(): boolean { return isScrapeRunning(); }
 
@@ -926,25 +924,6 @@ export async function runUnifiedScrape(opts: UnifiedScrapeOptions = {}): Promise
 export async function runKeywordScrape(opts: UnifiedScrapeOptions & { plates?: string[] } = {}): Promise<ScrapeRunSummary> {
   const { plates: _plates, ...rest } = opts;
   return runUnifiedScrape(rest);
-}
-
-// ── Backfill scrape (simplified v2.0) ─────────────────────────────────────────
-export async function runBackfillScrape(maxAgeDays = 15, paidOnly = false): Promise<ScrapeRunSummary> {
-  if (globalBackfillRunning) {
-    console.warn("[backfill] Already running — skipped");
-    return { runId: "skipped", totalSources: 0, totalItemsFound: 0, totalItemsSaved: 0, errors: 0, durationMs: 0 };
-  }
-  globalBackfillRunning = true;
-  try {
-    return await runUnifiedScrape({
-      paidOnly,
-      overrideWindowHours: maxAgeDays * 24,
-      maxArticlesPerRun: 200,
-      ignoreDailyLimit: true,
-    });
-  } finally {
-    globalBackfillRunning = false;
-  }
 }
 
 // ── Minimal KEYWORD_GRAB_CONFIG stub for routes backward compat ───────────────

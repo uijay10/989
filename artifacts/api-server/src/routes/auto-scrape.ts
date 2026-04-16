@@ -42,39 +42,6 @@ router.post("/run", checkScrapeAuth, async (req, res) => {
   res.json({ ok: true, message: "Unified scrape started (mode: deepseek, dual-publish)" });
 });
 
-// Backfill: custom time window, all combined keywords
-// Body: { hours?: number, freeOnly?: boolean, maxArticlesPerRun?: number }
-router.post("/backfill", checkScrapeAuth, async (req, res) => {
-  if (isKeywordScrapeRunning()) {
-    res.status(409).json({ error: "Scrape already running — try again in a moment" });
-    return;
-  }
-
-  const body = req.body as Record<string, unknown>;
-  const hoursRaw = Number(body?.hours ?? 240);
-  const overrideWindowHours = hoursRaw > 0 ? hoursRaw : 240;
-  const freeOnly = body?.freeOnly === true;
-  const maxArticlesPerRun = Number(body?.maxArticlesPerRun ?? 500);
-
-  runUnifiedScrape({
-    overrideWindowHours,
-    freeOnly,
-    paidOnly: !freeOnly,
-    maxArticlesPerRun,
-    ignoreDailyLimit: true,
-  })
-    .then(summary => { console.log("[unified-scrape] /backfill done:", summary); })
-    .catch(e => { console.error("[unified-scrape] /backfill error:", e); });
-
-  res.json({
-    ok: true,
-    message: `Backfill started — all keywords, dual-publish, last ${overrideWindowHours}h`,
-    overrideWindowHours,
-    freeOnly,
-    maxArticlesPerRun,
-  });
-});
-
 // Trigger with optional window override (Groq mode)
 router.post("/keyword", checkScrapeAuth, async (req, res) => {
   if (isKeywordScrapeRunning()) {
