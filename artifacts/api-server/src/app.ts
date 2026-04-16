@@ -1,7 +1,6 @@
 import express, { type Express } from "express";
 import cors from "cors";
 import path from "path";
-import { fileURLToPath } from "url";
 import router from "./routes";
 import { db } from "@workspace/db";
 import { sql } from "drizzle-orm";
@@ -421,9 +420,7 @@ if (process.env.NODE_ENV !== "test" && process.env.DISABLE_SCRAPE_CRON !== "true
 
 // In production, serve the built frontend SPA
 if (process.env.NODE_ENV === "production") {
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-  const publicPath = path.resolve(__dirname, "../../web3hub/dist/public");
+  const publicPath = path.resolve(process.cwd(), "artifacts/web3hub/dist/public");
   app.use(express.static(publicPath));
   app.get("*", (_req, res) => {
     res.sendFile(path.join(publicPath, "index.html"));
