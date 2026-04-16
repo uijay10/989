@@ -100,10 +100,12 @@ function importanceDot(importance?: string | null) {
 function eventTitleClass(level: "high" | "medium" | "other"): string {
   const base = "text-lg font-semibold leading-snug mb-2 transition-colors";
   if (level === "high") {
-    return `${base} text-[#b91c1c] dark:text-red-400 group-hover:text-[#991b1b] dark:group-hover:text-red-300`;
+    // Soft coral red；悬停保持同色（避免 group-hover 把标题洗成别的色）
+    return `${base} text-[#E55B5B] dark:text-[#F08080] group-hover:text-[#E55B5B] dark:group-hover:text-[#F08080]`;
   }
   if (level === "medium") {
-    return `${base} text-[#1d4ed8] dark:text-blue-400 group-hover:text-[#1e3a8a] dark:group-hover:text-blue-300`;
+    // 更深饱和蓝（参考客户端「一般」标签）；悬停不变色
+    return `${base} text-[#0052D9] dark:text-[#5B9FFF] group-hover:text-[#0052D9] dark:group-hover:text-[#5B9FFF]`;
   }
   return `${base} text-slate-800 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400`;
 }
