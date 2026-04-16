@@ -116,14 +116,14 @@ function resolveImportanceLevel(item: FeedItem): ImportanceLevel | null {
 function titleBlockClass(level: ImportanceLevel | null): string {
   const base = "text-xl font-semibold leading-tight mb-2";
   if (level === "high") return `${base} text-[#E55B5B]`;
-  if (level === "medium") return `${base} text-[#1d4ed8]`;
+  if (level === "medium") return `${base} text-[#0052D9]`;
   return `${base} text-gray-900 dark:text-zinc-100`;
 }
 
 function titleLinkClass(level: ImportanceLevel | null): string {
   const base = "hover:underline";
   if (level === "high") return `${base} text-[#E55B5B]`;
-  if (level === "medium") return `${base} text-[#1d4ed8]`;
+  if (level === "medium") return `${base} text-[#0052D9]`;
   return `${base} text-gray-900 dark:text-zinc-100`;
 }
 
@@ -133,7 +133,7 @@ function titleInlineStyle(level: ImportanceLevel | null): React.CSSProperties | 
     return { color: c, WebkitTextFillColor: c };
   }
   if (level === "medium") {
-    const c = "#1d4ed8";
+    const c = "#0052D9";
     return { color: c, WebkitTextFillColor: c };
   }
   return undefined;
