@@ -13,7 +13,7 @@ import { PriceTicker } from "@/components/PriceTicker";
 import { formatDistanceToNow } from "date-fns";
 import { enUS, zhCN } from "date-fns/locale";
 import { getApiBase } from "@/lib/api-base";
-import { semanticDedupKey } from "@/lib/semantic-title-key";
+import { semanticTitleKey } from "@/lib/semantic-title-key";
 
 const DATE_LOCALES: Record<string, Locale> = {
   "en": enUS, "zh-CN": zhCN,
@@ -230,8 +230,10 @@ function ImportantNews({ lang }: { lang: string }) {
   const seen = new Set<string>();
   const posts: any[] = [];
   for (const p of raw) {
-    const url = (p as any).sourceUrl ?? (p as any).source_url;
-    const key = semanticDedupKey(String((p as any).title ?? ""), url) ?? `id:${(p as any).id}`;
+    const title = String((p as any).title ?? "").trim();
+    // 重要动态：只按「标题语义指纹」折叠，不按域名（各站转载同标题仍只显示一条）
+    const sem = semanticTitleKey(title);
+    const key = sem ? `inews:${sem}` : `id:${(p as any).id}`;
     if (seen.has(key)) continue;
     seen.add(key);
     posts.push(p);
