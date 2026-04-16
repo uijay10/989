@@ -6,6 +6,7 @@ import { verifyAdminToken } from "../lib/admin-token";
 import { runUnifiedScrape, runKeywordScrape, isKeywordScrapeRunning, KEYWORD_GRAB_CONFIG, DEFAULT_KEYWORDS, SCRAPE_CONFIG } from "../lib/auto-scraper";
 import type { UnifiedScrapeOptions as KeywordScrapeOptions } from "../lib/auto-scraper";
 import { getDailyQuotaStats, areFreeProvidersDailyExhausted } from "../lib/ai-provider";
+import { readArticlesBackupFile } from "../lib/articles-backup";
 
 const router: IRouter = Router();
 
@@ -102,6 +103,38 @@ router.post("/keyword", checkScrapeAuth, async (req, res) => {
 
 router.get("/keyword/config", requireAdmin, (_req, res) => {
   res.json({ config: SCRAPE_CONFIG, version: SCRAPE_CONFIG.VERSION });
+});
+
+// Read historical articles from articles_backup.json (JSONL) for verification/debug.
+// Auth: SCRAPE_INTERNAL_KEY header/query OR admin credentials (same as scrape triggers).
+router.get("/backup", checkScrapeAuth, (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(String(req.query.page ?? "1")) || 1);
+    const limit = Math.min(200, Math.max(1, parseInt(String(req.query.limit ?? "50")) || 50));
+    const category = String(req.query.category ?? "all");
+    const offset = (page - 1) * limit;
+
+    const all = readArticlesBackupFile()
+      .filter((a) => (a.author_type ?? "ai") === "ai")
+      .filter((a) => category === "all" || (a.section ?? "other") === category)
+      .sort((a, b) => {
+        const at = a.created_at ? Date.parse(a.created_at) : 0;
+        const bt = b.created_at ? Date.parse(b.created_at) : 0;
+        if (bt !== at) return bt - at;
+        return Number(b.id) - Number(a.id);
+      });
+
+    const items = all.slice(offset, offset + limit);
+    res.json({
+      page,
+      limit,
+      total: all.length,
+      hasMore: offset + items.length < all.length,
+      items,
+    });
+  } catch (e: unknown) {
+    res.status(500).json({ error: String(e) });
+  }
 });
 
 router.get("/status", requireAdmin, async (_req, res) => {
