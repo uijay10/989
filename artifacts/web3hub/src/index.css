@@ -8,8 +8,8 @@
 }
 
 @keyframes flashRed {
-  0%   { color: #8B0000; }
-  60%  { color: #8B0000; }
+  0%   { color: #EF4444; }
+  60%  { color: #EF4444; }
   100% { color: inherit; }
 }
 
