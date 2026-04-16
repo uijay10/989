@@ -290,7 +290,12 @@ const Unified724Feed: React.FC = () => {
             </div>
             <h3 className={`text-xl font-semibold leading-tight mb-2 ${getTitleColorClass(item.importance)}`}>
               {item.link ? (
-                <a href={item.link} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                <a
+                  href={item.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`hover:underline ${getTitleColorClass(item.importance)}`}
+                >
                   {item.title}
                 </a>
               ) : (
