@@ -28,6 +28,7 @@ router.get("/", async (req, res) => {
         section:    postsTable.section,
         authorName: postsTable.authorName,
         sourceUrl:  postsTable.sourceUrl,
+        importance: postsTable.importance,
       })
         .from(postsTable)
         .where(where)
@@ -80,6 +81,7 @@ router.get("/", async (req, res) => {
         category: r.section || "other",
         source:   r.authorName,
         link:     r.sourceUrl,
+        importance: r.importance ?? null,
       })),
       hasMore,
       total,
