@@ -51,9 +51,33 @@ function normalizeText(s: string): string {
   return s.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+function semanticTitleKey(raw: string): string {
+  const t = normalizeText(raw || "")
+    .replace(/[’'"]/g, "")
+    .replace(/[^a-z0-9\u4e00-\u9fff\s-]/g, " ")
+    .replace(/\b(19|20)\d{2}\b/g, " ")
+    .replace(/\b\d+(?:\.\d+)?\b/g, " ");
+
+  const stop = new Set([
+    "a","an","and","are","as","at","be","by","for","from","has","have","in","into","is","it","its","of","on","or","s","says","to","the","this","that","these","those","with","will","vs","via",
+    "best","top","latest","update","news","revealed","reveals","lead","leads","goes","live","launch","launched","crosses","cross","potential","deadline","act","committee","senate","us","u","u.s",
+    "今日","最新","快讯","速报","公告","消息","更新","曝光","透露","宣布",
+  ]);
+
+  const parts = t.split(/[\s-]+/g).filter(Boolean);
+  const kept: string[] = [];
+  for (const p of parts) {
+    if (p.length <= 2) continue;
+    if (stop.has(p)) continue;
+    if (!kept.includes(p)) kept.push(p);
+    if (kept.length >= 8) break;
+  }
+  return kept.join("-");
+}
+
 function getDedupKey(item: FeedItem): string {
-  // 更激进：按「标题 + 域名」合并，同一网站上标题完全相同的视为同一条快讯
-  const title = normalizeText(item.title || "");
+  // 语义去重：标题抽关键词（去数字/日期/停用词），再按「关键词 + 域名」折叠相似软文/重复快讯
+  const title = semanticTitleKey(item.title || "");
   let host = "";
   if (item.link && item.link.trim()) {
     try {
