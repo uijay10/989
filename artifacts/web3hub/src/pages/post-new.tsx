@@ -7,13 +7,7 @@ import { useLang } from "@/lib/i18n";
 import { useLocation } from "wouter";
 import { AlertCircle, CheckCircle2, PenSquare, X, Pin, Sparkles, Copy, Check } from "lucide-react";
 import { isAdmin } from "@/lib/admin";
-
-function getApiBase() {
-  const base = import.meta.env.BASE_URL ?? "/";
-  const parts = base.replace(/\/$/, "").split("/");
-  parts.pop();
-  return parts.join("/") + "/api";
-}
+import { getApiBase } from "@/lib/api-base";
 
 const NAV_SECTIONS = [
   "ido", "funding", "quest", "policy",

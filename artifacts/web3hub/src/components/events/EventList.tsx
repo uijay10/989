@@ -12,13 +12,7 @@ import { useLang } from "@/lib/i18n";
 import { useWeb3Auth } from "@/lib/web3";
 import { isAdmin } from "@/lib/admin";
 import { AdminPinModal, PostCard } from "@/components/post-card";
-
-function getApiBase() {
-  const base = import.meta.env.BASE_URL ?? "/";
-  const parts = base.replace(/\/$/, "").split("/");
-  parts.pop();
-  return parts.join("/") + "/api";
-}
+import { getApiBase } from "@/lib/api-base";
 
 const SECTION_TO_ZH: Record<string, string> = {
   testnet:   "测试网",

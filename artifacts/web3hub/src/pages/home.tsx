@@ -12,6 +12,7 @@ import { RoleBadge } from "@/components/role-badge";
 import { PriceTicker } from "@/components/PriceTicker";
 import { formatDistanceToNow } from "date-fns";
 import { enUS, zhCN } from "date-fns/locale";
+import { getApiBase } from "@/lib/api-base";
 
 const DATE_LOCALES: Record<string, Locale> = {
   "en": enUS, "zh-CN": zhCN,
@@ -19,13 +20,6 @@ const DATE_LOCALES: Record<string, Locale> = {
 
 const PAGE_SIZE = 20;
 const PIN_SLOTS = 16;
-
-function getApiBase() {
-  const base = import.meta.env.BASE_URL ?? "/";
-  const parts = base.replace(/\/$/, "").split("/");
-  parts.pop();
-  return parts.join("/") + "/api";
-}
 
 function getCountdown(until: string) {
   const ms = new Date(until).getTime() - Date.now();

@@ -1,12 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useLang } from '@/lib/i18n';
-
-const getApiBase = () => {
-  const base = import.meta.env.BASE_URL ?? "/";
-  const parts = base.replace(/\/$/, "").split("/");
-  parts.pop();
-  return parts.join("/") + "/api";
-};
+import { getApiBase } from '@/lib/api-base';
 
 interface FeedItem {
   id: string;

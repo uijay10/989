@@ -21,6 +21,7 @@ function useCountdown(targetIso: string | null | undefined) {
 }
 import { createPortal } from "react-dom";
 import { Copy, Check, Pin, User, Eye, Clock, Globe, Twitter as TwitterIcon, X } from "lucide-react";
+import { getApiBase } from "@/lib/api-base";
 
 const SECTION_KEY_MAP: Record<string, string> = {
   testnet: "sTestnetLabel", ido: "sIdoLabel", security: "sSecurityLabel",
@@ -41,12 +42,6 @@ import { useLang } from "@/lib/i18n";
 import { Link } from "wouter";
 import { isAdmin } from "@/lib/admin";
 
-function getApiBase() {
-  const base = import.meta.env.BASE_URL ?? "/";
-  const parts = base.replace(/\/$/, "").split("/");
-  parts.pop();
-  return parts.join("/") + "/api";
-}
 const apiBase = getApiBase();
 
 interface PostCardPost {

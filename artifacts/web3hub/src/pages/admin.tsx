@@ -10,13 +10,7 @@ import {
   Handshake, Rss, Plus, Filter, Mail, MailOpen, Reply, Circle
 } from "lucide-react";
 import { ClaimsPanel } from "@/components/admin/ClaimsPanel";
-
-function getApiBase() {
-  const base = import.meta.env.BASE_URL ?? "/";
-  const parts = base.replace(/\/$/, "").split("/");
-  parts.pop();
-  return parts.join("/") + "/api";
-}
+import { getApiBase } from "@/lib/api-base";
 
 const apiBase = getApiBase();
 

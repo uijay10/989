@@ -202,11 +202,11 @@ export function SlotMachine({ wallet, tokens, lastSlotPull, onSuccess }: SlotMac
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
         <div>
-          <div style={{ fontWeight: 600, fontSize: 14, color: "var(--foreground)" }}>{t("slotTitle")}</div>
-          <div style={{ fontSize: 11, color: "var(--muted-foreground)", marginTop: 2 }}>{t("slotDesc")}</div>
+          <div style={{ fontWeight: 600, fontSize: 14, color: "hsl(var(--foreground))" }}>{t("slotTitle")}</div>
+          <div style={{ fontSize: 11, color: "hsl(var(--muted-foreground))", marginTop: 2 }}>{t("slotDesc")}</div>
         </div>
         <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: 11, color: "var(--muted-foreground)" }}>{t("tokenLabel")}</div>
+          <div style={{ fontSize: 11, color: "hsl(var(--muted-foreground))" }}>{t("tokenLabel")}</div>
           <div style={{ fontWeight: 700, fontSize: 20, color: "#f59e0b", lineHeight: 1.2 }}>{localTokens.toLocaleString()}</div>
           <div style={{ fontSize: 10, color: "rgba(245,158,11,0.6)" }}>$WBR</div>
         </div>
@@ -271,7 +271,7 @@ export function SlotMachine({ wallet, tokens, lastSlotPull, onSuccess }: SlotMac
 
       {/* Cooldown */}
       {isDone && (
-        <div style={{ fontSize: 12, color: "var(--muted-foreground)", textAlign: "center" }}>
+        <div style={{ fontSize: 12, color: "hsl(var(--muted-foreground))", textAlign: "center" }}>
           <span>{t("slotCooldown")}</span>
           {nextPullStr && (
             <span style={{ marginLeft: 8 }}>
