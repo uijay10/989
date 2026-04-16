@@ -654,7 +654,7 @@ export function EventList({ sectionSlug, sectionName }: { sectionSlug?: string; 
     primarySorted = [...base].sort((a, b) => getTime(b) - getTime(a));
   }
 
-  // 显示层再做一层「标题 + 域名」去重，折叠导入历史在多个板块重复的文章
+  // 显示层：按「标题语义指纹 + 域名」去重（相似标题、同站多篇软文、多板块重复会折叠）
   const seenDisplayKeys = new Set<string>();
   const filtered: Web3Event[] = [];
   for (const e of primarySorted) {
