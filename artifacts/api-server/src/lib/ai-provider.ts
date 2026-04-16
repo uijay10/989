@@ -20,28 +20,6 @@ export interface AiProvider {
 const RATE_LIMIT_COOLDOWN_MS = 10 * 60 * 1000; // 10 min per-minute rate-limit cooldown
 const ERROR_COOLDOWN_MS      = 30 * 1000;        // 30 s for non-rate-limit errors
 
-// ── Groq 6-hour slot limiting (平摊每日 1000 次额度) ────────────────────────
-const GROQ_MAX_PER_6H = 250; // 每6小时最多 250 次 = 1000/day 平均分配
-const GROQ_6H_MS = 6 * 60 * 60 * 1000;
-const groqSlotCounts = new Map<number, number>(); // slotStart(ms) → callCount
-
-function getGroqSlotStart(): number {
-  return Math.floor(Date.now() / GROQ_6H_MS) * GROQ_6H_MS;
-}
-
-function isGroqSlotFull(): boolean {
-  const count = groqSlotCounts.get(getGroqSlotStart()) ?? 0;
-  return count >= GROQ_MAX_PER_6H;
-}
-
-function incrementGroqSlot(): void {
-  const slot = getGroqSlotStart();
-  groqSlotCounts.set(slot, (groqSlotCounts.get(slot) ?? 0) + 1);
-  // 清理超过 24h 的旧窗口
-  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-  for (const [k] of groqSlotCounts) { if (k < cutoff) groqSlotCounts.delete(k); }
-}
-
 // ==================== DeepSeek 每日+每小时成本控制 ====================
 // v2.0_migrated_2026: 每日 $0.50 均分到 24 小时 → 每小时 $0.020833
 // 每日预算（UTC 0:00 重置，持久化到数据库）
@@ -199,26 +177,20 @@ function recordDeepSeekCost(_category: string, inputTokens: number, outputTokens
   persistDeepSeekCost();
 }
 
-// Free-tier daily limits (requests per day)
+// Provider daily request limits (0 = unlimited).
+// v2.0_migrated_2026 requirement: 11 Groq (free/unlimited) + 1 DeepSeek (budgeted).
 const DAILY_LIMITS: Record<string, number> = {
-  groq:       1000,  // Groq llama-3.3-70b free tier: 1,000 req/day
-  groq1:      1000,
-  groq2:      1000,
-  groq3:      1000,
-  groq4:      1000,
-  groq5:      1000,
-  groq6:      1000,
-  groq7:      1000,
-  groq8:      1000,
-  groq9:      1000,
-  groq10:     1000,
-  groq11:     1000,
-  cerebras:   1000,  // Cerebras free tier: ~1,000 req/day
-  sambanova:  1000,  // SambaNova free tier: ~1,000 req/day
-  openrouter: 200,   // OpenRouter :free models cap
-  together:   300,   // Together AI free credits (conserve)
-  fireworks:  300,   // Fireworks AI free credits (conserve)
-  novita:     300,   // Novita AI free credits (conserve)
+  groq1:      0,
+  groq2:      0,
+  groq3:      0,
+  groq4:      0,
+  groq5:      0,
+  groq6:      0,
+  groq7:      0,
+  groq8:      0,
+  groq9:      0,
+  groq10:     0,
+  groq11:     0,
   deepseek:   0,     // 0 = unlimited (paid)
 };
 
@@ -250,15 +222,7 @@ function makeProvider(
 
 function buildProviderList(): AiProvider[] {
   const list: (AiProvider | null)[] = [
-    // ── 优先：Groq 免费额度 ───────────────────────────────────────────────
-    makeProvider(
-      "groq",
-      "https://api.groq.com/openai/v1",
-      process.env.GROQ_API_KEY ?? process.env.GROQ,
-      "llama-3.3-70b-versatile",
-      4096,
-    ),
-    // ── Groq 备用 Key 轮换 (GROQ1–GROQ11) ──────────────────────────────
+    // ── 11× Groq keys (GROQ1–GROQ11) ─────────────────────────────────────────
     makeProvider("groq1",  "https://api.groq.com/openai/v1", process.env.GROQ1,  "llama-3.3-70b-versatile", 4096),
     makeProvider("groq2",  "https://api.groq.com/openai/v1", process.env.GROQ2,  "llama-3.3-70b-versatile", 4096),
     makeProvider("groq3",  "https://api.groq.com/openai/v1", process.env.GROQ3,  "llama-3.3-70b-versatile", 4096),
@@ -270,7 +234,7 @@ function buildProviderList(): AiProvider[] {
     makeProvider("groq9",  "https://api.groq.com/openai/v1", process.env.GROQ9,  "llama-3.3-70b-versatile", 4096),
     makeProvider("groq10", "https://api.groq.com/openai/v1", process.env.GROQ10, "llama-3.3-70b-versatile", 4096),
     makeProvider("groq11", "https://api.groq.com/openai/v1", process.env.GROQ11, "llama-3.3-70b-versatile", 4096),
-    // ── 兜底：Groq 额度用完后自动接管 ────────────────────────────────────
+    // ── 1× DeepSeek (budgeted) ────────────────────────────────────────────────
     makeProvider(
       "deepseek",
       "https://api.deepseek.com/v1",
@@ -499,29 +463,11 @@ export async function callAiWithFallback(
   let available = getAvailableProviders();
 
   if (paidOnly) {
-    // Reserve Groq exclusively for flash scraper — other scrapers use DeepSeek only
+    // DeepSeek-only mode (budgeted instance)
     available = available.filter(p => p.name === "deepseek");
   } else if (freeOnly) {
-    // freeOnly=true is used by: (a) Groq flash keyword scraper, (b) main RSS cron.
-    // The Groq flash is gate-kept by hasUsableProvider() in auto-scraper.ts, which already
-    // ensures this function is only called when a free Groq key is actually available.
-    // The main RSS cron needs the DeepSeek fallback when all Groq keys are daily-exhausted.
-    const freeProviders = providers.filter(p => p.name !== "deepseek");
-    const freeExhausted = freeProviders.length > 0 && freeProviders.every(isDailyExhausted);
-    const freeOnRateLimit = freeProviders.every(isRateLimited);
-    const freeAvailable = freeProviders.filter(p => !isRateLimited(p) && !isDailyExhausted(p));
-
-    if (freeExhausted) {
-      // All Groq keys daily-exhausted → DeepSeek fallback (main RSS cron needs this)
-      console.log("[ai-provider] Free providers daily-exhausted → using DeepSeek fallback");
-      // available already includes DeepSeek
-    } else if (freeOnRateLimit || freeAvailable.length === 0) {
-      // Temporary rate-limit → skip; next cycle will retry
-      console.log("[ai-provider] Free providers on rate-limit cooldown — skipping batch");
-      return null;
-    } else {
-      available = freeAvailable;
-    }
+    // Groq-only mode (11 free instances). DeepSeek fallback is handled by the caller gate.
+    available = available.filter(p => p.name !== "deepseek");
   }
 
   if (available.length === 0) {
@@ -530,12 +476,6 @@ export async function callAiWithFallback(
   }
 
   for (const provider of available) {
-    // Groq 6-hour slot check — skip if current slot is full, fall through to DeepSeek
-    if (provider.name === "groq" && isGroqSlotFull()) {
-      const slotUsed = groqSlotCounts.get(getGroqSlotStart()) ?? 0;
-      console.log(`[ai-provider] Groq 当前6小时窗口已达上限 (${slotUsed}/${GROQ_MAX_PER_6H})，切换到 DeepSeek`);
-      continue;
-    }
     // DeepSeek 预算检查
     if (provider.name === "deepseek" && !checkDeepSeekBudget(category)) {
       console.warn(`[DeepSeek Budget] fallback 中 ${category} 预算已满，跳过`);
@@ -554,7 +494,6 @@ export async function callAiWithFallback(
           console.log(`[ai-provider] Used fallback provider: ${provider.name}`);
         }
         incrementDailyCount(provider);
-        if (provider.name === "groq") incrementGroqSlot();
         if (provider.name === "deepseek" && completion.usage) {
           recordDeepSeekCost(category, completion.usage.prompt_tokens, completion.usage.completion_tokens);
         }

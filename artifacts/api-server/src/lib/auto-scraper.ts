@@ -208,54 +208,8 @@ export const DEFAULT_KEYWORDS = [
   "RWA代币化","机构采购","比特币储备","稳定币","银行区块链","加密ETF",
 ];
 
-// ── Additional plate-level keywords (combined — no per-plate routing) ─────────
-// These were previously used for plate-specific Google News queries.
-// In v2.0, they are merged into the unified keyword pool for all 12 instances.
-const ADDITIONAL_KEYWORDS: string[] = [
-  "IDO","IEO","ICO","TGE","token launch","fair launch","community sale","IGO",
-  "liquidity bootstrap","bonding curve launch","pink sale","dx sale",
-  "funding round","strategic investment","raises funding","raises million",
-  "crypto VC","web3 VC","pantera capital","paradigm","closed funding round",
-  "venture funding","institutional investment","led by","extension round",
-  "airdrop","token airdrop","quest reward","on-chain quest","points farming",
-  "earn tokens","referral reward","loyalty program","galxe","layer3","zealy",
-  "intract","retroactive reward","points program","XP farming","quest campaign",
-  "daily tasks","loyalty points","season rewards","retroactive airdrop",
-  "incentivized testnet","testnet reward","testnet airdrop","open beta",
-  "closed beta","alpha launch","testnet faucet","devnet faucet","pre-mainnet",
-  "testnet campaign","testnet points","testnet quest","public testnet",
-  "node operator","validator node","node recruitment","node sale","node NFT",
-  "genesis node","DePIN","staking reward","helium node","io.net",
-  "filecoin node","run a node","become validator","node license","mining node",
-  "operator recruitment","staking node","DePIN节点","创世节点","运行节点",
-  "web3 hiring","crypto hiring","blockchain hiring","web3 jobs","crypto jobs",
-  "blockchain jobs","solidity developer","smart contract developer","ZK developer",
-  "community manager","ambassador program","dao contributor","web3 job",
-  "crypto career","solidity engineer","ZK engineer","growth hacker",
-  "immunefi","hackenproof","bug bounty","whitehat","vulnerability reward",
-  "smart contract bug","audit contest","hackathon","ethglobal","devcon",
-  "developer grant","bug bounty program","security audit contest","code4rena",
-  "vulnerability disclosure","audit competition",
-  "grants","grant program","gitcoin","retro pgf","quadratic funding","RPGF",
-  "optimism grants","arbitrum grants","ethereum foundation grants",
-  "accelerator","incubator","fellowship","ecosystem grant","foundation grant",
-  "developer grant","accelerator program","incubator program","public goods funding",
-  "SEC","CFTC","FATF","MiCA","FCA","MAS","stablecoin bill","Bitcoin ETF",
-  "Ethereum ETF","CBDC","crypto tax","exchange license","crypto crackdown",
-  "crypto bill","digital asset regulation","ETF approval","travel rule",
-  "MiCA compliance","加密监管","比特币ETF","稳定币监管","合规","监管动态",
-  "RWA tokenization","real world assets","asset tokenization","tokenized bonds",
-  "tokenized securities","tokenized treasury","tokenized real estate",
-  "BTC ETF","institutional adoption crypto","corporate crypto","on-chain finance",
-  "TradFi DeFi","digital dollar","digital euro","digital yuan","CBDC pilot",
-  "STO security token","permissioned blockchain","enterprise blockchain",
-  "stablecoin geopolitics","USD stablecoin dominance","stablecoin sanctions",
-  "bitcoin halving","ethereum upgrade","solana etf filing","xrp etf",
-  "crypto etf inflow","bitcoin reserve bill","trump bitcoin","trump crypto policy",
-];
-
-// ── Combined de-duplicated keyword set ────────────────────────────────────────
-const COMBINED_KEYWORDS: string[] = [...new Set([...DEFAULT_KEYWORDS, ...ADDITIONAL_KEYWORDS])];
+// v2.0_migrated_2026 requirement: use ONLY the system keyword list.
+// Source order: DB scrape_keywords (enabled=true) → DEFAULT_KEYWORDS fallback.
 
 // ── Scrape config ──────────────────────────────────────────────────────────────
 export const SCRAPE_CONFIG = {
@@ -717,12 +671,11 @@ function hasUsableProvider(paidOnly: boolean, freeOnly: boolean): boolean {
   }
   if (freeOnly) {
     if (isFreeProviderAvailable()) return true;
-    if (areFreeProvidersDailyExhausted()) {
-      return getAvailableProviders().length > 0 &&
-             isDeepSeekBudgetAvailable() &&
-             isDeepSeekHourlyBudgetAvailable();
-    }
-    return false;
+    // If no free Groq provider is configured/available, allow DeepSeek to take over
+    // (still subject to the independent $0.50/day and hourly budget).
+    return getAvailableProviders().some(p => p.name === "deepseek") &&
+           isDeepSeekBudgetAvailable() &&
+           isDeepSeekHourlyBudgetAvailable();
   }
   return getAvailableProviders().length > 0;
 }
@@ -803,8 +756,7 @@ export async function runUnifiedScrape(opts: UnifiedScrapeOptions = {}): Promise
       return { runId, totalSources: 0, totalItemsFound: 0, totalItemsSaved: 0, errors: 0, durationMs: Date.now() - startMs };
     }
 
-    const keywords = await getKeywordsFromDb();
-    const combinedKws = [...new Set([...keywords, ...ADDITIONAL_KEYWORDS])];
+    const combinedKws = await getKeywordsFromDb();
 
     // ════════════════════════════════════════════════════════════
     // PART 1: RSS sources
