@@ -52,9 +52,8 @@ function normalizeText(s: string): string {
 }
 
 function getDedupKey(item: FeedItem): string {
-  // Primary key：标题 + 摘要文本；URL 只参与域名，避免同一篇新闻因为不同路径而重复
+  // 更激进：按「标题 + 域名」合并，同一网站上标题完全相同的视为同一条快讯
   const title = normalizeText(item.title || "");
-  const summary = normalizeText(item.summary || "");
   let host = "";
   if (item.link && item.link.trim()) {
     try {
@@ -63,7 +62,7 @@ function getDedupKey(item: FeedItem): string {
       host = item.link.trim().toLowerCase();
     }
   }
-  return `text:${title}::${summary.slice(0, 240)}::${host}`;
+  return `text:${title}::${host}`;
 }
 
 type ImportanceLevel = "high" | "medium" | "low";
