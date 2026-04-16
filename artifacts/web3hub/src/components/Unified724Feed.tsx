@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useLang } from '@/lib/i18n';
 
 const getApiBase = () => {
@@ -17,6 +17,8 @@ interface FeedItem {
   source?: string;
   link?: string;
 }
+
+type DisplayFeedItem = FeedItem & { _categories?: string[] };
 
 const SECTION_LABEL_ZH: Record<string, string> = {
   "724news":  "7*24快讯",
@@ -50,6 +52,19 @@ const SECTION_LABEL_EN: Record<string, string> = {
 
 const POLL_INTERVAL_MS = 60 * 1000; // 60秒轮询一次
 
+function normalizeText(s: string): string {
+  return s.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function getDedupKey(item: FeedItem): string {
+  // Prefer source URL (the most stable identity across dual-publish)
+  if (item.link && item.link.trim()) return `url:${item.link.trim()}`;
+  // Fallback: title + summary (best-effort)
+  const title = normalizeText(item.title || "");
+  const summary = normalizeText(item.summary || "");
+  return `text:${title}::${summary.slice(0, 240)}`;
+}
+
 const Unified724Feed: React.FC = () => {
   const { lang, t } = useLang();
   const SECTION_LABEL = lang === 'zh-CN' ? SECTION_LABEL_ZH : SECTION_LABEL_EN;
@@ -64,6 +79,33 @@ const Unified724Feed: React.FC = () => {
   const observerRef = useRef<HTMLDivElement>(null);
   const loadingRef  = useRef(false);
   const topIdRef    = useRef<string | null>(null); // 当前列表最新文章 id
+
+  const displayItems: DisplayFeedItem[] = useMemo(() => {
+    // In "All", collapse dual-published duplicates (板块 + 7×24快讯)
+    if (activeTab !== "all") return items;
+
+    const out: DisplayFeedItem[] = [];
+    const seen = new Map<string, DisplayFeedItem>();
+    for (const it of items) {
+      const key = getDedupKey(it);
+      const existing = seen.get(key);
+      if (!existing) {
+        const first: DisplayFeedItem = { ...it, _categories: [it.category] };
+        seen.set(key, first);
+        out.push(first);
+        continue;
+      }
+      const cats = existing._categories ?? [existing.category];
+      if (!cats.includes(it.category)) {
+        existing._categories = [...cats, it.category];
+      }
+    }
+    return out;
+  }, [items, activeTab]);
+
+  const displayTotal = useMemo(() => {
+    return activeTab === "all" ? displayItems.length : total;
+  }, [activeTab, displayItems.length, total]);
 
   const loadFeed = useCallback(async (reset = false) => {
     if (loadingRef.current || (!hasMore && !reset)) return;
@@ -178,11 +220,11 @@ const Unified724Feed: React.FC = () => {
     <div className="w-full">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold">{t('nav_724news')}</h2>
-        {total > 0 && (
+        {displayTotal > 0 && (
           <div className="text-sm text-gray-500">
             {lang === 'zh-CN'
-              ? <>{'\u5171'} <span className="font-semibold text-black dark:text-white">{total}</span> {'\u6761'}</>
-              : <><span className="font-semibold text-black dark:text-white">{total}</span> articles</>
+              ? <>{'\u5171'} <span className="font-semibold text-black dark:text-white">{displayTotal}</span> {'\u6761'}</>
+              : <><span className="font-semibold text-black dark:text-white">{displayTotal}</span> articles</>
             }
           </div>
         )}
@@ -220,15 +262,21 @@ const Unified724Feed: React.FC = () => {
 
       {/* 文章列表 */}
       <div className="space-y-6">
-        {items.length === 0 && !loading && (
+        {displayItems.length === 0 && !loading && (
           <div className="py-16 text-center text-gray-400">暂无内容</div>
         )}
-        {items.map((item) => (
+        {displayItems.map((item) => (
           <div key={item.id} className="border border-gray-200 dark:border-zinc-700 rounded-2xl p-6 hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3 mb-3">
-              <span className="text-xs font-medium px-3 py-1 bg-blue-100 text-blue-700 rounded-full">
-                {SECTION_LABEL[item.category] ?? item.category}
-              </span>
+              {(item._categories?.length ? item._categories : [item.category]).map((cat) => (
+                <span
+                  key={cat}
+                  className="text-xs font-medium px-3 py-1 bg-blue-100 text-blue-700 rounded-full"
+                  title={activeTab === "all" && (item._categories?.length ?? 0) > 1 ? (lang === "zh-CN" ? "同一条新闻已同步到多个板块" : "This story is published in multiple sections") : undefined}
+                >
+                  {SECTION_LABEL[cat] ?? cat}
+                </span>
+              ))}
               <span className="text-xs text-gray-500">{item.time}</span>
             </div>
             <h3 className="text-xl font-semibold leading-tight mb-2">

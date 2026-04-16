@@ -44,6 +44,10 @@ Thumbs.db
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
 
-# Hosted environment caches
+# Replit
 .cache/
 .local/
+.config/
+
+# Large local article backups (do not commit)
+articles_backup*.json
