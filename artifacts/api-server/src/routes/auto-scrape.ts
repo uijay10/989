@@ -8,6 +8,7 @@ import type { UnifiedScrapeOptions as KeywordScrapeOptions } from "../lib/auto-s
 import { getDailyQuotaStats, areFreeProvidersDailyExhausted } from "../lib/ai-provider";
 import { readArticlesBackupFile } from "../lib/articles-backup";
 import { importBackupToDb } from "../lib/import-backup";
+import { dedupAiPosts } from "../lib/dedup-posts";
 
 const router: IRouter = Router();
 
@@ -118,6 +119,30 @@ router.post("/backup/import", checkScrapeAuth, async (req, res) => {
       dryRun,
     });
     res.json({ ok: true, dryRun, stats });
+  } catch (e: unknown) {
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+// De-duplicate AI posts after import or scraping.
+// Scope: AI posts only, and de-dup happens within the same section (won't break dual-publish).
+// Auth: SCRAPE_INTERNAL_KEY header/query OR admin credentials.
+router.post("/dedup", checkScrapeAuth, async (req, res) => {
+  try {
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const days = Number(body.days ?? 90);
+    const dryRun = body.dryRun !== false;
+    const maxScan = Number(body.maxScan ?? 50000);
+    const maxDeletes = Number(body.maxDeletes ?? 5000);
+
+    const result = await dedupAiPosts({
+      days: Number.isFinite(days) ? days : 90,
+      dryRun,
+      maxScan: Number.isFinite(maxScan) ? maxScan : 50000,
+      maxDeletes: Number.isFinite(maxDeletes) ? maxDeletes : 5000,
+    });
+
+    res.json({ ok: true, dryRun, result });
   } catch (e: unknown) {
     res.status(500).json({ ok: false, error: String(e) });
   }
