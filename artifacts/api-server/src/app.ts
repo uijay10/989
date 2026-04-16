@@ -1,5 +1,7 @@
 import express, { type Express } from "express";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 import router from "./routes";
 import { db } from "@workspace/db";
 import { sql } from "drizzle-orm";
@@ -415,6 +417,17 @@ if (process.env.NODE_ENV !== "test" && process.env.DISABLE_SCRAPE_CRON !== "true
 
 } else if (process.env.DISABLE_SCRAPE_CRON === "true") {
   console.log("[cron] DISABLE_SCRAPE_CRON=true — scraper disabled in dev, all free API quota goes to production");
+}
+
+// In production, serve the built frontend SPA
+if (process.env.NODE_ENV === "production") {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const publicPath = path.resolve(__dirname, "../../web3hub/dist/public");
+  app.use(express.static(publicPath));
+  app.get("*", (_req, res) => {
+    res.sendFile(path.join(publicPath, "index.html"));
+  });
 }
 
 export default app;
