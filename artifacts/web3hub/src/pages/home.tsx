@@ -13,6 +13,7 @@ import { PriceTicker } from "@/components/PriceTicker";
 import { formatDistanceToNow } from "date-fns";
 import { enUS, zhCN } from "date-fns/locale";
 import { getApiBase } from "@/lib/api-base";
+import { semanticDedupKey } from "@/lib/semantic-title-key";
 
 const DATE_LOCALES: Record<string, Locale> = {
   "en": enUS, "zh-CN": zhCN,
@@ -219,13 +220,23 @@ function ImportantNews({ lang }: { lang: string }) {
   const { data, isLoading } = useQuery({
     queryKey: ["/api/posts", "important-news-high"],
     queryFn: async () => {
-      const res = await fetch(`${getApiBase()}/posts?limit=12&page=1&importance=high&authorType=ai`);
+      const res = await fetch(`${getApiBase()}/posts?limit=36&page=1&importance=high&authorType=ai`);
       return res.json() as Promise<{ posts: any[] }>;
     },
     staleTime: 60_000,
     refetchInterval: 120_000,
   });
-  const posts = (data?.posts ?? []).slice(0, 12);
+  const raw = data?.posts ?? [];
+  const seen = new Set<string>();
+  const posts: any[] = [];
+  for (const p of raw) {
+    const url = (p as any).sourceUrl ?? (p as any).source_url;
+    const key = semanticDedupKey(String((p as any).title ?? ""), url) ?? `id:${(p as any).id}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    posts.push(p);
+    if (posts.length >= 12) break;
+  }
 
   return (
     <div>
