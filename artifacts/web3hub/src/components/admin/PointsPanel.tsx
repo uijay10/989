@@ -1,13 +1,7 @@
 import { useState, useCallback } from "react";
 import { Search, Plus, Minus, RotateCcw, Coins, Trophy, Loader2, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-function getApiBase() {
-  const base = import.meta.env.BASE_URL ?? "/";
-  const parts = base.replace(/\/$/, "").split("/");
-  parts.pop();
-  return parts.join("/") + "/api";
-}
+import { getApiBase } from "@/lib/api-base";
 
 interface UserInfo {
   wallet: string;

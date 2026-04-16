@@ -5,13 +5,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { zhCN, enUS, type Locale } from "date-fns/locale";
 import { useLang } from "@/lib/i18n";
-
-function getApiBase() {
-  const base = import.meta.env.BASE_URL ?? "/";
-  const parts = base.replace(/\/$/, "").split("/");
-  parts.pop();
-  return parts.join("/") + "/api";
-}
+import { getApiBase } from "@/lib/api-base";
 
 const DATE_LOCALES: Record<string, Locale> = {
   "zh-CN": zhCN, "en": enUS,

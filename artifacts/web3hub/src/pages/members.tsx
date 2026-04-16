@@ -5,13 +5,7 @@ import { useLang } from "@/lib/i18n";
 import { generateGradient, truncateAddress } from "@/lib/utils";
 import { RoleBadge } from "@/components/role-badge";
 import { TagBadge } from "@/components/post-card";
-
-function getApiBase() {
-  const base = import.meta.env.BASE_URL ?? "/";
-  const parts = base.replace(/\/$/, "").split("/");
-  parts.pop();
-  return parts.join("/") + "/api";
-}
+import { getApiBase } from "@/lib/api-base";
 
 type MemberType = "project" | "kol" | "developer";
 

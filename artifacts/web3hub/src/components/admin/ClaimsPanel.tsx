@@ -1,13 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { CheckCircle, XCircle, RefreshCw, Search, ExternalLink, ChevronDown, ChevronUp, Trash2, ShieldOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-function getApiBase() {
-  const base = import.meta.env.BASE_URL ?? "/";
-  const parts = base.replace(/\/$/, "").split("/");
-  parts.pop();
-  return parts.join("/") + "/api";
-}
+import { getApiBase } from "@/lib/api-base";
 
 type AppStatus = "pending" | "approved" | "rejected";
 

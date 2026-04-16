@@ -7,13 +7,8 @@ import {
   BookOpen, CheckCircle2, ArrowRight, Loader2, AlertTriangle,
   Sparkles, ChevronRight,
 } from "lucide-react";
+import { getApiBase } from "@/lib/api-base";
 
-function getApiBase() {
-  const base = import.meta.env.BASE_URL ?? "/";
-  const parts = base.replace(/\/$/, "").split("/");
-  parts.pop();
-  return parts.join("/") + "/api";
-}
 const apiBase = getApiBase();
 
 type Role = "project" | "participant";

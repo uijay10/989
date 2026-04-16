@@ -31,35 +31,37 @@ html {
   --font-display: "MiSans", "Alibaba PuHuiTi", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  --color-background: 0 0% 100%;
-  --color-foreground: 222 47% 11%;
+  /* Tailwind v4 `--color-*` tokens must be real CSS colors (not bare HSL channels),
+     otherwise utilities like `border-border` compile to invalid `border-color: 214 32% 91%`. */
+  --color-background: hsl(0 0% 100%);
+  --color-foreground: hsl(222 47% 11%);
   
-  --color-primary: 221 83% 53%;
-  --color-primary-foreground: 210 40% 98%;
+  --color-primary: hsl(221 83% 53%);
+  --color-primary-foreground: hsl(210 40% 98%);
   
-  --color-accent: 330 81% 60%;
-  --color-accent-foreground: 210 40% 98%;
+  --color-accent: hsl(330 81% 60%);
+  --color-accent-foreground: hsl(210 40% 98%);
   
-  --color-secondary: 210 40% 96%;
-  --color-secondary-foreground: 222 47% 11%;
+  --color-secondary: hsl(210 40% 96%);
+  --color-secondary-foreground: hsl(222 47% 11%);
   
-  --color-muted: 210 40% 96%;
-  --color-muted-foreground: 215 16% 47%;
+  --color-muted: hsl(210 40% 96%);
+  --color-muted-foreground: hsl(215 16% 47%);
   
-  --color-border: 214 32% 91%;
-  --color-input: 214 32% 91%;
-  --color-ring: 221 83% 53%;
+  --color-border: hsl(214 32% 91%);
+  --color-input: hsl(214 32% 91%);
+  --color-ring: hsl(221 83% 53%);
 
-  --color-card: 0 0% 100%;
-  --color-card-foreground: 222 47% 11%;
-  --color-card-border: 214 32% 91%;
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(222 47% 11%);
+  --color-card-border: hsl(214 32% 91%);
 
-  --color-popover: 0 0% 100%;
-  --color-popover-foreground: 222 47% 11%;
-  --color-popover-border: 214 32% 91%;
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(222 47% 11%);
+  --color-popover-border: hsl(214 32% 91%);
 
-  --color-destructive: 0 84% 60%;
-  --color-destructive-foreground: 210 40% 98%;
+  --color-destructive: hsl(0 84% 60%);
+  --color-destructive-foreground: hsl(210 40% 98%);
 
   --radius-sm: 0.25rem;
   --radius-md: 0.5rem;

@@ -1,12 +1,6 @@
 import { useState } from "react";
 import { X, Send, CheckCircle } from "lucide-react";
-
-function getApiBase() {
-  const base = import.meta.env.BASE_URL ?? "/";
-  const parts = base.replace(/\/$/, "").split("/");
-  parts.pop();
-  return parts.join("/") + "/api";
-}
+import { getApiBase } from "@/lib/api-base";
 
 interface Props {
   open: boolean;

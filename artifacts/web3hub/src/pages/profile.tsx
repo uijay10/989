@@ -16,13 +16,8 @@ import { isAdmin } from "@/lib/admin";
 import { SlotMachine } from "@/components/slot-machine";
 import { Link } from "wouter";
 import AdminPage from "./admin";
+import { getApiBase } from "@/lib/api-base";
 
-function getApiBase() {
-  const base = import.meta.env.BASE_URL ?? "/";
-  const parts = base.replace(/\/$/, "").split("/");
-  parts.pop();
-  return parts.join("/") + "/api";
-}
 const apiBase = getApiBase();
 
 type NavTab =

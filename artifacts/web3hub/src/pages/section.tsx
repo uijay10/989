@@ -8,6 +8,7 @@ import { Search, ExternalLink } from "lucide-react";
 import { generateGradient, truncateAddress } from "@/lib/utils";
 import { RoleBadge } from "@/components/role-badge";
 import { TagBadge } from "@/components/post-card";
+import { getApiBase } from "@/lib/api-base";
 
 
 const SECTION_ICONS: Record<string, string> = {
