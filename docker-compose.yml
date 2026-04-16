@@ -1,0 +1,32 @@
+services:
+  api:
+    image: node:20
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+    command: >
+      sh -lc "corepack enable 2>/dev/null || true;
+              npm -g i pnpm@latest;
+              PORT=${API_PORT:-8080} pnpm --filter @workspace/api-server run dev"
+    environment:
+      - PORT=${API_PORT:-8080}
+    ports:
+      - "${API_PORT:-8080}:${API_PORT:-8080}"
+
+  web:
+    image: node:20
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+    command: >
+      sh -lc "corepack enable 2>/dev/null || true;
+              npm -g i pnpm@latest;
+              PORT=${PORT:-5000} BASE_PATH=${BASE_PATH:-/} pnpm --filter @workspace/web3hub run dev -- --host 0.0.0.0"
+    environment:
+      - PORT=${PORT:-5000}
+      - BASE_PATH=${BASE_PATH:-/}
+    ports:
+      - "${PORT:-5000}:${PORT:-5000}"
+    depends_on:
+      - api
+
