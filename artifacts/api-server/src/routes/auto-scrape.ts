@@ -3,7 +3,8 @@ import { db } from "@workspace/db";
 import { sql } from "drizzle-orm";
 import { requireAdmin, ADMIN_WALLETS } from "../lib/admin-check";
 import { verifyAdminToken } from "../lib/admin-token";
-import { runKeywordScrape, isKeywordScrapeRunning, KEYWORD_GRAB_CONFIG, DEFAULT_KEYWORDS, KeywordScrapeOptions } from "../lib/auto-scraper";
+import { runUnifiedScrape, runKeywordScrape, isKeywordScrapeRunning, KEYWORD_GRAB_CONFIG, DEFAULT_KEYWORDS, SCRAPE_CONFIG } from "../lib/auto-scraper";
+import type { UnifiedScrapeOptions as KeywordScrapeOptions } from "../lib/auto-scraper";
 import { getDailyQuotaStats, areFreeProvidersDailyExhausted } from "../lib/ai-provider";
 
 const router: IRouter = Router();
@@ -24,25 +25,24 @@ function checkScrapeAuth(req: Parameters<Parameters<typeof router.post>[1]>[0], 
   res.status(403).json({ error: "Forbidden: missing scrape key or admin credentials" });
 }
 
-// Trigger a full keyword scrape (all sections)
+// v2.0_migrated_2026: Trigger a unified scrape (DeepSeek mode)
 router.post("/run", checkScrapeAuth, async (req, res) => {
   if (isKeywordScrapeRunning()) {
     res.status(409).json({ error: "Scrape already running" });
     return;
   }
-  runKeywordScrape({
+  runUnifiedScrape({
     paidOnly: true,
-    maxArticlesPerRun: KEYWORD_GRAB_CONFIG.maxArticlesPerRun,
+    maxArticlesPerRun: SCRAPE_CONFIG.maxArticlesPerDeepSeekRun,
   })
-    .then(summary => { console.log("[keyword-scrape] /run done:", summary); })
-    .catch(e => { console.error("[keyword-scrape] /run error:", e); });
+    .then(summary => { console.log("[unified-scrape] /run done:", summary); })
+    .catch(e => { console.error("[unified-scrape] /run error:", e); });
 
-  res.json({ ok: true, message: "Keyword scrape started (mode: deepseek)" });
+  res.json({ ok: true, message: "Unified scrape started (mode: deepseek, dual-publish)" });
 });
 
-// One-time backfill for specific sections with custom time window
-// Body: { plates?: string[], hours?: number, freeOnly?: boolean, maxArticlesPerRun?: number }
-// When plates is omitted, ALL sections are included.
+// Backfill: custom time window, all combined keywords
+// Body: { hours?: number, freeOnly?: boolean, maxArticlesPerRun?: number }
 router.post("/backfill", checkScrapeAuth, async (req, res) => {
   if (isKeywordScrapeRunning()) {
     res.status(409).json({ error: "Scrape already running — try again in a moment" });
@@ -50,51 +50,34 @@ router.post("/backfill", checkScrapeAuth, async (req, res) => {
   }
 
   const body = req.body as Record<string, unknown>;
-  const plates = Array.isArray(body?.plates) ? (body.plates as string[]) : undefined;
   const hoursRaw = Number(body?.hours ?? 240);
   const overrideWindowHours = hoursRaw > 0 ? hoursRaw : 240;
   const freeOnly = body?.freeOnly === true;
   const maxArticlesPerRun = Number(body?.maxArticlesPerRun ?? 500);
 
-  const validPlates = Object.keys(KEYWORD_GRAB_CONFIG.plates);
-
-  // Validate plates when provided
-  if (plates) {
-    const invalidPlates = plates.filter(p => !validPlates.includes(p));
-    if (invalidPlates.length > 0) {
-      res.status(400).json({ error: `Unknown plate names: ${invalidPlates.join(", ")}. Valid names: ${validPlates.join(", ")}` });
-      return;
-    }
-  }
-
-  const targetPlates = plates ?? validPlates; // default: all sections
-
-  const opts: KeywordScrapeOptions = {
-    plates: targetPlates,
+  runUnifiedScrape({
     overrideWindowHours,
-    freeOnly,              // default false — use DeepSeek for big backfills
+    freeOnly,
+    paidOnly: !freeOnly,
     maxArticlesPerRun,
-    ignoreDailyLimit: true, // backfill always bypasses daily cap
-  };
-
-  runKeywordScrape(opts)
-    .then(summary => { console.log("[keyword-scrape] /backfill done:", summary); })
-    .catch(e => { console.error("[keyword-scrape] /backfill error:", e); });
+    ignoreDailyLimit: true,
+  })
+    .then(summary => { console.log("[unified-scrape] /backfill done:", summary); })
+    .catch(e => { console.error("[unified-scrape] /backfill error:", e); });
 
   res.json({
     ok: true,
-    message: `Backfill started for ${targetPlates.length} sections over last ${overrideWindowHours}h`,
-    plates: targetPlates,
+    message: `Backfill started — all keywords, dual-publish, last ${overrideWindowHours}h`,
     overrideWindowHours,
     freeOnly,
     maxArticlesPerRun,
   });
 });
 
-// Trigger keyword scrape with optional window override
+// Trigger with optional window override (Groq mode)
 router.post("/keyword", checkScrapeAuth, async (req, res) => {
   if (isKeywordScrapeRunning()) {
-    res.status(409).json({ error: "Keyword scrape already running" });
+    res.status(409).json({ error: "Unified scrape already running" });
     return;
   }
 
@@ -102,38 +85,42 @@ router.post("/keyword", checkScrapeAuth, async (req, res) => {
   const hoursRaw = Number(req.query.hours ?? body?.hours ?? 0);
   const overrideHours = hoursRaw > 0 ? hoursRaw : undefined;
 
-  runKeywordScrape({
+  runUnifiedScrape({
     overrideWindowHours: overrideHours,
-    paidOnly: true,
-    maxArticlesPerRun: KEYWORD_GRAB_CONFIG.maxArticlesPerRun,
+    freeOnly: true,
+    maxArticlesPerRun: SCRAPE_CONFIG.maxArticlesPerGroqRun,
   })
-    .then(summary => { console.log("[keyword-scrape] /keyword done:", summary); })
-    .catch(e => { console.error("[keyword-scrape] /keyword error:", e); });
+    .then(summary => { console.log("[unified-scrape] /keyword done:", summary); })
+    .catch(e => { console.error("[unified-scrape] /keyword error:", e); });
 
   res.json({
     ok: true,
-    message: `Keyword scrape started (window: ${overrideHours ? overrideHours + "h override" : "auto"}, mode: deepseek)`,
-    config: KEYWORD_GRAB_CONFIG,
+    message: `Unified scrape started (window: ${overrideHours ? overrideHours + "h" : "auto"}, mode: groq-first, dual-publish)`,
+    config: SCRAPE_CONFIG,
   });
 });
 
 router.get("/keyword/config", requireAdmin, (_req, res) => {
-  res.json({ config: KEYWORD_GRAB_CONFIG });
+  res.json({ config: SCRAPE_CONFIG, version: SCRAPE_CONFIG.VERSION });
 });
 
 router.get("/status", requireAdmin, async (_req, res) => {
   const quotaStats = getDailyQuotaStats();
   const freeExhausted = areFreeProvidersDailyExhausted();
   res.json({
-    keywordScrapeRunning: isKeywordScrapeRunning(),
-    mode: "deepseek",
-    schedule: "DeepSeek only (non-flash) — every 2h. Groq flash (快讯 only) — every 30min. DS flash (快讯) — every 10min.",
+    version: "v2.0_migrated_2026",
+    scrapeRunning: isKeywordScrapeRunning(),
+    mode: "unified-dual-publish",
+    schedule: "Groq every 30min (11 keys, freeOnly) + DeepSeek every 60min (paidOnly, $0.020833/h cap). All articles → section + 7×24快讯.",
+    freeExhausted,
     quotaStats,
     config: {
-      maxArticlesPerRun: KEYWORD_GRAB_CONFIG.maxArticlesPerRun,
-      maxArticlesPerRunDeepSeek: KEYWORD_GRAB_CONFIG.maxArticlesPerRunDeepSeek,
-      maxDailyArticles: KEYWORD_GRAB_CONFIG.maxDailyArticles,
-      normalTimeWindowHours: KEYWORD_GRAB_CONFIG.normalTimeWindowHours,
+      maxArticlesPerGroqRun:     SCRAPE_CONFIG.maxArticlesPerGroqRun,
+      maxArticlesPerDeepSeekRun: SCRAPE_CONFIG.maxArticlesPerDeepSeekRun,
+      maxDailyArticles:          SCRAPE_CONFIG.maxDailyArticles,
+      normalTimeWindowHours:     SCRAPE_CONFIG.normalTimeWindowHours,
+      deepseekHourlyBudget:      "$0.020833",
+      deepseekDailyBudget:       "$0.50",
     },
   });
 });

@@ -318,104 +318,82 @@ async function acquireCronLeader(): Promise<boolean> {
   }
 }
 
+// ── v2.0_migrated_2026: Unified cron scheduler ───────────────────────────────
+//
+//  Two independent cycles replacing all old plate-specific scrapers:
+//
+//  [Groq cycle]    Every 30 min (48 runs/day)
+//                  freeOnly=true — 11 Groq keys rotate via ai-provider round-robin
+//                  Each key used ~4-5 times/day (well under 1000/day limit per key)
+//                  Falls back to DeepSeek only if ALL Groq keys daily-exhausted
+//
+//  [DeepSeek cycle] Every 60 min (24 runs/day)
+//                  paidOnly=true — uses DeepSeek exclusively
+//                  Hourly budget cap: $0.50/24 = ~$0.020833/hour
+//                  Skips run automatically when hourly cap is reached
+//
+//  Both cycles use ALL combined keywords → AI classify →
+//  dual-publish to matched section(s) + 7×24快讯
+//
+//  DB leader lock ensures only ONE server instance runs the cron.
+//
 if (process.env.NODE_ENV !== "test" && process.env.DISABLE_SCRAPE_CRON !== "true") {
-  acquireCronLeader().then(isLeader => { if (!isLeader) return;
-  const MAIN_INTERVAL_MS = 2 * 60 * 60 * 1000;  // 2h
+  acquireCronLeader().then(isLeader => {
+    if (!isLeader) return;
 
-  // ── Main cron: all non-快讯 plates, DeepSeek only ────────────────────────────
-  // 快讯 is handled exclusively by the dedicated Groq + DeepSeek flash scrapers below.
-  // Groq is reserved solely for 快讯 flash (freeOnly). It never touches other plates.
-  const NON_FLASH_PLATES = [
-    "IDO/Launchpad", "融资公告", "活动奖励", "政策监管",
-    "测试网", "节点招募", "招聘", "开发者漏洞奖金", "捐赠/赞助",
-  ];
+    const GROQ_INTERVAL_MS = 30 * 60 * 1000;   // 30 min
+    const DS_INTERVAL_MS   = 60 * 60 * 1000;   // 60 min
 
-  const runMain = async () => {
-    const { runKeywordScrape, runAutoScrape, KEYWORD_GRAB_CONFIG } = await import("./lib/auto-scraper");
-    console.log("[cron] Main run (DeepSeek only) — all plates except 快讯");
-    try {
-      const rssResult = await runAutoScrape("high", { paidOnly: true })
-        .catch(e => { console.error("[cron] RSS run error:", e); return null; });
-      if (rssResult) console.log("[cron] RSS run done:", rssResult);
+    let groqRunCount = 0;
 
-      const keywordResult = await runKeywordScrape({
-        paidOnly: true,
-        maxArticlesPerRun: KEYWORD_GRAB_CONFIG.maxArticlesPerRun,
-        plates: NON_FLASH_PLATES,   // 明确排除 快讯，避免与专属调度重叠
-      }).catch(e => { console.error("[cron] Keyword run error:", e); return null; });
-      if (keywordResult) console.log("[cron] Keyword run done:", keywordResult);
-    } catch (e) {
-      console.error("[cron] Main run error:", e);
-    }
-    setTimeout(runMain, MAIN_INTERVAL_MS);
-    console.log("[cron] Next main scrape in 2h");
-  };
+    // ── Groq cycle (every 30 min, freeOnly) ─────────────────────────────────
+    const runGroqCycle = async () => {
+      const { runUnifiedScrape, SCRAPE_CONFIG } = await import("./lib/auto-scraper");
+      groqRunCount++;
+      console.log(`[cron:groq] Run #${groqRunCount} — freeOnly, all keywords, dual-publish`);
+      try {
+        const result = await runUnifiedScrape({
+          freeOnly:          true,
+          maxArticlesPerRun: SCRAPE_CONFIG.maxArticlesPerGroqRun,
+        });
+        console.log(`[cron:groq] Done — saved: ${result.totalItemsSaved}, found: ${result.totalItemsFound}`);
+      } catch (e) {
+        console.error("[cron:groq] Error:", e);
+      }
+      setTimeout(runGroqCycle, GROQ_INTERVAL_MS);
+    };
 
-  // Start 5 s after boot (grace period for DB init)
-  setTimeout(runMain, 5000);
-  console.log("[cron] Main 2h scheduler started (DeepSeek only — Groq reserved for 快讯 flash only)");
+    // ── DeepSeek cycle (every 60 min, paidOnly, hourly budget $0.020833) ────
+    const runDeepSeekCycle = async () => {
+      const { runUnifiedScrape, SCRAPE_CONFIG } = await import("./lib/auto-scraper");
+      console.log("[cron:deepseek] Run — paidOnly, all keywords, dual-publish, hourly budget cap");
+      try {
+        const result = await runUnifiedScrape({
+          paidOnly:          true,
+          maxArticlesPerRun: SCRAPE_CONFIG.maxArticlesPerDeepSeekRun,
+        });
+        console.log(`[cron:deepseek] Done — saved: ${result.totalItemsSaved}, found: ${result.totalItemsFound}`);
+      } catch (e) {
+        console.error("[cron:deepseek] Error:", e);
+      }
+      setTimeout(runDeepSeekCycle, DS_INTERVAL_MS);
+    };
 
-  // ── Flash cron: 快讯 plate — Groq & DeepSeek run INDEPENDENTLY in parallel ──
-  //
-  //  Groq flash  (every 30min — 48 runs/day, 11 keys round-robin)
-  //    Keys 0-10 rotate in sequence; key index = runCount % 11
-  //    (each key used ~4-5 times/day; well within 1000 req/day limit)
-  //    Look-back: 35 min (30min interval + 5-min Google News latency buffer)
-  //
-  //  DeepSeek flash  (every 10 min — 144 runs/day, paidOnly)
-  //    Runs independently, does NOT wait for Groq budget
-  //    Look-back: 45 min (wider window to catch articles missed in narrow 15min gaps)
-  //    Budget counts toward shared $0.50/day cap with main cron
-  //
-  const GROQ_FLASH_INTERVAL_MS = 30 * 60 * 1000;  // 30min
-  const DS_FLASH_INTERVAL_MS   = 10 * 60 * 1000;  // 10min
+    // Groq: start 5 s after boot (allow DB init to complete)
+    setTimeout(runGroqCycle, 5 * 1000);
+    // DeepSeek: start 90 s after boot (offset to avoid simultaneous first run)
+    setTimeout(runDeepSeekCycle, 90 * 1000);
 
-  let groqFlashRunCount = 0;
-
-  const runGroqFlash = async () => {
-    const { runKeywordScrape } = await import("./lib/auto-scraper");
-    groqFlashRunCount++;
-    // Key selection (groq → groq1 → … → groq11) is handled automatically by ai-provider round-robin.
-    console.log(`[cron:flash-groq] Run #${groqFlashRunCount} (freeOnly, 快讯, 35min window)`);
-    try {
-      await runKeywordScrape({
-        freeOnly:            true,
-        maxArticlesPerRun:   10,
-        plates:              ["快讯"],
-        overrideWindowHours: 35 / 60,   // 35-min look-back (30min interval + 5min buffer)
-      });
-    } catch (e) {
-      console.error("[cron:flash-groq] Error:", e);
-    }
-    setTimeout(runGroqFlash, GROQ_FLASH_INTERVAL_MS);
-  };
-
-  const runDeepSeekFlash = async () => {
-    const { runKeywordScrape } = await import("./lib/auto-scraper");
-    console.log("[cron:flash-ds] DeepSeek flash run (paidOnly, 快讯)");
-    try {
-      await runKeywordScrape({
-        paidOnly:            true,
-        maxArticlesPerRun:   10,
-        plates:              ["快讯"],
-        overrideWindowHours: 45 / 60,   // 45-min look-back (wider window; improves hit rate for niche TradFi×Crypto keywords)
-      });
-    } catch (e) {
-      console.error("[cron:flash-ds] Error:", e);
-    }
-    setTimeout(runDeepSeekFlash, DS_FLASH_INTERVAL_MS);
-  };
-
-  // Groq flash: start 4 min after boot
-  setTimeout(runGroqFlash, 4 * 60 * 1000);
-  // DeepSeek flash: start 5 min after boot (slight offset to avoid simultaneous first run)
-  setTimeout(runDeepSeekFlash, 5 * 60 * 1000);
-  console.log("[cron:flash] 快讯 scraper started — Groq every 30min (11 keys, 35min window) + DeepSeek every 10min (45min window, no-anchor, independent)");
+    console.log(
+      "[cron] v2.0_migrated_2026 unified scheduler started — " +
+      "Groq every 30min (11 keys, freeOnly) + DeepSeek every 60min (paidOnly, $0.020833/h cap). " +
+      "All articles dual-published to matched section + 7×24快讯."
+    );
 
   }).catch(e => { console.error("[cron-leader] Unexpected error:", e); });
 
 } else if (process.env.DISABLE_SCRAPE_CRON === "true") {
-  console.log("[cron] DISABLE_SCRAPE_CRON=true — scraper disabled in dev, all free API quota goes to production");
+  console.log("[cron] DISABLE_SCRAPE_CRON=true — scraper disabled, all API quota reserved for production");
 }
 
 // In production, serve the built frontend SPA
