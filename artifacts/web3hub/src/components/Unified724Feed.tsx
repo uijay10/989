@@ -76,6 +76,14 @@ function getTitleColorClass(importance: FeedItem["importance"]): string {
   return "";
 }
 
+function getTitleStyle(importance: FeedItem["importance"]): React.CSSProperties | undefined {
+  const v = (importance ?? "").toString().trim().toLowerCase();
+  // Inline style as the ultimate override when global CSS/link styles win.
+  if (v === "high" || v === "important" || v === "critical" || v === "重要") return { color: "#dc2626" }; // red-600
+  if (v === "medium" || v === "normal" || v === "general" || v === "一般") return { color: "#2563eb" }; // blue-600
+  return undefined;
+}
+
 const Unified724Feed: React.FC = () => {
   const { lang, t } = useLang();
   const SECTION_LABEL = lang === 'zh-CN' ? SECTION_LABEL_ZH : SECTION_LABEL_EN;
@@ -290,13 +298,17 @@ const Unified724Feed: React.FC = () => {
               ))}
               <span className="text-xs text-gray-500">{item.time}</span>
             </div>
-            <h3 className={`text-xl font-semibold leading-tight mb-2 ${getTitleColorClass(item.importance)}`}>
+            <h3
+              className={`text-xl font-semibold leading-tight mb-2 ${getTitleColorClass(item.importance)}`}
+              style={getTitleStyle(item.importance)}
+            >
               {item.link ? (
                 <a
                   href={item.link}
                   target="_blank"
                   rel="noopener noreferrer"
                   className={`hover:underline ${getTitleColorClass(item.importance)}`}
+                  style={getTitleStyle(item.importance)}
                 >
                   {item.title}
                 </a>
