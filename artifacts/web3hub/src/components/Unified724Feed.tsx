@@ -52,12 +52,18 @@ function normalizeText(s: string): string {
 }
 
 function getDedupKey(item: FeedItem): string {
-  // Prefer source URL (the most stable identity across dual-publish)
-  if (item.link && item.link.trim()) return `url:${item.link.trim()}`;
-  // Fallback: title + summary (best-effort)
+  // Primary key：标题 + 摘要文本；URL 只参与域名，避免同一篇新闻因为不同路径而重复
   const title = normalizeText(item.title || "");
   const summary = normalizeText(item.summary || "");
-  return `text:${title}::${summary.slice(0, 240)}`;
+  let host = "";
+  if (item.link && item.link.trim()) {
+    try {
+      host = new URL(item.link.trim()).hostname.toLowerCase();
+    } catch {
+      host = item.link.trim().toLowerCase();
+    }
+  }
+  return `text:${title}::${summary.slice(0, 240)}::${host}`;
 }
 
 type ImportanceLevel = "high" | "medium" | "low";
