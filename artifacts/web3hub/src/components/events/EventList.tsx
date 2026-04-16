@@ -13,6 +13,7 @@ import { useWeb3Auth } from "@/lib/web3";
 import { isAdmin } from "@/lib/admin";
 import { AdminPinModal, PostCard } from "@/components/post-card";
 import { getApiBase } from "@/lib/api-base";
+import { semanticDedupKey } from "@/lib/semantic-title-key";
 
 const SECTION_TO_ZH: Record<string, string> = {
   testnet:   "测试网",
@@ -57,47 +58,8 @@ function getSectionLabel(section: string, lang: string): string {
   return map[section] ?? section;
 }
 
-function normalizeText(s: string): string {
-  return s.trim().toLowerCase().replace(/\s+/g, " ");
-}
-
-function semanticTitleKey(raw: string): string {
-  const t = normalizeText(raw || "")
-    .replace(/[’'"]/g, "")
-    .replace(/[^a-z0-9\u4e00-\u9fff\s-]/g, " ")
-    .replace(/\b(19|20)\d{2}\b/g, " ")
-    .replace(/\b\d+(?:\.\d+)?\b/g, " ");
-
-  const stop = new Set([
-    "a","an","and","are","as","at","be","by","for","from","has","have","in","into","is","it","its","of","on","or","s","says","to","the","this","that","these","those","with","will","vs","via",
-    "best","top","latest","update","news","revealed","reveals","lead","leads","goes","live","launch","launched","crosses","cross","potential","deadline","act","committee","senate","us","u","u.s",
-    "今日","最新","快讯","速报","公告","消息","更新","曝光","透露","宣布",
-  ]);
-
-  const parts = t.split(/[\s-]+/g).filter(Boolean);
-  const kept: string[] = [];
-  for (const p of parts) {
-    if (p.length <= 2) continue;
-    if (stop.has(p)) continue;
-    if (!kept.includes(p)) kept.push(p);
-    if (kept.length >= 8) break;
-  }
-  return kept.join("-");
-}
-
 function getEventDisplayKey(e: Web3Event): string | null {
-  const sem = semanticTitleKey(e.title || "");
-  if (!sem) return null;
-  let host = "";
-  const rawUrl = e.source_url ?? "";
-  if (rawUrl) {
-    try {
-      host = new URL(rawUrl).hostname.toLowerCase();
-    } catch {
-      host = rawUrl.toLowerCase();
-    }
-  }
-  return `sem:${sem}::${host}`;
+  return semanticDedupKey(e.title ?? "", e.source_url);
 }
 
 const CAT_I18N: Record<string, string> = {
