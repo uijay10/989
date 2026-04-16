@@ -1,0 +1,19 @@
+[project]
+name = "web3-release-tools"
+version = "0.1.0"
+description = "Web3 page crawling and event extraction utilities."
+requires-python = ">=3.11"
+dependencies = [
+  "beautifulsoup4>=4.14.3",
+  "requests>=2.33.1",
+]
+
+[project.optional-dependencies]
+llm = [
+  "groq>=1.1.2",
+  "openai>=1.0.0",
+]
+crawl = [
+  "crawl4ai>=0.4.0",
+]
+
