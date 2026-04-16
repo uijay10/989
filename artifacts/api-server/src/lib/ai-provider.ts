@@ -390,7 +390,7 @@ export function setForcedProvider(name: string | null): void {
  * Call AI with provider fallback.
  *
  * @param freeOnly
- *   true  → Use free/credit providers only (Groq→Cerebras→SambaNova→OpenRouter→Together→Fireworks→Novita).
+ *   true  → Use free providers only (Groq1..Groq11).
  *           - If ALL are on RATE-LIMIT cooldown → skip batch (return null)
  *           - If ALL are DAILY-EXHAUSTED → fall through to DeepSeek
  *   false → Use any available provider in order, DeepSeek as last resort.
