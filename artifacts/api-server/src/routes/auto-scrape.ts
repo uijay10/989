@@ -7,6 +7,7 @@ import { runUnifiedScrape, runKeywordScrape, isKeywordScrapeRunning, KEYWORD_GRA
 import type { UnifiedScrapeOptions as KeywordScrapeOptions } from "../lib/auto-scraper";
 import { getDailyQuotaStats, areFreeProvidersDailyExhausted } from "../lib/ai-provider";
 import { readArticlesBackupFile } from "../lib/articles-backup";
+import { importBackupToDb } from "../lib/import-backup";
 
 const router: IRouter = Router();
 
@@ -101,6 +102,24 @@ router.get("/backup", checkScrapeAuth, (req, res) => {
     });
   } catch (e: unknown) {
     res.status(500).json({ error: String(e) });
+  }
+});
+
+// Import historical articles from articles_backup.json into PostgreSQL.
+// This is a one-time operation to restore legacy content visibility.
+// Auth: SCRAPE_INTERNAL_KEY header/query OR admin credentials.
+router.post("/backup/import", checkScrapeAuth, async (req, res) => {
+  try {
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const maxItems = Number(body.maxItems ?? 50000);
+    const dryRun = body.dryRun === true;
+    const stats = await importBackupToDb({
+      maxItems: Number.isFinite(maxItems) ? maxItems : 50000,
+      dryRun,
+    });
+    res.json({ ok: true, dryRun, stats });
+  } catch (e: unknown) {
+    res.status(500).json({ ok: false, error: String(e) });
   }
 });
 
