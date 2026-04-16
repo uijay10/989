@@ -416,6 +416,16 @@ export function isDeepSeekBudgetAvailable(): boolean {
   return deepseekTotalDailyCost < DEEPSEEK_TOTAL_BUDGET;
 }
 
+/**
+ * True when the current UTC hour bucket has remaining DeepSeek budget.
+ * This is used by auto-scraper to avoid starting DeepSeek-only work when
+ * the hourly slice (0.50/24) is already exhausted.
+ */
+export function isDeepSeekHourlyBudgetAvailable(): boolean {
+  // Reuse budget gate which includes hourly + daily checks.
+  return checkDeepSeekBudget("hourly-budget-check");
+}
+
 /** Returns today's DeepSeek call count (resets at UTC midnight) */
 export function getDeepseekCallsToday(): number {
   const ds = providers.find(p => p.name === "deepseek");
