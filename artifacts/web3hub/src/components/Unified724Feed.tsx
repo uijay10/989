@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useLang } from '@/lib/i18n';
 import { getApiBase } from '@/lib/api-base';
+import { semanticDedupKey } from '@/lib/semantic-title-key';
 
 interface FeedItem {
   id: string;
@@ -47,22 +48,9 @@ const SECTION_LABEL_EN: Record<string, string> = {
 
 const POLL_INTERVAL_MS = 60 * 1000; // 60秒轮询一次
 
-function normalizeText(s: string): string {
-  return s.trim().toLowerCase().replace(/\s+/g, " ");
-}
-
 function getDedupKey(item: FeedItem): string {
-  // 更激进：按「标题 + 域名」合并，同一网站上标题完全相同的视为同一条快讯
-  const title = normalizeText(item.title || "");
-  let host = "";
-  if (item.link && item.link.trim()) {
-    try {
-      host = new URL(item.link.trim()).hostname.toLowerCase();
-    } catch {
-      host = item.link.trim().toLowerCase();
-    }
-  }
-  return `text:${title}::${host}`;
+  const k = semanticDedupKey(item.title || "", item.link);
+  return k ?? `id:${item.id}`;
 }
 
 type ImportanceLevel = "high" | "medium" | "low";

@@ -13,6 +13,7 @@ import { PriceTicker } from "@/components/PriceTicker";
 import { formatDistanceToNow } from "date-fns";
 import { enUS, zhCN } from "date-fns/locale";
 import { getApiBase } from "@/lib/api-base";
+import { semanticTitleKey } from "@/lib/semantic-title-key";
 
 const DATE_LOCALES: Record<string, Locale> = {
   "en": enUS, "zh-CN": zhCN,
@@ -219,13 +220,25 @@ function ImportantNews({ lang }: { lang: string }) {
   const { data, isLoading } = useQuery({
     queryKey: ["/api/posts", "important-news-high"],
     queryFn: async () => {
-      const res = await fetch(`${getApiBase()}/posts?limit=12&page=1&importance=high&authorType=ai`);
+      const res = await fetch(`${getApiBase()}/posts?limit=36&page=1&importance=high&authorType=ai`);
       return res.json() as Promise<{ posts: any[] }>;
     },
     staleTime: 60_000,
     refetchInterval: 120_000,
   });
-  const posts = (data?.posts ?? []).slice(0, 12);
+  const raw = data?.posts ?? [];
+  const seen = new Set<string>();
+  const posts: any[] = [];
+  for (const p of raw) {
+    const title = String((p as any).title ?? "").trim();
+    // 重要动态：只按「标题语义指纹」折叠，不按域名（各站转载同标题仍只显示一条）
+    const sem = semanticTitleKey(title);
+    const key = sem ? `inews:${sem}` : `id:${(p as any).id}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    posts.push(p);
+    if (posts.length >= 12) break;
+  }
 
   return (
     <div>

@@ -1,0 +1,10 @@
+---
+description: Push only to origin/main for this repo; no feature-branch PR workflow unless user explicitly asks.
+alwaysApply: true
+---
+
+# Git：只推主分支
+
+- 远程仓库为 **`https://github.com/uijay10/989`**（`origin`）。提交后 **`git push origin main`** 直接更新默认分支。
+- **不要**默认新建 `color-fix` 等功能分支再让用户去 GitHub 点 Merge；除非用户**明确**要求用分支或 PR。
+- 若当前在其它分支，合并进 `main` 再推 `main`，或直接在 `main` 上提交并推送。

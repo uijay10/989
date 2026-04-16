@@ -13,6 +13,7 @@ import { useWeb3Auth } from "@/lib/web3";
 import { isAdmin } from "@/lib/admin";
 import { AdminPinModal, PostCard } from "@/components/post-card";
 import { getApiBase } from "@/lib/api-base";
+import { semanticDedupKey } from "@/lib/semantic-title-key";
 
 const SECTION_TO_ZH: Record<string, string> = {
   testnet:   "测试网",
@@ -57,23 +58,8 @@ function getSectionLabel(section: string, lang: string): string {
   return map[section] ?? section;
 }
 
-function normalizeText(s: string): string {
-  return s.trim().toLowerCase().replace(/\s+/g, " ");
-}
-
 function getEventDisplayKey(e: Web3Event): string | null {
-  const title = normalizeText(e.title || "");
-  if (!title) return null;
-  let host = "";
-  const rawUrl = e.source_url ?? "";
-  if (rawUrl) {
-    try {
-      host = new URL(rawUrl).hostname.toLowerCase();
-    } catch {
-      host = rawUrl.toLowerCase();
-    }
-  }
-  return `title:${title}::${host}`;
+  return semanticDedupKey(e.title ?? "", e.source_url);
 }
 
 const CAT_I18N: Record<string, string> = {
@@ -630,7 +616,7 @@ export function EventList({ sectionSlug, sectionName }: { sectionSlug?: string; 
     primarySorted = [...base].sort((a, b) => getTime(b) - getTime(a));
   }
 
-  // 显示层再做一层「标题 + 域名」去重，折叠导入历史在多个板块重复的文章
+  // 显示层：按「标题语义指纹 + 域名」去重（相似标题、同站多篇软文、多板块重复会折叠）
   const seenDisplayKeys = new Set<string>();
   const filtered: Web3Event[] = [];
   for (const e of primarySorted) {
