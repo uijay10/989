@@ -47,12 +47,14 @@ function incrementGroqSlot(): void {
 // 快讯 DeepSeek（Groq窗口耗尽后）：~133次/天 × 10篇 × $0.0026/次 ≈ $0.35/天
 // 其他9个板块（主 cron）：12次/天 × 50篇 × $0.013/次 ≈ $0.16/天
 // 理论峰值 ≈ $0.51/天；实际因去重通常只有 $0.10–0.25/天
-// 到达上限后停止调用，等到下一个“小时桶”或 24h 窗口滚动后继续
+// 到达 24h 总上限后停止调用，等到窗口滚动后继续。小时桶仅用于统计/日志，默认不硬拦截（见 DEEPSEEK_STRICT_HOURLY_CAP）。
 // 花费持久化到数据库（ai_cost_window / ai_cost_hourly_bucket），重启后不归零
 const DEEPSEEK_TOTAL_BUDGET = 0.50;   // 每日总上限 $0.50
 const DEEPSEEK_HOURLY_BUDGET = DEEPSEEK_TOTAL_BUDGET / 24; // 每小时均分预算（以 anchor 为起点的小时桶）
 const DEEPSEEK_WINDOW_MS = 24 * 60 * 60 * 1000;
 const DEEPSEEK_HOUR_MS = 60 * 60 * 1000;
+/** `true` = 达到本小时 slice 后暂停 DeepSeek（旧行为）。默认 `false`：只受 24h 总预算限制，避免长时间完全无文。 */
+const DEEPSEEK_STRICT_HOURLY_CAP = process.env.DEEPSEEK_STRICT_HOURLY_CAP === "true";
 
 let deepseekTotalDailyCost = 0;
 let deepseekBudgetInitialized = false;
@@ -303,9 +305,15 @@ function checkDeepSeekBudget(_category: string): boolean {
     persistDeepSeekHourlyCost();
     console.log(`[DeepSeek Budget] 小时桶切换：idx=${deepseekHourIndex}（anchor=${formatIso(deepseekAnchorMs)}），本小时预算 $${DEEPSEEK_HOURLY_BUDGET.toFixed(4)}`);
   }
-  if (deepseekHourlyCost >= DEEPSEEK_HOURLY_BUDGET) {
+  if (DEEPSEEK_STRICT_HOURLY_CAP && deepseekHourlyCost >= DEEPSEEK_HOURLY_BUDGET) {
     console.warn(`[DeepSeek Budget] 本小时预算已达 $${DEEPSEEK_HOURLY_BUDGET.toFixed(4)}（已用 $${deepseekHourlyCost.toFixed(4)}），等待下一个小时桶（anchor=${formatIso(deepseekAnchorMs)}）`);
     return false;
+  }
+  if (!DEEPSEEK_STRICT_HOURLY_CAP && deepseekHourlyCost >= DEEPSEEK_HOURLY_BUDGET) {
+    console.warn(
+      `[DeepSeek Budget] 本小时 slice 已超过均分额度（已用 $${deepseekHourlyCost.toFixed(4)} / $${DEEPSEEK_HOURLY_BUDGET.toFixed(4)}），` +
+      `DEEPSEEK_STRICT_HOURLY_CAP=false — 仍允许调用，直至 24h 总预算 $${DEEPSEEK_TOTAL_BUDGET}`
+    );
   }
   if (deepseekTotalDailyCost >= DEEPSEEK_TOTAL_BUDGET) {
     console.warn(`[DeepSeek Budget] 24h 总预算已达 $${DEEPSEEK_TOTAL_BUDGET}（已用 $${deepseekTotalDailyCost.toFixed(4)}，anchor=${formatIso(deepseekAnchorMs)}）`);
@@ -481,7 +489,6 @@ export function isFreeProviderAvailable(): boolean {
 /**
  * True when ALL configured free providers have exhausted their DAILY quota
  * (not just a temporary rate-limit cooldown).
- * This is the signal to activate DeepSeek fallback.
  */
 export function areFreeProvidersDailyExhausted(): boolean {
   const free = providers.filter(p => p.name !== "deepseek");
@@ -659,39 +666,15 @@ export async function callAiWithFallback(
     // Reserve Groq exclusively for flash scraper — other scrapers use DeepSeek only
     available = available.filter(p => p.name === "deepseek");
   } else if (freeOnly) {
-    // freeOnly=true is used by: (a) Groq flash keyword scraper, (b) main RSS cron.
-    // The Groq flash is gate-kept by hasUsableProvider() in auto-scraper.ts, which already
-    // ensures this function is only called when a free Groq key is actually available.
-    // The main RSS cron needs the DeepSeek fallback when all Groq keys are daily-exhausted.
-    const freeProviders = providers.filter(p => p.name !== "deepseek");
-    const freeExhausted = freeProviders.length > 0 && freeProviders.every(isDailyExhausted);
-    const freeOnRateLimit = freeProviders.every(isRateLimited);
-    const freeAvailable = freeProviders.filter(p => !isRateLimited(p) && !isDailyExhausted(p));
-
-    if (freeExhausted) {
-      // All Groq keys daily-exhausted → DeepSeek fallback (main RSS cron needs this)
-      console.log("[ai-provider] Free providers daily-exhausted → using DeepSeek fallback");
-      // available already includes DeepSeek
-    } else if (freeOnRateLimit || freeAvailable.length === 0) {
-      // No Groq key is callable right now (429 cooldowns, transient errors, etc.).
-      // Previously we returned null here — that makes the scraper look "dead" for long stretches
-      // even though DeepSeek is configured. Fall back to DeepSeek when budget allows.
-      const ds = providers.find(p => p.name === "deepseek");
-      const dsUsable =
-        !!ds &&
-        !isRateLimited(ds) &&
-        !isDailyExhausted(ds) &&
-        checkDeepSeekBudget(category);
-      if (dsUsable) {
-        available = [ds];
-        console.log("[ai-provider] No usable Groq right now (cooldown/exhausted mix) → DeepSeek fallback");
-      } else {
-        console.log("[ai-provider] Free providers unavailable and DeepSeek not usable — skipping batch");
-        return null;
-      }
-    } else {
-      available = freeAvailable;
+    // freeOnly: Groq cron only — never call DeepSeek here (paid DeepSeek runs on its own schedule).
+    const freeAvailable = providers
+      .filter(p => p.name !== "deepseek")
+      .filter(p => !isRateLimited(p) && !isDailyExhausted(p));
+    if (freeAvailable.length === 0) {
+      console.log("[ai-provider] No usable free Groq provider — skipping batch (freeOnly)");
+      return null;
     }
+    available = freeAvailable;
   }
 
   if (available.length === 0) {
@@ -700,10 +683,10 @@ export async function callAiWithFallback(
   }
 
   for (const provider of available) {
-    // Groq 6-hour slot check — skip if current slot is full, fall through to DeepSeek
+    // Groq 6-hour slot check — skip if current slot is full, try next Groq key (freeOnly has no DeepSeek).
     if (provider.name === "groq" && isGroqSlotFull()) {
       const slotUsed = groqSlotCounts.get(getGroqSlotStart()) ?? 0;
-      console.log(`[ai-provider] Groq 当前6小时窗口已达上限 (${slotUsed}/${GROQ_MAX_PER_6H})，切换到 DeepSeek`);
+      console.log(`[ai-provider] Groq 当前6小时窗口已达上限 (${slotUsed}/${GROQ_MAX_PER_6H})，跳过本 key`);
       continue;
     }
     // DeepSeek 预算检查

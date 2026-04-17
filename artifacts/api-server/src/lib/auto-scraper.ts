@@ -13,7 +13,6 @@ import {
   logProviderStatus,
   isFreeProviderAvailable,
   getAvailableProviders,
-  areFreeProvidersDailyExhausted,
   isDeepSeekBudgetAvailable,
   isDeepSeekHourlyBudgetAvailable,
 } from "./ai-provider";
@@ -703,12 +702,8 @@ function hasUsableProvider(paidOnly: boolean, freeOnly: boolean): boolean {
            isDeepSeekHourlyBudgetAvailable();
   }
   if (freeOnly) {
-    if (isFreeProviderAvailable()) return true;
-    // If no free Groq provider is configured/available, allow DeepSeek to take over
-    // (still subject to the independent $0.50/day and hourly budget).
-    return getAvailableProviders().some(p => p.name === "deepseek") &&
-           isDeepSeekBudgetAvailable() &&
-           isDeepSeekHourlyBudgetAvailable();
+    // Groq cron only — DeepSeek is never used here (paid DeepSeek has its own cron).
+    return isFreeProviderAvailable();
   }
   return getAvailableProviders().length > 0;
 }

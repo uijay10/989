@@ -320,9 +320,9 @@ async function acquireCronLeader(): Promise<boolean> {
 //                   Uses the system keyword list (DB scrape_keywords → DEFAULT_KEYWORDS).
 //
 //  [DeepSeek cycle] Every 60 min (24 runs/day)
-//                   paidOnly=true — uses DeepSeek exclusively
-//                   Hourly budget cap: $0.50/24 = ~$0.020833/hour
-//                   Skips run automatically when hourly cap is reached
+//                   paidOnly=true — uses DeepSeek exclusively (never mixed into Groq cron)
+//                   Default: only the rolling $0.50 / 24h total can block calls; hourly slice is logged.
+//                   Set DEEPSEEK_STRICT_HOURLY_CAP=true to restore per-hour hard cap (~$0.020833/h).
 //
 //  Both cycles use ALL combined keywords → AI classify →
 //  dual-publish to matched section(s) + 7×24快讯
