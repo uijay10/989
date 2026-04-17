@@ -25,7 +25,10 @@ const AI_SYSTEM_WALLET = "ai-system";
 const AI_SYSTEM_NAME   = "AI精选";
 const SIXTY_DAYS_MS    = 60 * 24 * 60 * 60 * 1000;
 const BATCH_SIZE       = 5;
-const MAX_RETRIES      = 3;
+const _aiRetriesRaw = Number(process.env.SCRAPE_AI_BATCH_RETRIES ?? "5");
+const MAX_RETRIES = Number.isFinite(_aiRetriesRaw)
+  ? Math.min(8, Math.max(3, Math.round(_aiRetriesRaw)))
+  : 5;
 
 // ── Section max-age caps (days) ────────────────────────────────────────────────
 const SECTION_EVENT_MAX_AGE_DAYS: Record<string, number> = {

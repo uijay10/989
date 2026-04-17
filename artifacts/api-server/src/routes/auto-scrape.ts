@@ -157,7 +157,13 @@ router.get("/status", checkScrapeAuth, async (_req, res) => {
     version: "v2.0_migrated_2026",
     scrapeRunning: isKeywordScrapeRunning(),
     mode: "unified-dual-publish",
-    schedule: "Groq every 30min (11 keys, freeOnly) + DeepSeek every 60min (paidOnly, $0.020833/h cap). All articles → section + 7×24快讯.",
+    schedule: (() => {
+      const g = Number(process.env.SCRAPE_GROQ_INTERVAL_MIN);
+      const d = Number(process.env.SCRAPE_DEEPSEEK_INTERVAL_MIN);
+      const gm = Number.isFinite(g) && g > 0 ? Math.round(g) : 30;
+      const dm = Number.isFinite(d) && d > 0 ? Math.round(d) : 60;
+      return `Groq every ${gm}min wall-clock (freeOnly, GROQ1..GROQ50) + DeepSeek every ${dm}min wall-clock (paidOnly, $0.020833/h cap). All articles → section + 7×24快讯.`;
+    })(),
     freeExhausted,
     quotaStats,
     config: {

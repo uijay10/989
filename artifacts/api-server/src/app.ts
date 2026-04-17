@@ -333,14 +333,29 @@ if (process.env.NODE_ENV !== "test" && process.env.DISABLE_SCRAPE_CRON !== "true
   acquireCronLeader().then(isLeader => {
     if (!isLeader) return;
 
-    const GROQ_INTERVAL_MS = 30 * 60 * 1000;   // 30 min
-    const DS_INTERVAL_MS   = 60 * 60 * 1000;   // 60 min
+    const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
+    const parseMinEnv = (key: string, def: number, lo: number, hi: number): number => {
+      const v = Number(process.env[key]);
+      if (!Number.isFinite(v) || v <= 0) return def;
+      return clamp(Math.round(v), lo, hi);
+    };
+
+    // Wall-clock intervals (minutes). Env overrides for tuning without code changes.
+    const groqIntervalMin = parseMinEnv("SCRAPE_GROQ_INTERVAL_MIN", 30, 5, 180);
+    const dsIntervalMin   = parseMinEnv("SCRAPE_DEEPSEEK_INTERVAL_MIN", 60, 10, 360);
+    const GROQ_INTERVAL_MS = groqIntervalMin * 60 * 1000;
+    const DS_INTERVAL_MS   = dsIntervalMin * 60 * 1000;
 
     let groqRunCount = 0;
+    let dsRunCount = 0;
 
-    // ── Groq cycle (every 30 min, freeOnly) ─────────────────────────────────
-    const runGroqCycle = async () => {
-      const { runUnifiedScrape, SCRAPE_CONFIG } = await import("./lib/auto-scraper");
+    // ── Groq cycle (wall-clock setInterval; skip if a scrape is still running) ─
+    const tickGroq = async () => {
+      const { runUnifiedScrape, SCRAPE_CONFIG, isKeywordScrapeRunning } = await import("./lib/auto-scraper");
+      if (isKeywordScrapeRunning()) {
+        console.warn("[cron:groq] Skipped tick — previous scrape still running");
+        return;
+      }
       groqRunCount++;
       console.log(`[cron:groq] Run #${groqRunCount} — freeOnly, all keywords, dual-publish`);
       try {
@@ -352,13 +367,17 @@ if (process.env.NODE_ENV !== "test" && process.env.DISABLE_SCRAPE_CRON !== "true
       } catch (e) {
         console.error("[cron:groq] Error:", e);
       }
-      setTimeout(runGroqCycle, GROQ_INTERVAL_MS);
     };
 
-    // ── DeepSeek cycle (every 60 min, paidOnly, hourly budget $0.020833) ────
-    const runDeepSeekCycle = async () => {
-      const { runUnifiedScrape, SCRAPE_CONFIG } = await import("./lib/auto-scraper");
-      console.log("[cron:deepseek] Run — paidOnly, all keywords, dual-publish, hourly budget cap");
+    // ── DeepSeek cycle (wall-clock setInterval; skip if a scrape is still running) ─
+    const tickDeepSeek = async () => {
+      const { runUnifiedScrape, SCRAPE_CONFIG, isKeywordScrapeRunning } = await import("./lib/auto-scraper");
+      if (isKeywordScrapeRunning()) {
+        console.warn("[cron:deepseek] Skipped tick — previous scrape still running");
+        return;
+      }
+      dsRunCount++;
+      console.log(`[cron:deepseek] Run #${dsRunCount} — paidOnly, all keywords, dual-publish, hourly budget cap`);
       try {
         const result = await runUnifiedScrape({
           paidOnly:          true,
@@ -368,17 +387,18 @@ if (process.env.NODE_ENV !== "test" && process.env.DISABLE_SCRAPE_CRON !== "true
       } catch (e) {
         console.error("[cron:deepseek] Error:", e);
       }
-      setTimeout(runDeepSeekCycle, DS_INTERVAL_MS);
     };
 
-    // Groq: start 5 s after boot (allow DB init to complete)
-    setTimeout(runGroqCycle, 5 * 1000);
-    // DeepSeek: start 90 s after boot (offset to avoid simultaneous first run)
-    setTimeout(runDeepSeekCycle, 90 * 1000);
+    // First run after boot, then fixed wall-clock cadence (avoids "interval + run duration" drift).
+    setTimeout(() => { void tickGroq(); }, 5 * 1000);
+    setInterval(() => { void tickGroq(); }, GROQ_INTERVAL_MS);
+
+    setTimeout(() => { void tickDeepSeek(); }, 90 * 1000);
+    setInterval(() => { void tickDeepSeek(); }, DS_INTERVAL_MS);
 
     console.log(
       "[cron] v2.0_migrated_2026 unified scheduler started — " +
-      "Groq every 30min (11 keys, freeOnly) + DeepSeek every 60min (paidOnly, $0.020833/h cap). " +
+      `Groq every ${groqIntervalMin}min wall-clock (freeOnly) + DeepSeek every ${dsIntervalMin}min wall-clock (paidOnly, $0.020833/h cap). ` +
       "Keyword source: DB scrape_keywords → DEFAULT_KEYWORDS. " +
       "All articles dual-published to matched section + 7×24快讯."
     );
