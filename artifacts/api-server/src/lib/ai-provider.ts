@@ -179,6 +179,7 @@ export async function initDeepSeekDailyBudget(): Promise<void> {
         PRIMARY KEY (date, provider_name)
       )
     `);
+    const today = todayUtc();
     const exhaustedRows = await db.execute(sql`
       SELECT provider_name FROM provider_daily_exhausted WHERE date = ${today}
     `);
@@ -365,6 +366,14 @@ function nextMidnightUtc(): number {
   return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1);
 }
 
+function todayUtc(): string {
+  const now = new Date();
+  const y = now.getUTCFullYear();
+  const m = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(now.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 function makeProvider(
   name: string,
   baseURL: string,
@@ -373,7 +382,7 @@ function makeProvider(
   maxTokens: number,
 ): AiProvider | null {
   if (!apiKey) return null;
-  const limit = DAILY_LIMITS[name] ?? 0;
+  const limit = (DAILY_LIMITS[name] ?? (/^groq\d+$/i.test(name) ? 1000 : 0));
   return {
     name,
     client: new OpenAI({ baseURL, apiKey }),
@@ -396,18 +405,18 @@ function buildProviderList(): AiProvider[] {
       "llama-3.3-70b-versatile",
       4096,
     ),
-    // ── Groq 备用 Key 轮换 (GROQ1–GROQ11) ──────────────────────────────
-    makeProvider("groq1",  "https://api.groq.com/openai/v1", process.env.GROQ1,  "llama-3.3-70b-versatile", 4096),
-    makeProvider("groq2",  "https://api.groq.com/openai/v1", process.env.GROQ2,  "llama-3.3-70b-versatile", 4096),
-    makeProvider("groq3",  "https://api.groq.com/openai/v1", process.env.GROQ3,  "llama-3.3-70b-versatile", 4096),
-    makeProvider("groq4",  "https://api.groq.com/openai/v1", process.env.GROQ4,  "llama-3.3-70b-versatile", 4096),
-    makeProvider("groq5",  "https://api.groq.com/openai/v1", process.env.GROQ5,  "llama-3.3-70b-versatile", 4096),
-    makeProvider("groq6",  "https://api.groq.com/openai/v1", process.env.GROQ6,  "llama-3.3-70b-versatile", 4096),
-    makeProvider("groq7",  "https://api.groq.com/openai/v1", process.env.GROQ7,  "llama-3.3-70b-versatile", 4096),
-    makeProvider("groq8",  "https://api.groq.com/openai/v1", process.env.GROQ8,  "llama-3.3-70b-versatile", 4096),
-    makeProvider("groq9",  "https://api.groq.com/openai/v1", process.env.GROQ9,  "llama-3.3-70b-versatile", 4096),
-    makeProvider("groq10", "https://api.groq.com/openai/v1", process.env.GROQ10, "llama-3.3-70b-versatile", 4096),
-    makeProvider("groq11", "https://api.groq.com/openai/v1", process.env.GROQ11, "llama-3.3-70b-versatile", 4096),
+    // ── Groq 备用 Key 轮换：自动读取 GROQ1..GROQ50 ───────────────────────
+    // 这样你后续加 GROQ12/GROQ13/... 不需要再改代码。
+    ...Array.from({ length: 50 }, (_, idx) => {
+      const i = idx + 1;
+      return makeProvider(
+        `groq${i}`,
+        "https://api.groq.com/openai/v1",
+        process.env[`GROQ${i}`],
+        "llama-3.3-70b-versatile",
+        4096,
+      );
+    }),
     // ── 兜底：Groq 额度用完后自动接管 ────────────────────────────────────
     makeProvider(
       "deepseek",

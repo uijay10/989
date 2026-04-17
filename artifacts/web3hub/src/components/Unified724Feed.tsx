@@ -285,34 +285,7 @@ const Unified724Feed: React.FC = () => {
 
   return (
     <div className="w-full">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold">{t('nav_724news')}</h2>
-        {displayTotal > 0 && (
-          <div className="text-sm text-gray-500">
-            {lang === 'zh-CN'
-              ? <>{'\u5171'} <span className="font-semibold text-black dark:text-white">{displayTotal}</span> {'\u6761'}</>
-              : <><span className="font-semibold text-black dark:text-white">{displayTotal}</span> articles</>
-            }
-          </div>
-        )}
-      </div>
-
-      {/* Tab 切换 */}
-      <div className="flex flex-wrap gap-2 mb-8 border-b pb-4">
-        {['all', '724news', 'ido', 'funding', 'quest', 'policy', 'testnet', 'nodes', 'recruiting', 'devbounty', 'grant'].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all ${
-              activeTab === tab
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300'
-            }`}
-          >
-            {tab === 'all' ? (lang === 'zh-CN' ? '全部' : 'All') : (SECTION_LABEL[tab] ?? tab)}
-          </button>
-        ))}
-      </div>
+      {/* Header / tabs are handled by the global navbar. Keep this feed minimal. */}
 
       {/* 新文章提示条 */}
       {newCount > 0 && (
