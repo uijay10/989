@@ -339,9 +339,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
               {/* All events shortcut — always visible, navigates to home */}
               <button
                 onClick={() => {
-                  // 7×24 should show the dedicated 724news section feed (not the home "all AI posts" view).
+                  // 7×24 should route to HOME (single feed view), not a separate 724 page.
                   setActiveCategory("全部");
-                  navigate("/section/724news");
+                  navigate("/");
                 }}
                 className={cn(
                   "relative px-3 py-1 rounded-full text-[14px] font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer",
