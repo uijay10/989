@@ -673,9 +673,22 @@ export async function callAiWithFallback(
       console.log("[ai-provider] Free providers daily-exhausted → using DeepSeek fallback");
       // available already includes DeepSeek
     } else if (freeOnRateLimit || freeAvailable.length === 0) {
-      // Temporary rate-limit → skip; next cycle will retry
-      console.log("[ai-provider] Free providers on rate-limit cooldown — skipping batch");
-      return null;
+      // No Groq key is callable right now (429 cooldowns, transient errors, etc.).
+      // Previously we returned null here — that makes the scraper look "dead" for long stretches
+      // even though DeepSeek is configured. Fall back to DeepSeek when budget allows.
+      const ds = providers.find(p => p.name === "deepseek");
+      const dsUsable =
+        !!ds &&
+        !isRateLimited(ds) &&
+        !isDailyExhausted(ds) &&
+        checkDeepSeekBudget(category);
+      if (dsUsable) {
+        available = [ds];
+        console.log("[ai-provider] No usable Groq right now (cooldown/exhausted mix) → DeepSeek fallback");
+      } else {
+        console.log("[ai-provider] Free providers unavailable and DeepSeek not usable — skipping batch");
+        return null;
+      }
     } else {
       available = freeAvailable;
     }
