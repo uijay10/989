@@ -342,24 +342,54 @@ function passesKeywordFilter(text: string, keywords: string[]): boolean {
 }
 
 async function fetchRssWithRetry(url: string, retries = MAX_RETRIES): Promise<Parser.Output<Record<string, unknown>> | null> {
+  const UA = "Mozilla/5.0 (compatible; Web3ReleaseBot/2.0; +https://web3release.com)";
+
   const parser = new Parser({
-    timeout: 15000,
+    timeout: 20000,
     headers: {
-      "User-Agent": "Mozilla/5.0 (compatible; Web3ReleaseBot/2.0; +https://web3release.com)",
+      "User-Agent": UA,
       "Accept": "application/rss+xml, application/xml, application/atom+xml, text/xml, */*",
     },
     requestOptions: { rejectUnauthorized: false },
   });
+
+  const backoffMs = (attempt: number) => {
+    const base = Math.min(15000, 700 * Math.pow(2, attempt - 1));
+    const jitter = Math.floor(Math.random() * 350);
+    return base + jitter;
+  };
+
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      return await parser.parseURL(url);
+      const res = await fetch(url, {
+        headers: {
+          "User-Agent": UA,
+          "Accept": "application/rss+xml, application/xml, application/atom+xml, text/xml, */*",
+        },
+        redirect: "follow",
+        signal: AbortSignal.timeout(20000),
+      });
+
+      if (!res.ok) {
+        const retryable = res.status === 429 || res.status === 408 || (res.status >= 500 && res.status <= 599);
+        const msg = `HTTP ${res.status} ${res.statusText}`;
+        if (!retryable || attempt === retries) {
+          console.warn(`[unified-scrape] fetchRss failed (${attempt}/${retries}): ${url} — ${msg}`);
+          return null;
+        }
+        await sleep(backoffMs(attempt));
+        continue;
+      }
+
+      const xml = await res.text();
+      return await parser.parseString(xml);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       if (attempt === retries) {
         console.warn(`[unified-scrape] fetchRss failed (${retries} attempts): ${url} — ${msg}`);
         return null;
       }
-      await sleep(attempt * 1500);
+      await sleep(backoffMs(attempt));
     }
   }
   return null;
@@ -828,6 +858,15 @@ export async function runUnifiedScrape(opts: UnifiedScrapeOptions = {}): Promise
         errors++;
         const msg = e instanceof Error ? e.message : String(e);
         console.error(`[unified-scrape] RSS source ${source.name} error:`, msg);
+        await logEntry({
+          runId,
+          sourceName: source.name,
+          sourceUrl: source.url,
+          status: "error",
+          itemsFound: 0,
+          itemsSaved: 0,
+          errorMsg: msg.slice(0, 900),
+        });
       }
       await sleep(200);
     }
@@ -843,6 +882,7 @@ export async function runUnifiedScrape(opts: UnifiedScrapeOptions = {}): Promise
       );
 
       const gnArticles = new Map<string, { title: string; description: string; link: string; pubDate?: string }>();
+      let gnFetchErrors = 0;
 
       for (const gnUrl of gnUrls) {
         try {
@@ -865,6 +905,7 @@ export async function runUnifiedScrape(opts: UnifiedScrapeOptions = {}): Promise
           }
         } catch (e) {
           errors++;
+          gnFetchErrors++;
           console.warn(`[unified-scrape] Google News fetch error:`, e instanceof Error ? e.message : e);
         }
         await sleep(400);
@@ -903,7 +944,25 @@ export async function runUnifiedScrape(opts: UnifiedScrapeOptions = {}): Promise
         }
 
         totalItemsSaved += savedCount;
-        await logEntry({ runId, sourceName: "[google-news] all-keywords", sourceUrl: gnUrls[0] ?? "", status: "ok", itemsFound: newGnArticles.length, itemsSaved: savedCount });
+        await logEntry({
+          runId,
+          sourceName: "[google-news] all-keywords",
+          sourceUrl: gnUrls[0] ?? "",
+          status: gnFetchErrors > 0 && savedCount === 0 ? "error" : "ok",
+          itemsFound: newGnArticles.length,
+          itemsSaved: savedCount,
+          errorMsg: gnFetchErrors > 0 ? `google-news feed errors: ${gnFetchErrors}/${gnUrls.length}` : null,
+        });
+      } else if (gnFetchErrors > 0) {
+        await logEntry({
+          runId,
+          sourceName: "[google-news] all-keywords",
+          sourceUrl: gnUrls[0] ?? "",
+          status: "error",
+          itemsFound: 0,
+          itemsSaved: 0,
+          errorMsg: `google-news feed errors: ${gnFetchErrors}/${gnUrls.length}`,
+        });
       }
     }
 
