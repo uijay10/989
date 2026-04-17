@@ -148,7 +148,9 @@ router.post("/dedup", checkScrapeAuth, async (req, res) => {
   }
 });
 
-router.get("/status", requireAdmin, async (_req, res) => {
+// Status/metrics endpoints are safe to expose to internal operators via SCRAPE_INTERNAL_KEY.
+// This avoids needing a wallet signature just to monitor whether the cron is running.
+router.get("/status", checkScrapeAuth, async (_req, res) => {
   const quotaStats = getDailyQuotaStats();
   const freeExhausted = areFreeProvidersDailyExhausted();
   res.json({
@@ -169,7 +171,7 @@ router.get("/status", requireAdmin, async (_req, res) => {
   });
 });
 
-router.get("/logs", requireAdmin, async (req, res) => {
+router.get("/logs", checkScrapeAuth, async (req, res) => {
   try {
     const limit = Math.min(Number(req.query.limit ?? 200), 500);
     const runId = req.query.runId as string | undefined;
@@ -186,7 +188,7 @@ router.get("/logs", requireAdmin, async (req, res) => {
   }
 });
 
-router.get("/runs", requireAdmin, async (req, res) => {
+router.get("/runs", checkScrapeAuth, async (req, res) => {
   try {
     const limit = Math.min(Number(req.query.limit ?? 50), 100);
     const rows = await db.execute(sql`
@@ -207,7 +209,7 @@ router.get("/runs", requireAdmin, async (req, res) => {
   }
 });
 
-router.get("/keywords", requireAdmin, async (_req, res) => {
+router.get("/keywords", checkScrapeAuth, async (_req, res) => {
   try {
     const rows = await db.execute(sql`SELECT id, keyword, enabled FROM scrape_keywords ORDER BY id ASC`);
     let keywords = rows.rows as Array<{ id: number; keyword: string; enabled: boolean }>;
@@ -220,7 +222,7 @@ router.get("/keywords", requireAdmin, async (_req, res) => {
   }
 });
 
-router.put("/keywords", requireAdmin, async (req, res) => {
+router.put("/keywords", checkScrapeAuth, async (req, res) => {
   try {
     const { keywords } = req.body as { keywords: string[] };
     if (!Array.isArray(keywords)) { res.status(400).json({ error: "keywords array required" }); return; }

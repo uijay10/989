@@ -338,7 +338,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <div className="flex flex-wrap items-center justify-center gap-x-0.5 gap-y-1">
               {/* All events shortcut — always visible, navigates to home */}
               <button
-                onClick={() => { setActiveCategory("全部"); navigate("/"); }}
+                onClick={() => {
+                  // 7×24 should show the dedicated 724news section feed (not the home "all AI posts" view).
+                  setActiveCategory("全部");
+                  navigate("/section/724news");
+                }}
                 className={cn(
                   "relative px-3 py-1 rounded-full text-[14px] font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer",
                   isHome && activeCategory === "全部"
