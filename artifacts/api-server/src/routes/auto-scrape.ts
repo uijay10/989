@@ -157,7 +157,17 @@ router.get("/status", checkScrapeAuth, async (_req, res) => {
     version: "v2.0_migrated_2026",
     scrapeRunning: isKeywordScrapeRunning(),
     mode: "unified-dual-publish",
-    schedule: "Groq every 30min (11 keys, freeOnly) + DeepSeek every 60min (paidOnly, $0.020833/h cap). All articles → section + 7×24快讯.",
+    schedule: (() => {
+      const g = Number(process.env.SCRAPE_GROQ_INTERVAL_MIN);
+      const d = Number(process.env.SCRAPE_DEEPSEEK_INTERVAL_MIN);
+      const gm = Number.isFinite(g) && g > 0 ? Math.round(g) : 30;
+      const dm = Number.isFinite(d) && d > 0 ? Math.round(d) : 60;
+      const strictHourly = process.env.DEEPSEEK_STRICT_HOURLY_CAP === "true";
+      const dsCap = strictHourly
+        ? "paidOnly, strict hourly slice + $0.50/24h"
+        : "paidOnly, $0.50/24h total (hourly slice logged, not hard-capped)";
+      return `Groq every ${gm}min wall-clock (freeOnly, Groq keys only) + DeepSeek every ${dm}min wall-clock (${dsCap}). No cross-provider takeover. All articles → section + 7×24快讯.`;
+    })(),
     freeExhausted,
     quotaStats,
     config: {
@@ -167,6 +177,7 @@ router.get("/status", checkScrapeAuth, async (_req, res) => {
       normalTimeWindowHours:     SCRAPE_CONFIG.normalTimeWindowHours,
       deepseekHourlyBudget:      "$0.020833",
       deepseekDailyBudget:       "$0.50",
+      deepseekStrictHourlyCap:   process.env.DEEPSEEK_STRICT_HOURLY_CAP === "true",
     },
   });
 });

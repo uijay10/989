@@ -13,7 +13,6 @@ import {
   logProviderStatus,
   isFreeProviderAvailable,
   getAvailableProviders,
-  areFreeProvidersDailyExhausted,
   isDeepSeekBudgetAvailable,
   isDeepSeekHourlyBudgetAvailable,
 } from "./ai-provider";
@@ -25,7 +24,10 @@ const AI_SYSTEM_WALLET = "ai-system";
 const AI_SYSTEM_NAME   = "AI精选";
 const SIXTY_DAYS_MS    = 60 * 24 * 60 * 60 * 1000;
 const BATCH_SIZE       = 5;
-const MAX_RETRIES      = 3;
+const _aiRetriesRaw = Number(process.env.SCRAPE_AI_BATCH_RETRIES ?? "5");
+const MAX_RETRIES = Number.isFinite(_aiRetriesRaw)
+  ? Math.min(8, Math.max(3, Math.round(_aiRetriesRaw)))
+  : 5;
 
 // ── Section max-age caps (days) ────────────────────────────────────────────────
 const SECTION_EVENT_MAX_AGE_DAYS: Record<string, number> = {
@@ -700,12 +702,8 @@ function hasUsableProvider(paidOnly: boolean, freeOnly: boolean): boolean {
            isDeepSeekHourlyBudgetAvailable();
   }
   if (freeOnly) {
-    if (isFreeProviderAvailable()) return true;
-    // If no free Groq provider is configured/available, allow DeepSeek to take over
-    // (still subject to the independent $0.50/day and hourly budget).
-    return getAvailableProviders().some(p => p.name === "deepseek") &&
-           isDeepSeekBudgetAvailable() &&
-           isDeepSeekHourlyBudgetAvailable();
+    // Groq cron only — DeepSeek is never used here (paid DeepSeek has its own cron).
+    return isFreeProviderAvailable();
   }
   return getAvailableProviders().length > 0;
 }
