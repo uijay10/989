@@ -351,9 +351,9 @@ if (process.env.NODE_ENV !== "test" && process.env.DISABLE_SCRAPE_CRON !== "true
 
     // ── Groq cycle (wall-clock setInterval; skip if a scrape is still running) ─
     const tickGroq = async () => {
-      const { runUnifiedScrape, SCRAPE_CONFIG, isKeywordScrapeRunning } = await import("./lib/auto-scraper");
-      if (isKeywordScrapeRunning()) {
-        console.warn("[cron:groq] Skipped tick — previous scrape still running");
+      const { runUnifiedScrape, SCRAPE_CONFIG, isGroqScrapeRunning } = await import("./lib/auto-scraper");
+      if (isGroqScrapeRunning()) {
+        console.warn("[cron:groq] Skipped tick — Groq scrape still running");
         return;
       }
       groqRunCount++;
@@ -371,13 +371,13 @@ if (process.env.NODE_ENV !== "test" && process.env.DISABLE_SCRAPE_CRON !== "true
 
     // ── DeepSeek cycle (wall-clock setInterval; skip if a scrape is still running) ─
     const tickDeepSeek = async () => {
-      const { runUnifiedScrape, SCRAPE_CONFIG, isKeywordScrapeRunning } = await import("./lib/auto-scraper");
-      if (isKeywordScrapeRunning()) {
-        console.warn("[cron:deepseek] Skipped tick — previous scrape still running");
+      const { runUnifiedScrape, SCRAPE_CONFIG, isDeepSeekScrapeRunning } = await import("./lib/auto-scraper");
+      if (isDeepSeekScrapeRunning()) {
+        console.warn("[cron:deepseek] Skipped tick — DeepSeek scrape still running");
         return;
       }
       dsRunCount++;
-      console.log(`[cron:deepseek] Run #${dsRunCount} — paidOnly, all keywords, dual-publish, hourly budget cap`);
+      console.log(`[cron:deepseek] Run #${dsRunCount} — paidOnly, all keywords, dual-publish`);
       try {
         const result = await runUnifiedScrape({
           paidOnly:          true,
@@ -398,7 +398,7 @@ if (process.env.NODE_ENV !== "test" && process.env.DISABLE_SCRAPE_CRON !== "true
 
     console.log(
       "[cron] v2.0_migrated_2026 unified scheduler started — " +
-      `Groq every ${groqIntervalMin}min wall-clock (freeOnly) + DeepSeek every ${dsIntervalMin}min wall-clock (paidOnly, $0.020833/h cap). ` +
+      `Groq every ${groqIntervalMin}min wall-clock (freeOnly) + DeepSeek every ${dsIntervalMin}min wall-clock (paidOnly; ticks independent). ` +
       "Keyword source: DB scrape_keywords → DEFAULT_KEYWORDS. " +
       "All articles dual-published to matched section + 7×24快讯."
     );

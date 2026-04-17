@@ -716,6 +716,11 @@ export function isScrapeRunning(): boolean { return globalGroqRunning || globalD
 // Alias for routes backward compat
 export function isKeywordScrapeRunning(): boolean { return isScrapeRunning(); }
 
+/** True while the Groq (`freeOnly`) unified scrape is in progress. */
+export function isGroqScrapeRunning(): boolean { return globalGroqRunning; }
+/** True while the DeepSeek (`paidOnly`) unified scrape is in progress. */
+export function isDeepSeekScrapeRunning(): boolean { return globalDsRunning; }
+
 // ── runUnifiedScrape — main entry point (v2.0) ────────────────────────────────
 export interface UnifiedScrapeOptions {
   paidOnly?: boolean;
