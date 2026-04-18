@@ -321,8 +321,7 @@ async function acquireCronLeader(): Promise<boolean> {
 //
 //  [DeepSeek cycle] Every 60 min (24 runs/day)
 //                   paidOnly=true — uses DeepSeek exclusively (never mixed into Groq cron)
-//                   Default: only the rolling $0.50 / 24h total can block calls; hourly slice is logged.
-//                   Set DEEPSEEK_STRICT_HOURLY_CAP=true to restore per-hour hard cap (~$0.020833/h).
+//                   Blocked only by UTC hourly USD cap (DEEPSEEK_HOURLY_BUDGET_USD, default 0.05); no 24h total cap.
 //
 //  Both cycles use ALL combined keywords → AI classify →
 //  dual-publish to matched section(s) + 7×24快讯

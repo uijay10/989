@@ -14,7 +14,6 @@ import {
   isFreeProviderAvailable,
   getAvailableProviders,
   isDeepSeekBudgetAvailable,
-  isDeepSeekHourlyBudgetAvailable,
 } from "./ai-provider";
 
 const VERSION = "v2.0_migrated_2026";
@@ -698,8 +697,7 @@ function buildGoogleNewsUrls(keywords: string[], chunkSize = 8, maxUrls = 40): s
 function hasUsableProvider(paidOnly: boolean, freeOnly: boolean): boolean {
   if (paidOnly) {
     return getAvailableProviders().some(p => p.name === "deepseek") &&
-           isDeepSeekBudgetAvailable() &&
-           isDeepSeekHourlyBudgetAvailable();
+           isDeepSeekBudgetAvailable();
   }
   if (freeOnly) {
     // Groq cron only — DeepSeek is never used here (paid DeepSeek has its own cron).
@@ -781,9 +779,9 @@ export async function runUnifiedScrape(opts: UnifiedScrapeOptions = {}): Promise
       }
     }
 
-    // ── DeepSeek hourly budget gate ──
-    if (paidOnly && !isDeepSeekHourlyBudgetAvailable()) {
-      console.log(`[unified-scrape:ds] Hourly DeepSeek budget exhausted — skipping this run`);
+    // ── DeepSeek UTC hourly USD cap ──
+    if (paidOnly && !isDeepSeekBudgetAvailable()) {
+      console.log(`[unified-scrape:ds] DeepSeek hourly budget exhausted — skipping this run`);
       return { runId, totalSources: 0, totalItemsFound: 0, totalItemsSaved: 0, errors: 0, durationMs: Date.now() - startMs };
     }
 
