@@ -224,7 +224,7 @@ function ImportantNews({ lang }: { lang: string }) {
       return res.json() as Promise<{ posts: any[] }>;
     },
     staleTime: 60_000,
-    refetchInterval: 120_000,
+    refetchInterval: 60_000,
   });
   const raw = data?.posts ?? [];
   const seen = new Set<string>();
@@ -324,6 +324,7 @@ export default function Home() {
       return res.json() as Promise<{ posts: any[]; total: number; totalPages: number; page: number }>;
     },
     staleTime: 30_000,
+    refetchInterval: debouncedSearch ? false : 60_000,
   });
 
   const pinnedPosts = pinnedData?.posts ?? [];
