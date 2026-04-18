@@ -336,7 +336,7 @@ const _cacheTs = new Map<string, number>();
 const _totalCache = new Map<string, number>(); // per-section historical total
 const CACHE_TTL = 60_000; // 60 s — background-refresh after this
 /** Poll so new scraped posts appear without manual reload (tab visible only). */
-const AUTO_REFRESH_MS = 45_000;
+const AUTO_REFRESH_MS = 30_000;
 
 /* ── EventList component ─────────────────────────────────── */
 

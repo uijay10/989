@@ -25,18 +25,46 @@ function LoadingCards({ count = 3, cols = 3 }: { count?: number; cols?: number }
   );
 }
 
+/** 标签页在前台时每 30s 拉一次，新文章无需手动刷新 */
+const FEED_POLL_MS = 30_000;
+
+function useJsonFeedItems<T>(url: string): { items: T[]; loading: boolean } {
+  const [items, setItems] = useState<T[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    const load = (initial: boolean) => {
+      if (initial) setLoading(true);
+      fetch(url)
+        .then(r => r.json())
+        .then((d: { items?: T[] }) => {
+          if (!cancelled) setItems(d.items ?? []);
+        })
+        .catch(() => {
+          if (!cancelled) setItems([]);
+        })
+        .finally(() => {
+          if (initial && !cancelled) setLoading(false);
+        });
+    };
+    load(true);
+    const id = setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      load(false);
+    }, FEED_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [url]);
+  return { items, loading };
+}
+
 // ==================== 行业动态 ====================
 export function IndustryNewsFeed() {
-  const [items, setItems] = useState<Array<{ id?: number; title?: string; content?: string; sourceUrl?: string; createdAt?: string }>>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/feeds/industry")
-      .then(r => r.json())
-      .then(d => setItems(d.items ?? []))
-      .catch(() => setItems([]))
-      .finally(() => setLoading(false));
-  }, []);
+  const { items, loading } = useJsonFeedItems<{ id?: number; title?: string; content?: string; sourceUrl?: string; createdAt?: string; url?: string }>(
+    "/api/feeds/industry",
+  );
 
   if (loading) return <LoadingCards count={3} />;
   if (items.length === 0) return (
@@ -73,16 +101,9 @@ export function IndustryNewsFeed() {
 
 // ==================== 捐赠/赞助 ====================
 export function GrantsFeed() {
-  const [data, setData] = useState<Array<{ uid?: string; title?: string; description?: string; community?: string; communityLogo?: string; link?: string }>>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/feeds/grants")
-      .then(r => r.json())
-      .then(d => setData(d.items ?? []))
-      .catch(() => setData([]))
-      .finally(() => setLoading(false));
-  }, []);
+  const { items: data, loading } = useJsonFeedItems<{ uid?: string; title?: string; description?: string; community?: string; communityLogo?: string; link?: string }>(
+    "/api/feeds/grants",
+  );
 
   if (loading) return <LoadingCards count={3} />;
   if (data.length === 0) return (
@@ -133,12 +154,35 @@ export function IDOFeed() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const api = window.Web3ReleaseAPI;
-    if (!api) { setLoading(false); return; }
-    api.getIDO()
-      .then(d => setData(d))
-      .catch(() => setData([]))
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    const load = (initial: boolean) => {
+      const api = window.Web3ReleaseAPI;
+      if (!api) {
+        if (initial) setLoading(false);
+        return;
+      }
+      if (initial) setLoading(true);
+      api
+        .getIDO()
+        .then(d => {
+          if (!cancelled) setData(d);
+        })
+        .catch(() => {
+          if (!cancelled) setData([]);
+        })
+        .finally(() => {
+          if (initial && !cancelled) setLoading(false);
+        });
+    };
+    load(true);
+    const id = setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      load(false);
+    }, FEED_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
   }, []);
 
   if (loading) return <LoadingCards count={4} cols={4} />;
@@ -182,16 +226,9 @@ export function IDOFeed() {
 
 // ==================== 代币解锁 ====================
 export function TokenUnlocksFeed() {
-  const [items, setItems] = useState<Array<{ id?: number; title?: string; content?: string; sourceUrl?: string; createdAt?: string }>>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/feeds/unlocks")
-      .then(r => r.json())
-      .then(d => setItems(d.items ?? []))
-      .catch(() => setItems([]))
-      .finally(() => setLoading(false));
-  }, []);
+  const { items, loading } = useJsonFeedItems<{ id?: number; title?: string; content?: string; sourceUrl?: string; createdAt?: string }>(
+    "/api/feeds/unlocks",
+  );
 
   if (loading) return <LoadingCards count={4} cols={2} />;
   if (items.length === 0) return (
@@ -265,18 +302,11 @@ export function TestnetsFeed() {
 
 // ==================== 链上奖励/空投 ====================
 export function AirdropsFeed() {
-  const [items, setItems] = useState<Array<{ id?: number; title?: string; content?: string; sourceUrl?: string; createdAt?: string }>>([]);
-  const [loading, setLoading] = useState(true);
+  const { items, loading } = useJsonFeedItems<{ id?: number; title?: string; content?: string; sourceUrl?: string; createdAt?: string }>(
+    "/api/feeds/airdrops",
+  );
   const [wallet, setWallet] = useState("");
   const [checking, setChecking] = useState(false);
-
-  useEffect(() => {
-    fetch("/api/feeds/airdrops")
-      .then(r => r.json())
-      .then(d => setItems(d.items ?? []))
-      .catch(() => setItems([]))
-      .finally(() => setLoading(false));
-  }, []);
 
   function handleCheck() {
     if (!wallet.trim()) return;
@@ -365,12 +395,35 @@ export function MemePriceFeed() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const api = window.Web3ReleaseAPI;
-    if (!api) { setLoading(false); return; }
-    api.getMeme()
-      .then(d => setData(d))
-      .catch(() => setData([]))
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    const load = (initial: boolean) => {
+      const api = window.Web3ReleaseAPI;
+      if (!api) {
+        if (initial) setLoading(false);
+        return;
+      }
+      if (initial) setLoading(true);
+      api
+        .getMeme()
+        .then(d => {
+          if (!cancelled) setData(d);
+        })
+        .catch(() => {
+          if (!cancelled) setData([]);
+        })
+        .finally(() => {
+          if (initial && !cancelled) setLoading(false);
+        });
+    };
+    load(true);
+    const id = setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      load(false);
+    }, FEED_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
   }, []);
 
   if (loading) return (
@@ -415,16 +468,9 @@ export function MemePriceFeed() {
 
 // ==================== 漏洞赏金 ====================
 export function BugBountyFeed() {
-  const [items, setItems] = useState<Array<{ id?: string; name?: string; slug?: string; maxBounty?: string; totalPaid?: string; chains?: string[] }>>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/feeds/bugbounty")
-      .then(r => r.json())
-      .then(d => setItems(d.items ?? []))
-      .catch(() => setItems([]))
-      .finally(() => setLoading(false));
-  }, []);
+  const { items, loading } = useJsonFeedItems<{ id?: string; name?: string; slug?: string; maxBounty?: string; totalPaid?: string; chains?: string[] }>(
+    "/api/feeds/bugbounty",
+  );
 
   return (
     <div className="rounded-2xl border border-border/50 bg-card/50 p-4 space-y-3">
@@ -475,16 +521,9 @@ export function BugBountyFeed() {
 
 // ==================== 链上任务 ====================
 export function QuestFeed() {
-  const [items, setItems] = useState<Array<{ id?: number; title?: string; content?: string; sourceUrl?: string; createdAt?: string }>>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/feeds/quest")
-      .then(r => r.json())
-      .then(d => setItems(d.items ?? []))
-      .catch(() => setItems([]))
-      .finally(() => setLoading(false));
-  }, []);
+  const { items, loading } = useJsonFeedItems<{ id?: number; title?: string; content?: string; sourceUrl?: string; createdAt?: string }>(
+    "/api/feeds/quest",
+  );
 
   return (
     <div className="rounded-2xl border border-border/50 bg-card/50 p-4 space-y-3">
@@ -524,16 +563,9 @@ export function QuestFeed() {
 
 // ==================== 政策/监管 ====================
 export function PolicyFeed() {
-  const [items, setItems] = useState<Array<{ id?: number; title?: string; content?: string; sourceUrl?: string; createdAt?: string }>>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/feeds/policy")
-      .then(r => r.json())
-      .then(d => setItems(d.items ?? []))
-      .catch(() => setItems([]))
-      .finally(() => setLoading(false));
-  }, []);
+  const { items, loading } = useJsonFeedItems<{ id?: number; title?: string; content?: string; sourceUrl?: string; createdAt?: string }>(
+    "/api/feeds/policy",
+  );
 
   if (loading) return <LoadingCards count={3} />;
   if (items.length === 0) return (
@@ -570,16 +602,9 @@ export function PolicyFeed() {
 
 // ==================== 招聘 ====================
 export function RecruitingFeed() {
-  const [items, setItems] = useState<Array<{ title?: string; company?: string; link?: string; pubDate?: string; salary?: string }>>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/feeds/recruiting")
-      .then(r => r.json())
-      .then(d => setItems(d.items ?? []))
-      .catch(() => setItems([]))
-      .finally(() => setLoading(false));
-  }, []);
+  const { items, loading } = useJsonFeedItems<{ title?: string; company?: string; link?: string; pubDate?: string; salary?: string }>(
+    "/api/feeds/recruiting",
+  );
 
   return (
     <div className="rounded-2xl border border-border/50 bg-card/50 p-4 space-y-3">
@@ -622,16 +647,9 @@ export function RecruitingFeed() {
 
 // ==================== 投融资 ====================
 export function FundingFeed() {
-  const [items, setItems] = useState<Array<{ id?: number; title?: string; content?: string; sourceUrl?: string; createdAt?: string }>>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/feeds/funding")
-      .then(r => r.json())
-      .then(d => setItems(d.items ?? []))
-      .catch(() => setItems([]))
-      .finally(() => setLoading(false));
-  }, []);
+  const { items, loading } = useJsonFeedItems<{ id?: number; title?: string; content?: string; sourceUrl?: string; createdAt?: string }>(
+    "/api/feeds/funding",
+  );
 
   if (loading) return <LoadingCards count={3} />;
   if (items.length === 0) return (

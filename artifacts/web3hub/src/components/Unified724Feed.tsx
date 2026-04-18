@@ -46,7 +46,7 @@ const SECTION_LABEL_EN: Record<string, string> = {
   grant:      "Grants & Sponsorship",
 };
 
-const POLL_INTERVAL_MS = 45 * 1000; // 与分区列表接近：后台有新帖时尽快出现在列表顶部
+const POLL_INTERVAL_MS = 30 * 1000; // 前台轮询第一页，新帖自动插入列表顶部
 
 function getDedupKey(item: FeedItem): string {
   const k = semanticDedupKey(item.title || "", item.link);
