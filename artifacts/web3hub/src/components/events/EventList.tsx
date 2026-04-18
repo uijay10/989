@@ -335,6 +335,8 @@ const _pinnedCache = new Map<string, any[]>();
 const _cacheTs = new Map<string, number>();
 const _totalCache = new Map<string, number>(); // per-section historical total
 const CACHE_TTL = 60_000; // 60 s — background-refresh after this
+/** Poll so new scraped posts appear without manual reload (tab visible only). */
+const AUTO_REFRESH_MS = 45_000;
 
 /* ── EventList component ─────────────────────────────────── */
 
@@ -375,6 +377,16 @@ export function EventList({ sectionSlug, sectionName }: { sectionSlug?: string; 
   const [deleting, setDeleting] = useState(false);
 
   const refetch = useCallback(() => setFetchTick(t => t + 1), []);
+
+  // Auto-refresh list while user stays on the page (new AI posts from scraper).
+  useEffect(() => {
+    const tick = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      setFetchTick(t => t + 1);
+    };
+    const id = setInterval(tick, AUTO_REFRESH_MS);
+    return () => clearInterval(id);
+  }, [cacheKey]);
 
   // ==================== 新增：全局去重函数（放在 refetch 之后） ====================
   const deduplicateEvents = useCallback((events: Web3Event[]) => {
