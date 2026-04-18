@@ -223,8 +223,9 @@ function ImportantNews({ lang }: { lang: string }) {
       const res = await fetch(`${getApiBase()}/posts?limit=36&page=1&importance=high&authorType=ai`);
       return res.json() as Promise<{ posts: any[] }>;
     },
-    staleTime: 60_000,
-    refetchInterval: 60_000,
+    staleTime: 15_000,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   });
   const raw = data?.posts ?? [];
   const seen = new Set<string>();
@@ -304,8 +305,9 @@ export default function Home() {
       const res = await fetch(`${getApiBase()}/posts?pinned=1&limit=${PIN_SLOTS}`);
       return res.json() as Promise<{ posts: any[] }>;
     },
-    staleTime: 30_000,
-    refetchInterval: 60_000,
+    staleTime: 15_000,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   });
 
   // Regular posts — when searching: all types; when browsing: project-type only
@@ -323,8 +325,9 @@ export default function Home() {
       const res = await fetch(`${getApiBase()}/posts?authorType=project&page=${page}&limit=${PAGE_SIZE}`);
       return res.json() as Promise<{ posts: any[]; total: number; totalPages: number; page: number }>;
     },
-    staleTime: 30_000,
-    refetchInterval: debouncedSearch ? false : 60_000,
+    staleTime: 15_000,
+    refetchInterval: debouncedSearch ? false : 30_000,
+    refetchOnWindowFocus: true,
   });
 
   const pinnedPosts = pinnedData?.posts ?? [];

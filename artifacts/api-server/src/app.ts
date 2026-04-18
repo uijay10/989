@@ -256,57 +256,54 @@ initDeepSeekDailyBudget();
 //
 //  Set DISABLE_SCRAPE_CRON=true in dev to reserve all quota for prod.
 //
-//  DB leader lock: only ONE instance across all running servers runs cron.
-//  The first instance to start claims the lock; others skip cron entirely.
+//  DB leader lease: only ONE instance runs each scrape, but EVERY instance registers the same
+//  timers. Before each tick we atomically try to claim/refresh the lease. This fixes:
+//  - Non-leader replicas never running cron after boot
+//  - Leader process dying while heartbeat row still "fresh" (no scrape until redeploy)
 //
-async function acquireCronLeader(): Promise<boolean> {
+//  Env: CRON_LEADER_STALE_MS (default 300000 = 5 min) — if heartbeat older than this, another
+//  instance may steal the lease. CRON_LEADER_HEARTBEAT_MS (default 60000) — renew interval.
+//
+async function ensureCronLeaderTable(): Promise<void> {
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS cron_leader (
+      id INTEGER PRIMARY KEY DEFAULT 1,
+      instance_id TEXT NOT NULL,
+      heartbeat TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+}
+
+function getCronInstanceId(): string {
+  const host = process.env.HOSTNAME ?? process.env.COMPUTERNAME ?? "host";
+  return `${host}-pid${process.pid}-port${process.env.PORT ?? "?"}`;
+}
+
+/** Atomically become leader if lease is stale OR we already hold it. Returns true if this instance holds the lease. */
+async function tryClaimCronLeaderLease(instanceId: string): Promise<boolean> {
   try {
-    await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS cron_leader (
-        id INTEGER PRIMARY KEY DEFAULT 1,
-        instance_id TEXT NOT NULL,
-        heartbeat TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      )
+    await ensureCronLeaderTable();
+    const staleEnv = Number(process.env.CRON_LEADER_STALE_MS);
+    const staleMs = Number.isFinite(staleEnv) && staleEnv > 30_000 ? staleEnv : 300_000;
+
+    const res = await db.execute(sql`
+      INSERT INTO cron_leader (id, instance_id, heartbeat) VALUES (1, ${instanceId}, NOW())
+      ON CONFLICT (id) DO UPDATE SET
+        instance_id = ${instanceId},
+        heartbeat = NOW()
+      WHERE
+        cron_leader.heartbeat < NOW() - (${String(Math.floor(staleMs))}::bigint * INTERVAL '1 millisecond')
+        OR cron_leader.instance_id = ${instanceId}
+      RETURNING instance_id
     `);
-    const instanceId = `pid-${process.pid}-port-${process.env.PORT ?? "?"}`;
-    // Try to insert; if row exists AND heartbeat is fresh (< 5 min), we are NOT the leader
-    const rows = await db.execute(sql`
-      SELECT instance_id, heartbeat FROM cron_leader WHERE id = 1
-    `);
-    const existing = (rows as any).rows?.[0];
-    if (existing) {
-      const ageMs = Date.now() - new Date(existing.heartbeat).getTime();
-      if (ageMs < 5 * 60 * 1000) {
-        console.log(`[cron-leader] Instance ${existing.instance_id} holds the lock (${Math.round(ageMs/1000)}s old). Skipping cron on this instance.`);
-        return false;
-      }
-      // Stale lock — take over
-      await db.execute(sql`
-        UPDATE cron_leader SET instance_id = ${instanceId}, heartbeat = NOW() WHERE id = 1
-      `);
-    } else {
-      await db.execute(sql`
-        INSERT INTO cron_leader (id, instance_id, heartbeat) VALUES (1, ${instanceId}, NOW())
-        ON CONFLICT (id) DO UPDATE SET instance_id = ${instanceId}, heartbeat = NOW()
-        WHERE cron_leader.heartbeat < NOW() - INTERVAL '5 minutes'
-      `);
-      // Verify we actually won
-      const verify = await db.execute(sql`SELECT instance_id FROM cron_leader WHERE id = 1`);
-      const winner = (verify as any).rows?.[0]?.instance_id;
-      if (winner !== instanceId) {
-        console.log(`[cron-leader] Lost lock race to ${winner}. Skipping cron on this instance.`);
-        return false;
-      }
-    }
-    console.log(`[cron-leader] Lock acquired by ${instanceId}. This instance will run cron.`);
-    // Heartbeat every 2 minutes
-    setInterval(async () => {
-      await db.execute(sql`UPDATE cron_leader SET heartbeat = NOW() WHERE id = 1 AND instance_id = ${instanceId}`).catch(() => {});
-    }, 2 * 60 * 1000);
-    return true;
+    const rows = (res as { rows?: { instance_id: string }[] }).rows;
+    if (rows?.length) return rows[0]!.instance_id === instanceId;
+
+    const sel = await db.execute(sql`SELECT instance_id FROM cron_leader WHERE id = 1`);
+    const holder = (sel as { rows?: { instance_id: string }[] }).rows?.[0]?.instance_id;
+    return holder === instanceId;
   } catch (e) {
-    // If lock mechanism fails (e.g. DB error), allow cron to run to avoid outage
-    console.warn("[cron-leader] Lock check failed, allowing cron anyway:", e);
+    console.warn("[cron-leader] tryClaimCronLeaderLease failed; allowing tick to run:", e);
     return true;
   }
 }
@@ -326,83 +323,84 @@ async function acquireCronLeader(): Promise<boolean> {
 //  Both cycles use ALL combined keywords → AI classify →
 //  dual-publish to matched section(s) + 7×24快讯
 //
-//  DB leader lock ensures only ONE server instance runs the cron.
+//  DB lease: each tick tries to claim; only the holder runs scrape (others skip silently).
 //
 if (process.env.NODE_ENV !== "test" && process.env.DISABLE_SCRAPE_CRON !== "true") {
-  acquireCronLeader().then(isLeader => {
-    if (!isLeader) return;
+  const instanceId = getCronInstanceId();
+  const hbEnv = Number(process.env.CRON_LEADER_HEARTBEAT_MS);
+  const heartbeatMs = Number.isFinite(hbEnv) && hbEnv >= 10_000 ? hbEnv : 60_000;
 
-    const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
-    const parseMinEnv = (key: string, def: number, lo: number, hi: number): number => {
-      const v = Number(process.env[key]);
-      if (!Number.isFinite(v) || v <= 0) return def;
-      return clamp(Math.round(v), lo, hi);
-    };
+  const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
+  const parseMinEnv = (key: string, def: number, lo: number, hi: number): number => {
+    const v = Number(process.env[key]);
+    if (!Number.isFinite(v) || v <= 0) return def;
+    return clamp(Math.round(v), lo, hi);
+  };
 
-    // Wall-clock intervals (minutes). Env overrides for tuning without code changes.
-    const groqIntervalMin = parseMinEnv("SCRAPE_GROQ_INTERVAL_MIN", 30, 5, 180);
-    const dsIntervalMin   = parseMinEnv("SCRAPE_DEEPSEEK_INTERVAL_MIN", 60, 10, 360);
-    const GROQ_INTERVAL_MS = groqIntervalMin * 60 * 1000;
-    const DS_INTERVAL_MS   = dsIntervalMin * 60 * 1000;
+  const groqIntervalMin = parseMinEnv("SCRAPE_GROQ_INTERVAL_MIN", 30, 5, 180);
+  const dsIntervalMin   = parseMinEnv("SCRAPE_DEEPSEEK_INTERVAL_MIN", 60, 10, 360);
+  const GROQ_INTERVAL_MS = groqIntervalMin * 60 * 1000;
+  const DS_INTERVAL_MS   = dsIntervalMin * 60 * 1000;
 
-    let groqRunCount = 0;
-    let dsRunCount = 0;
+  let groqRunCount = 0;
+  let dsRunCount = 0;
 
-    // ── Groq cycle (wall-clock setInterval; skip if a scrape is still running) ─
-    const tickGroq = async () => {
-      const { runUnifiedScrape, SCRAPE_CONFIG, isGroqScrapeRunning } = await import("./lib/auto-scraper");
-      if (isGroqScrapeRunning()) {
-        console.warn("[cron:groq] Skipped tick — Groq scrape still running");
-        return;
-      }
-      groqRunCount++;
-      console.log(`[cron:groq] Run #${groqRunCount} — freeOnly, all keywords, dual-publish`);
-      try {
-        const result = await runUnifiedScrape({
-          freeOnly:          true,
-          maxArticlesPerRun: SCRAPE_CONFIG.maxArticlesPerGroqRun,
-        });
-        console.log(`[cron:groq] Done — saved: ${result.totalItemsSaved}, found: ${result.totalItemsFound}`);
-      } catch (e) {
-        console.error("[cron:groq] Error:", e);
-      }
-    };
+  // Renew lease while this process holds it (long scrapes can exceed one tick interval).
+  setInterval(() => {
+    void db.execute(sql`UPDATE cron_leader SET heartbeat = NOW() WHERE id = 1 AND instance_id = ${instanceId}`).catch(() => {});
+  }, heartbeatMs);
 
-    // ── DeepSeek cycle (wall-clock setInterval; skip if a scrape is still running) ─
-    const tickDeepSeek = async () => {
-      const { runUnifiedScrape, SCRAPE_CONFIG, isDeepSeekScrapeRunning } = await import("./lib/auto-scraper");
-      if (isDeepSeekScrapeRunning()) {
-        console.warn("[cron:deepseek] Skipped tick — DeepSeek scrape still running");
-        return;
-      }
-      dsRunCount++;
-      console.log(`[cron:deepseek] Run #${dsRunCount} — paidOnly, all keywords, dual-publish`);
-      try {
-        const result = await runUnifiedScrape({
-          paidOnly:          true,
-          maxArticlesPerRun: SCRAPE_CONFIG.maxArticlesPerDeepSeekRun,
-        });
-        console.log(`[cron:deepseek] Done — saved: ${result.totalItemsSaved}, found: ${result.totalItemsFound}`);
-      } catch (e) {
-        console.error("[cron:deepseek] Error:", e);
-      }
-    };
+  const tickGroq = async () => {
+    if (!(await tryClaimCronLeaderLease(instanceId))) return;
+    const { runUnifiedScrape, SCRAPE_CONFIG, isGroqScrapeRunning } = await import("./lib/auto-scraper");
+    if (isGroqScrapeRunning()) {
+      console.warn("[cron:groq] Skipped tick — Groq scrape still running");
+      return;
+    }
+    groqRunCount++;
+    console.log(`[cron:groq] Run #${groqRunCount} (${instanceId}) — freeOnly, all keywords, dual-publish`);
+    try {
+      const result = await runUnifiedScrape({
+        freeOnly:          true,
+        maxArticlesPerRun: SCRAPE_CONFIG.maxArticlesPerGroqRun,
+      });
+      console.log(`[cron:groq] Done — saved: ${result.totalItemsSaved}, found: ${result.totalItemsFound}`);
+    } catch (e) {
+      console.error("[cron:groq] Error:", e);
+    }
+  };
 
-    // First run after boot, then fixed wall-clock cadence (avoids "interval + run duration" drift).
-    setTimeout(() => { void tickGroq(); }, 5 * 1000);
-    setInterval(() => { void tickGroq(); }, GROQ_INTERVAL_MS);
+  const tickDeepSeek = async () => {
+    if (!(await tryClaimCronLeaderLease(instanceId))) return;
+    const { runUnifiedScrape, SCRAPE_CONFIG, isDeepSeekScrapeRunning } = await import("./lib/auto-scraper");
+    if (isDeepSeekScrapeRunning()) {
+      console.warn("[cron:deepseek] Skipped tick — DeepSeek scrape still running");
+      return;
+    }
+    dsRunCount++;
+    console.log(`[cron:deepseek] Run #${dsRunCount} (${instanceId}) — paidOnly, all keywords, dual-publish`);
+    try {
+      const result = await runUnifiedScrape({
+        paidOnly:          true,
+        maxArticlesPerRun: SCRAPE_CONFIG.maxArticlesPerDeepSeekRun,
+      });
+      console.log(`[cron:deepseek] Done — saved: ${result.totalItemsSaved}, found: ${result.totalItemsFound}`);
+    } catch (e) {
+      console.error("[cron:deepseek] Error:", e);
+    }
+  };
 
-    setTimeout(() => { void tickDeepSeek(); }, 90 * 1000);
-    setInterval(() => { void tickDeepSeek(); }, DS_INTERVAL_MS);
+  setTimeout(() => { void tickGroq(); }, 5 * 1000);
+  setInterval(() => { void tickGroq(); }, GROQ_INTERVAL_MS);
 
-    console.log(
-      "[cron] v2.0_migrated_2026 unified scheduler started — " +
-      `Groq every ${groqIntervalMin}min wall-clock (freeOnly) + DeepSeek every ${dsIntervalMin}min wall-clock (paidOnly; ticks independent). ` +
-      "Keyword source: DB scrape_keywords → DEFAULT_KEYWORDS. " +
-      "All articles dual-published to matched section + 7×24快讯."
-    );
+  setTimeout(() => { void tickDeepSeek(); }, 90 * 1000);
+  setInterval(() => { void tickDeepSeek(); }, DS_INTERVAL_MS);
 
-  }).catch(e => { console.error("[cron-leader] Unexpected error:", e); });
+  console.log(
+    `[cron] unified scheduler started instance=${instanceId} — ` +
+    `Groq every ${groqIntervalMin}min + DeepSeek every ${dsIntervalMin}min (lease per tick, heartbeat ${heartbeatMs}ms). ` +
+    "Keyword source: DB scrape_keywords → DEFAULT_KEYWORDS."
+  );
 
 } else if (process.env.DISABLE_SCRAPE_CRON === "true") {
   console.log("[cron] DISABLE_SCRAPE_CRON=true — scraper disabled, all API quota reserved for production");
