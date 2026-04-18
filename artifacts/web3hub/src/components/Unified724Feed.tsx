@@ -46,7 +46,7 @@ const SECTION_LABEL_EN: Record<string, string> = {
   grant:      "Grants & Sponsorship",
 };
 
-const POLL_INTERVAL_MS = 60 * 1000; // 60秒轮询一次
+const POLL_INTERVAL_MS = 45 * 1000; // 与分区列表接近：后台有新帖时尽快出现在列表顶部
 
 function getDedupKey(item: FeedItem): string {
   const k = semanticDedupKey(item.title || "", item.link);
@@ -133,7 +133,7 @@ function titleInlineStyle(level: ImportanceLevel | null): React.CSSProperties | 
 }
 
 const Unified724Feed: React.FC = () => {
-  const { lang, t } = useLang();
+  const { lang } = useLang();
   const SECTION_LABEL = lang === 'zh-CN' ? SECTION_LABEL_ZH : SECTION_LABEL_EN;
   const [items, setItems] = useState<FeedItem[]>([]);
   const [page, setPage] = useState(1);
@@ -141,7 +141,6 @@ const Unified724Feed: React.FC = () => {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | string>('all');
-  const [newCount, setNewCount] = useState(0); // 新到文章数
 
   const observerRef = useRef<HTMLDivElement>(null);
   const loadingRef  = useRef(false);
@@ -195,7 +194,6 @@ const Unified724Feed: React.FC = () => {
         setItems(incoming);
         setTotal(data.total || 0);
         setPage(2);
-        setNewCount(0);
         topIdRef.current = incoming[0]?.id ?? null;
       } else {
         setItems((prev) => [...prev, ...incoming]);
@@ -217,18 +215,18 @@ const Unified724Feed: React.FC = () => {
     setPage(1);
     setHasMore(true);
     setTotal(0);
-    setNewCount(0);
     topIdRef.current = null;
     loadFeed(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
-  // 自动轮询：每 60 秒静默检查有无新文章
+  // 自动轮询：标签页在前台时定时拉第一页，比当前列表顶部更新的帖子直接插入列表最前（无需手动刷新）
   useEffect(() => {
     const poll = async () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
       try {
         const tabParam = activeTab === 'all' ? '' : `&category=${activeTab}`;
-        const res = await fetch(`${getApiBase()}/feed?page=1&limit=5${tabParam}`);
+        const res = await fetch(`${getApiBase()}/feed?page=1&limit=30${tabParam}`);
         const data = await res.json();
         const latest: FeedItem[] = data.items || [];
         if (!latest.length) return;
@@ -239,11 +237,17 @@ const Unified724Feed: React.FC = () => {
           return;
         }
 
-        // 计算有多少篇文章比当前列表顶部更新
-        const newItems = latest.filter(i => Number(i.id) > Number(currentTopId));
-        if (newItems.length > 0) {
-          setNewCount(prev => prev + newItems.length);
-        }
+        const topNum = Number(currentTopId);
+        const newChunk = latest.filter((i) => Number(i.id) > topNum);
+        if (newChunk.length === 0) return;
+
+        setItems((prev) => {
+          const existingIds = new Set(prev.map((p) => p.id));
+          const toAdd = newChunk.filter((i) => !existingIds.has(i.id));
+          if (toAdd.length === 0) return prev;
+          return [...toAdd, ...prev];
+        });
+        topIdRef.current = latest[0].id;
       } catch {
         // 静默失败
       }
@@ -252,17 +256,6 @@ const Unified724Feed: React.FC = () => {
     const timer = setInterval(poll, POLL_INTERVAL_MS);
     return () => clearInterval(timer);
   }, [activeTab]);
-
-  // 点击"查看新文章"提示条 → 重新从头加载
-  const handleRefresh = useCallback(() => {
-    setItems([]);
-    setPage(1);
-    setHasMore(true);
-    setTotal(0);
-    setNewCount(0);
-    topIdRef.current = null;
-    loadFeed(true);
-  }, [loadFeed]);
 
   // 无限滚动
   useEffect(() => {
@@ -286,19 +279,6 @@ const Unified724Feed: React.FC = () => {
   return (
     <div className="w-full">
       {/* Header / tabs are handled by the global navbar. Keep this feed minimal. */}
-
-      {/* 新文章提示条 */}
-      {newCount > 0 && (
-        <button
-          onClick={handleRefresh}
-          className="w-full mb-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
-        >
-          {lang === 'zh-CN'
-            ? `↑ 有 ${newCount} 篇新文章，点击刷新`
-            : `↑ ${newCount} new article${newCount > 1 ? 's' : ''} — click to refresh`
-          }
-        </button>
-      )}
 
       {/* 文章列表 */}
       <div className="space-y-6">
