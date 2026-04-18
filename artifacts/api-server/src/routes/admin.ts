@@ -563,11 +563,11 @@ router.post("/bulk-sync", async (req, res) => {
   }
 });
 
-/** POST /api/admin/reset-deepseek-budget  — 立即将当日 DeepSeek 花费清零 */
+/** POST /api/admin/reset-deepseek-budget  — 将当前 UTC 小时 DeepSeek 花费清零 */
 router.post("/reset-deepseek-budget", requireAdmin, async (_req, res) => {
   try {
     await resetDeepSeekBudgetNow();
-    res.json({ ok: true, message: "DeepSeek 日预算已重置为 $0（内存 + DB 同步）" });
+    res.json({ ok: true, message: "DeepSeek 当前 UTC 小时桶花费已清零（内存 + DB 同步）" });
   } catch (e) {
     res.status(500).json({ error: String(e) });
   }

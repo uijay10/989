@@ -5,7 +5,7 @@ import { requireAdmin, ADMIN_WALLETS } from "../lib/admin-check";
 import { verifyAdminToken } from "../lib/admin-token";
 import { runUnifiedScrape, runKeywordScrape, isKeywordScrapeRunning, KEYWORD_GRAB_CONFIG, DEFAULT_KEYWORDS, SCRAPE_CONFIG } from "../lib/auto-scraper";
 import type { UnifiedScrapeOptions as KeywordScrapeOptions } from "../lib/auto-scraper";
-import { getDailyQuotaStats, areFreeProvidersDailyExhausted } from "../lib/ai-provider";
+import { getDailyQuotaStats, areFreeProvidersDailyExhausted, getDeepSeekHourlyBudgetUsd } from "../lib/ai-provider";
 import { readArticlesBackupFile } from "../lib/articles-backup";
 import { importBackupToDb } from "../lib/import-backup";
 import { dedupAiPosts } from "../lib/dedup-posts";
@@ -162,11 +162,8 @@ router.get("/status", checkScrapeAuth, async (_req, res) => {
       const d = Number(process.env.SCRAPE_DEEPSEEK_INTERVAL_MIN);
       const gm = Number.isFinite(g) && g > 0 ? Math.round(g) : 30;
       const dm = Number.isFinite(d) && d > 0 ? Math.round(d) : 60;
-      const strictHourly = process.env.DEEPSEEK_STRICT_HOURLY_CAP === "true";
-      const dsCap = strictHourly
-        ? "paidOnly, strict hourly slice + $0.50/24h"
-        : "paidOnly, $0.50/24h total (hourly slice logged, not hard-capped)";
-      return `Groq every ${gm}min wall-clock (freeOnly, Groq keys only) + DeepSeek every ${dm}min wall-clock (${dsCap}). No cross-provider takeover. All articles → section + 7×24快讯.`;
+      const hourlyUsd = getDeepSeekHourlyBudgetUsd();
+      return `Groq every ${gm}min wall-clock (freeOnly, Groq keys only) + DeepSeek every ${dm}min wall-clock (paidOnly, ≤$${hourlyUsd.toFixed(4)}/UTC hour, no daily cap). No cross-provider takeover. All articles → section + 7×24快讯.`;
     })(),
     freeExhausted,
     quotaStats,
@@ -175,9 +172,8 @@ router.get("/status", checkScrapeAuth, async (_req, res) => {
       maxArticlesPerDeepSeekRun: SCRAPE_CONFIG.maxArticlesPerDeepSeekRun,
       maxDailyArticles:          SCRAPE_CONFIG.maxDailyArticles,
       normalTimeWindowHours:     SCRAPE_CONFIG.normalTimeWindowHours,
-      deepseekHourlyBudget:      "$0.020833",
-      deepseekDailyBudget:       "$0.50",
-      deepseekStrictHourlyCap:   process.env.DEEPSEEK_STRICT_HOURLY_CAP === "true",
+      deepseekHourlyBudgetUsd:   getDeepSeekHourlyBudgetUsd(),
+      deepseekHourlyBudgetEnv:   "DEEPSEEK_HOURLY_BUDGET_USD",
     },
   });
 });

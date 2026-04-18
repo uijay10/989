@@ -851,7 +851,7 @@ export default function AdminPage() {
           {/* Header */}
           <div>
             <h2 className="text-lg font-bold flex items-center gap-2"><Rss className="w-5 h-5 text-primary" />AI 自动抓取</h2>
-            <p className="text-sm text-muted-foreground mt-0.5">免费 Groq（11 个 Key）+ 付费 DeepSeek（≤$0.50/天）统一抓取发布：Groq 每 30 分钟一次，DeepSeek 每 60 分钟一次（按小时均摊预算自动限流）。</p>
+            <p className="text-sm text-muted-foreground mt-0.5">免费 Groq（多 Key）+ 付费 DeepSeek（按 UTC 小时花费上限，无日总上限，见服务端 DEEPSEEK_HOURLY_BUDGET_USD）统一抓取发布：Groq 与 DeepSeek 定时任务独立。</p>
           </div>
 
           {scrapeMsg && (

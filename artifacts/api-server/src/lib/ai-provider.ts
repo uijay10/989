@@ -42,46 +42,38 @@ function incrementGroqSlot(): void {
   for (const [k] of groqSlotCounts) { if (k < cutoff) groqSlotCounts.delete(k); }
 }
 
-// ==================== DeepSeek 每日成本控制 ====================
-// 每日预算上限：$0.50/24h（以“预算锚点 anchor”为起点滚动计费，不按 UTC 自然日）
-// 快讯 DeepSeek（Groq窗口耗尽后）：~133次/天 × 10篇 × $0.0026/次 ≈ $0.35/天
-// 其他9个板块（主 cron）：12次/天 × 50篇 × $0.013/次 ≈ $0.16/天
-// 理论峰值 ≈ $0.51/天；实际因去重通常只有 $0.10–0.25/天
-// 到达 24h 总上限后停止调用，等到窗口滚动后继续。小时桶仅用于统计/日志，默认不硬拦截（见 DEEPSEEK_STRICT_HOURLY_CAP）。
-// 花费持久化到数据库（ai_cost_window / ai_cost_hourly_bucket），重启后不归零
-const DEEPSEEK_TOTAL_BUDGET = 0.50;   // 每日总上限 $0.50
-const DEEPSEEK_HOURLY_BUDGET = DEEPSEEK_TOTAL_BUDGET / 24; // 每小时均分预算（以 anchor 为起点的小时桶）
-const DEEPSEEK_WINDOW_MS = 24 * 60 * 60 * 1000;
-const DEEPSEEK_HOUR_MS = 60 * 60 * 1000;
-/** `true` = 达到本小时 slice 后暂停 DeepSeek（旧行为）。默认 `false`：只受 24h 总预算限制，避免长时间完全无文。 */
-const DEEPSEEK_STRICT_HOURLY_CAP = process.env.DEEPSEEK_STRICT_HOURLY_CAP === "true";
+// ==================== DeepSeek：仅按 UTC 自然小时上限（无 24h 总预算）====================
+// 每小时花费上限由环境变量 DEEPSEEK_HOURLY_BUDGET_USD 控制（默认 0.05 USD/UTC 小时）。
+// 花费持久化到 ai_cost_hourly_bucket（bucket_key = `YYYY-MM-DDTHH` UTC），重启后按当前小时恢复。
+const DEEPSEEK_HOURLY_BUDGET_USD = (() => {
+  const v = parseFloat(process.env.DEEPSEEK_HOURLY_BUDGET_USD ?? "0.05");
+  return Number.isFinite(v) && v > 0 ? v : 0.05;
+})();
 
-let deepseekTotalDailyCost = 0;
 let deepseekBudgetInitialized = false;
 let deepseekHourlyCost = 0;
-let deepseekAnchorMs = 0;      // window start (ms since epoch)
-let deepseekWindowKey = "";   // string key = anchorMs
-let deepseekHourIndex = 0;    // 0..23
-let deepseekHourBucketKey = ""; // `${anchorMs}-${hourIndex}`
+let deepseekHourBucketKey = "";
 
-function getDefaultAnchorUtcMidnightMs(): number {
-  // Back-compat default: start at UTC midnight of "today"
-  const now = new Date();
-  return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+/** UTC 自然小时桶键，例如 2026-04-18T08 */
+function utcHourBucketKey(nowMs: number): string {
+  const d = new Date(nowMs);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  const h = String(d.getUTCHours()).padStart(2, "0");
+  return `${y}-${m}-${day}T${h}`;
 }
 
-function windowKeyFromAnchor(anchorMs: number): string {
-  return String(anchorMs);
+function syncDeepSeekUtcHourBucket(nowMs: number): void {
+  const key = utcHourBucketKey(nowMs);
+  if (key === deepseekHourBucketKey) return;
+  deepseekHourBucketKey = key;
+  deepseekHourlyCost = 0;
 }
 
-function hourIndexFromAnchor(anchorMs: number, nowMs: number): number {
-  const delta = nowMs - anchorMs;
-  if (delta <= 0) return 0;
-  return Math.floor(delta / DEEPSEEK_HOUR_MS);
-}
-
-function bucketKey(anchorMs: number, hourIndex: number): string {
-  return `${anchorMs}-${hourIndex}`;
+/** 供 /api/auto-scrape/status 等展示当前小时上限 */
+export function getDeepSeekHourlyBudgetUsd(): number {
+  return DEEPSEEK_HOURLY_BUDGET_USD;
 }
 
 async function ensureDeepSeekBudgetTables(): Promise<void> {
@@ -105,75 +97,40 @@ async function ensureDeepSeekBudgetTables(): Promise<void> {
   `);
 }
 
-async function loadOrInitDeepSeekAnchor(): Promise<void> {
-  const rows = await db.execute(sql`SELECT anchor_ms FROM deepseek_budget_anchor WHERE id = 1`);
-  const existing = (rows as any).rows?.[0] as { anchor_ms?: number | string } | undefined;
-  if (existing?.anchor_ms !== undefined && existing.anchor_ms !== null) {
-    deepseekAnchorMs = Number(existing.anchor_ms);
-    if (!Number.isFinite(deepseekAnchorMs) || deepseekAnchorMs <= 0) {
-      deepseekAnchorMs = getDefaultAnchorUtcMidnightMs();
-    }
-    return;
-  }
-  deepseekAnchorMs = getDefaultAnchorUtcMidnightMs();
-  await db.execute(sql`
-    INSERT INTO deepseek_budget_anchor (id, anchor_ms)
-    VALUES (1, ${deepseekAnchorMs})
-    ON CONFLICT (id) DO UPDATE SET anchor_ms = ${deepseekAnchorMs}
-  `);
-}
-
 function formatIso(tsMs: number): string {
   try { return new Date(tsMs).toISOString(); } catch { return String(tsMs); }
 }
 
-/** 启动时从数据库恢复当日累计花费，防止重启后归零 */
+/** 启动时从数据库恢复当前 UTC 小时桶花费 */
 export async function initDeepSeekDailyBudget(): Promise<void> {
   try {
     await ensureDeepSeekBudgetTables();
-    await loadOrInitDeepSeekAnchor();
 
-    deepseekWindowKey = windowKeyFromAnchor(deepseekAnchorMs);
-    deepseekHourIndex = Math.min(23, Math.max(0, hourIndexFromAnchor(deepseekAnchorMs, Date.now())));
-    deepseekHourBucketKey = bucketKey(deepseekAnchorMs, deepseekHourIndex);
-
-    const winResult = await db.execute(sql`
-      SELECT deepseek_cost_usd FROM ai_cost_window WHERE window_key = ${deepseekWindowKey}
-    `);
-    if ((winResult as any).rows?.length > 0) {
-      deepseekTotalDailyCost = Number(((winResult as any).rows[0] as any).deepseek_cost_usd ?? 0);
-      console.log(`[DeepSeek Budget] 从数据库恢复窗口累计(anchor=${formatIso(deepseekAnchorMs)}): $${deepseekTotalDailyCost.toFixed(4)} / $${DEEPSEEK_TOTAL_BUDGET}`);
-    } else {
-      deepseekTotalDailyCost = 0;
-      console.log(`[DeepSeek Budget] 新窗口(anchor=${formatIso(deepseekAnchorMs)})首次启动，从 $0 开始`);
-    }
-
+    deepseekHourBucketKey = utcHourBucketKey(Date.now());
     const hourResult = await db.execute(sql`
       SELECT deepseek_cost_usd FROM ai_cost_hourly_bucket WHERE bucket_key = ${deepseekHourBucketKey}
     `);
     if ((hourResult as any).rows?.length > 0) {
       deepseekHourlyCost = Number(((hourResult as any).rows[0] as any).deepseek_cost_usd ?? 0);
-      console.log(`[DeepSeek Budget] 从数据库恢复本小时桶(idx=${deepseekHourIndex}, anchor=${formatIso(deepseekAnchorMs)}): $${deepseekHourlyCost.toFixed(4)} / $${DEEPSEEK_HOURLY_BUDGET.toFixed(4)}`);
+      console.log(
+        `[DeepSeek Budget] UTC 小时桶 ${deepseekHourBucketKey}：已用 $${deepseekHourlyCost.toFixed(4)} / $${DEEPSEEK_HOURLY_BUDGET_USD.toFixed(4)}（仅小时上限，无日总预算）`
+      );
     } else {
       deepseekHourlyCost = 0;
-      console.log(`[DeepSeek Budget] 本小时桶(idx=${deepseekHourIndex}, anchor=${formatIso(deepseekAnchorMs)})首次启动，从 $0 开始（小时预算 $${DEEPSEEK_HOURLY_BUDGET.toFixed(4)}）`);
+      console.log(
+        `[DeepSeek Budget] UTC 小时桶 ${deepseekHourBucketKey} 首次记录（上限 $${DEEPSEEK_HOURLY_BUDGET_USD.toFixed(4)}/h）`
+      );
     }
 
-    // Best-effort cleanup: keep only ~7 days of buckets/windows (avoid unbounded growth)
-    db.execute(sql`
-      DELETE FROM ai_cost_window
-      WHERE CAST(window_key AS BIGINT) < ${Date.now() - 7 * DEEPSEEK_WINDOW_MS}
-    `).catch(() => {/* non-fatal */});
+    const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
     db.execute(sql`
       DELETE FROM ai_cost_hourly_bucket
-      WHERE CAST(split_part(bucket_key, '-', 1) AS BIGINT) < ${Date.now() - 7 * DEEPSEEK_WINDOW_MS}
+      WHERE bucket_key ~ '^[0-9]+-[0-9]+$'
+        AND CAST(split_part(bucket_key, '-', 1) AS BIGINT) < ${weekAgo}
     `).catch(() => {/* non-fatal */});
 
     deepseekBudgetInitialized = true;
 
-    // ── Provider daily-exhausted state table ─────────────────────────────────
-    // Persists which free providers hit their daily quota, so restarts don't
-    // reset the exhausted flag and waste one 429 call per exhausted key.
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS provider_daily_exhausted (
         date TEXT NOT NULL,
@@ -197,25 +154,14 @@ export async function initDeepSeekDailyBudget(): Promise<void> {
       }
     }
   } catch (e) {
-    console.warn("[DeepSeek Budget] 无法从数据库加载今日成本，从 $0 开始:", e);
+    console.warn("[DeepSeek Budget] 无法从数据库加载小时成本，从 $0 开始:", e);
     deepseekBudgetInitialized = true;
   }
 }
 
-/** 将 24h 窗口花费异步持久化到数据库 */
-function persistDeepSeekWindowCost(): void {
-  const key = deepseekWindowKey || windowKeyFromAnchor(deepseekAnchorMs || getDefaultAnchorUtcMidnightMs());
-  const cost = deepseekTotalDailyCost;
-  db.execute(sql`
-    INSERT INTO ai_cost_window (window_key, deepseek_cost_usd)
-    VALUES (${key}, ${cost})
-    ON CONFLICT (window_key) DO UPDATE SET deepseek_cost_usd = ${cost}
-  `).catch(() => {/* 非致命，忽略 */});
-}
-
-/** 将本小时桶花费异步持久化到数据库 */
 function persistDeepSeekHourlyCost(): void {
-  const key = deepseekHourBucketKey || bucketKey(deepseekAnchorMs || getDefaultAnchorUtcMidnightMs(), 0);
+  const key = deepseekHourBucketKey;
+  if (!key) return;
   const cost = deepseekHourlyCost;
   db.execute(sql`
     INSERT INTO ai_cost_hourly_bucket (bucket_key, deepseek_cost_usd)
@@ -224,125 +170,40 @@ function persistDeepSeekHourlyCost(): void {
   `).catch(() => {/* 非致命，忽略 */});
 }
 
-/** 立即将内存计数和数据库行同时清零（管理接口调用） */
+/** 将当前 UTC 小时桶花费清零（管理接口） */
 export async function resetDeepSeekBudgetNow(): Promise<void> {
   await ensureDeepSeekBudgetTables();
-  deepseekAnchorMs = Date.now();
-  deepseekWindowKey = windowKeyFromAnchor(deepseekAnchorMs);
-  deepseekHourIndex = 0;
-  deepseekHourBucketKey = bucketKey(deepseekAnchorMs, 0);
-  deepseekTotalDailyCost = 0;
+  deepseekHourBucketKey = utcHourBucketKey(Date.now());
   deepseekHourlyCost = 0;
-  await db.execute(sql`
-    INSERT INTO deepseek_budget_anchor (id, anchor_ms)
-    VALUES (1, ${deepseekAnchorMs})
-    ON CONFLICT (id) DO UPDATE SET anchor_ms = ${deepseekAnchorMs}
-  `).catch(() => {});
-  await db.execute(sql`
-    INSERT INTO ai_cost_window (window_key, deepseek_cost_usd)
-    VALUES (${deepseekWindowKey}, 0)
-    ON CONFLICT (window_key) DO UPDATE SET deepseek_cost_usd = 0
-  `).catch(() => {});
   await db.execute(sql`
     INSERT INTO ai_cost_hourly_bucket (bucket_key, deepseek_cost_usd)
     VALUES (${deepseekHourBucketKey}, 0)
     ON CONFLICT (bucket_key) DO UPDATE SET deepseek_cost_usd = 0
   `).catch(() => {});
-  console.log(`[DeepSeek Budget] 管理员手动重置：anchor=${formatIso(deepseekAnchorMs)}，从 $0 / $0 开始（按小时均分）`);
-}
-
-async function rollDeepSeekWindowIfNeeded(nowMs: number): Promise<void> {
-  if (!deepseekAnchorMs) return;
-  const delta = nowMs - deepseekAnchorMs;
-  if (delta < DEEPSEEK_WINDOW_MS) return;
-
-  // Advance anchor by N * 24h to keep it aligned (avoid drift).
-  const steps = Math.floor(delta / DEEPSEEK_WINDOW_MS);
-  deepseekAnchorMs = deepseekAnchorMs + steps * DEEPSEEK_WINDOW_MS;
-  deepseekWindowKey = windowKeyFromAnchor(deepseekAnchorMs);
-  deepseekHourIndex = 0;
-  deepseekHourBucketKey = bucketKey(deepseekAnchorMs, 0);
-  deepseekTotalDailyCost = 0;
-  deepseekHourlyCost = 0;
-
-  // Persist new anchor + zeroed costs best-effort.
-  db.execute(sql`
-    INSERT INTO deepseek_budget_anchor (id, anchor_ms)
-    VALUES (1, ${deepseekAnchorMs})
-    ON CONFLICT (id) DO UPDATE SET anchor_ms = ${deepseekAnchorMs}
-  `).catch(() => {});
-  db.execute(sql`
-    INSERT INTO ai_cost_window (window_key, deepseek_cost_usd)
-    VALUES (${deepseekWindowKey}, 0)
-    ON CONFLICT (window_key) DO UPDATE SET deepseek_cost_usd = 0
-  `).catch(() => {});
-  db.execute(sql`
-    INSERT INTO ai_cost_hourly_bucket (bucket_key, deepseek_cost_usd)
-    VALUES (${deepseekHourBucketKey}, 0)
-    ON CONFLICT (bucket_key) DO UPDATE SET deepseek_cost_usd = 0
-  `).catch(() => {});
-
-  console.log(`[DeepSeek Budget] 24h 窗口滚动：新 anchor=${formatIso(deepseekAnchorMs)}（预算 $${DEEPSEEK_TOTAL_BUDGET}/24h，小时 $${DEEPSEEK_HOURLY_BUDGET.toFixed(4)}）`);
+  console.log(`[DeepSeek Budget] 管理员重置：UTC 小时桶 ${deepseekHourBucketKey} 已清零`);
 }
 
 function checkDeepSeekBudget(_category: string): boolean {
-  if (!deepseekBudgetInitialized) return true; // 初始化完成前不拦截
+  if (!deepseekBudgetInitialized) return true;
   const nowMs = Date.now();
-  if (!deepseekAnchorMs) deepseekAnchorMs = getDefaultAnchorUtcMidnightMs();
-
-  // Roll window (async best-effort; do not block request path)
-  void rollDeepSeekWindowIfNeeded(nowMs);
-
-  deepseekWindowKey = deepseekWindowKey || windowKeyFromAnchor(deepseekAnchorMs);
-
-  // Hour bucket reset (relative to anchor)
-  const idx = hourIndexFromAnchor(deepseekAnchorMs, nowMs);
-  const clamped = Math.max(0, Math.min(23, idx));
-  if (clamped !== deepseekHourIndex) {
-    deepseekHourIndex = clamped;
-    deepseekHourlyCost = 0;
-    deepseekHourBucketKey = bucketKey(deepseekAnchorMs, deepseekHourIndex);
-    persistDeepSeekHourlyCost();
-    console.log(`[DeepSeek Budget] 小时桶切换：idx=${deepseekHourIndex}（anchor=${formatIso(deepseekAnchorMs)}），本小时预算 $${DEEPSEEK_HOURLY_BUDGET.toFixed(4)}`);
-  }
-  if (DEEPSEEK_STRICT_HOURLY_CAP && deepseekHourlyCost >= DEEPSEEK_HOURLY_BUDGET) {
-    console.warn(`[DeepSeek Budget] 本小时预算已达 $${DEEPSEEK_HOURLY_BUDGET.toFixed(4)}（已用 $${deepseekHourlyCost.toFixed(4)}），等待下一个小时桶（anchor=${formatIso(deepseekAnchorMs)}）`);
-    return false;
-  }
-  if (!DEEPSEEK_STRICT_HOURLY_CAP && deepseekHourlyCost >= DEEPSEEK_HOURLY_BUDGET) {
+  syncDeepSeekUtcHourBucket(nowMs);
+  if (deepseekHourlyCost >= DEEPSEEK_HOURLY_BUDGET_USD) {
     console.warn(
-      `[DeepSeek Budget] 本小时 slice 已超过均分额度（已用 $${deepseekHourlyCost.toFixed(4)} / $${DEEPSEEK_HOURLY_BUDGET.toFixed(4)}），` +
-      `DEEPSEEK_STRICT_HOURLY_CAP=false — 仍允许调用，直至 24h 总预算 $${DEEPSEEK_TOTAL_BUDGET}`
+      `[DeepSeek Budget] 本 UTC 小时已达上限 $${DEEPSEEK_HOURLY_BUDGET_USD.toFixed(4)}（已用 $${deepseekHourlyCost.toFixed(4)}，桶=${deepseekHourBucketKey}）`
     );
-  }
-  if (deepseekTotalDailyCost >= DEEPSEEK_TOTAL_BUDGET) {
-    console.warn(`[DeepSeek Budget] 24h 总预算已达 $${DEEPSEEK_TOTAL_BUDGET}（已用 $${deepseekTotalDailyCost.toFixed(4)}，anchor=${formatIso(deepseekAnchorMs)}）`);
     return false;
   }
   return true;
 }
 
 function recordDeepSeekCost(_category: string, inputTokens: number, outputTokens: number): void {
-  // DeepSeek-chat: 输入 $0.27/1M，输出 $1.10/1M
   const cost = (inputTokens * 0.27 + outputTokens * 1.10) / 1_000_000;
-  // Ensure hour bucket is current before recording
   const nowMs = Date.now();
-  if (!deepseekAnchorMs) deepseekAnchorMs = getDefaultAnchorUtcMidnightMs();
-  const idx = Math.max(0, Math.min(23, hourIndexFromAnchor(deepseekAnchorMs, nowMs)));
-  if (!deepseekWindowKey) deepseekWindowKey = windowKeyFromAnchor(deepseekAnchorMs);
-  if (idx !== deepseekHourIndex) {
-    deepseekHourIndex = idx;
-    deepseekHourlyCost = 0;
-    deepseekHourBucketKey = bucketKey(deepseekAnchorMs, deepseekHourIndex);
-  }
-  deepseekTotalDailyCost += cost;
+  syncDeepSeekUtcHourBucket(nowMs);
   deepseekHourlyCost += cost;
   console.log(
-    `[DeepSeek Cost] 本次 $${cost.toFixed(5)} | ` +
-    `本小时(idx=${deepseekHourIndex}, anchor=${formatIso(deepseekAnchorMs)}) $${deepseekHourlyCost.toFixed(4)} / $${DEEPSEEK_HOURLY_BUDGET.toFixed(4)} | ` +
-    `本窗口 $${deepseekTotalDailyCost.toFixed(4)} / $${DEEPSEEK_TOTAL_BUDGET}`
+    `[DeepSeek Cost] 本次 $${cost.toFixed(5)} | UTC 小时 ${deepseekHourBucketKey} 累计 $${deepseekHourlyCost.toFixed(4)} / $${DEEPSEEK_HOURLY_BUDGET_USD.toFixed(4)}`
   );
-  persistDeepSeekWindowCost();
   persistDeepSeekHourlyCost();
 }
 
@@ -497,23 +358,15 @@ export function areFreeProvidersDailyExhausted(): boolean {
 }
 
 /**
- * True when the DeepSeek $0.50/day budget has NOT yet been reached.
- * Used by auto-scraper.ts to gate hasUsableProvider() — prevents fingerprinting
- * articles when the only available provider (DeepSeek) is over budget.
+ * True when DeepSeek is under the **UTC hourly** USD cap (see DEEPSEEK_HOURLY_BUDGET_USD).
+ * Used by auto-scraper to gate hasUsableProvider() — no separate 24h total budget.
  */
 export function isDeepSeekBudgetAvailable(): boolean {
-  // Trigger a midnight reset check first
-  checkDeepSeekBudget("budget-check");
-  return deepseekTotalDailyCost < DEEPSEEK_TOTAL_BUDGET;
+  return checkDeepSeekBudget("budget-check");
 }
 
-/**
- * True when the current UTC hour bucket has remaining DeepSeek budget.
- * This is used by auto-scraper to avoid starting DeepSeek-only work when
- * the hourly slice (0.50/24) is already exhausted.
- */
+/** @deprecated Same as isDeepSeekBudgetAvailable (hourly-only cap). */
 export function isDeepSeekHourlyBudgetAvailable(): boolean {
-  // Reuse budget gate which includes hourly + daily checks.
   return checkDeepSeekBudget("hourly-budget-check");
 }
 
