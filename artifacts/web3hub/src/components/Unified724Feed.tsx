@@ -49,6 +49,9 @@ const SECTION_LABEL_EN: Record<string, string> = {
 
 const POLL_INTERVAL_MS = 30 * 1000; // 前台轮询第一页，新帖自动插入列表顶部
 
+const feedFetch = (url: string) =>
+  fetch(url, { cache: "no-store", headers: { "Cache-Control": "no-cache" } });
+
 function getDedupKey(item: FeedItem): string {
   const k = semanticDedupKey(item.title || "", item.link);
   return k ?? `id:${item.id}`;
@@ -186,7 +189,7 @@ const Unified724Feed: React.FC = () => {
 
       const url = `${getApiBase()}/feed?page=${currentPage}&limit=${AI_FEED_PAGE_SIZE}${tabParam}`;
 
-      const res = await fetch(url);
+      const res = await feedFetch(url);
       const data = await res.json();
 
       const incoming: FeedItem[] = data.items || [];
@@ -227,28 +230,30 @@ const Unified724Feed: React.FC = () => {
       if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
       try {
         const tabParam = activeTab === 'all' ? '' : `&category=${activeTab}`;
-        const res = await fetch(`${getApiBase()}/feed?page=1&limit=${AI_FEED_PAGE_SIZE}${tabParam}`);
+        const res = await feedFetch(
+          `${getApiBase()}/feed?page=1&limit=${AI_FEED_PAGE_SIZE}${tabParam}`,
+        );
         const data = await res.json();
         const latest: FeedItem[] = data.items || [];
         if (!latest.length) return;
 
-        const currentTopId = topIdRef.current;
-        if (!currentTopId) {
-          topIdRef.current = latest[0].id;
-          return;
-        }
-
-        const topNum = Number(currentTopId);
-        const newChunk = latest.filter((i) => Number(i.id) > topNum);
-        if (newChunk.length === 0) return;
-
+        // Merge by id — do not rely on numeric id order (non-sequential / string ids break the old > comparison).
         setItems((prev) => {
-          const existingIds = new Set(prev.map((p) => p.id));
-          const toAdd = newChunk.filter((i) => !existingIds.has(i.id));
-          if (toAdd.length === 0) return prev;
-          return [...toAdd, ...prev];
+          if (prev.length === 0) {
+            topIdRef.current = latest[0]?.id ?? null;
+            return latest;
+          }
+          const existingIds = new Set(prev.map((p) => String(p.id)));
+          const fresh = latest.filter((i) => !existingIds.has(String(i.id)));
+          if (fresh.length === 0) {
+            topIdRef.current = latest[0]?.id ?? topIdRef.current;
+            return prev;
+          }
+          const merged = [...fresh, ...prev];
+          merged.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+          topIdRef.current = merged[0]?.id ?? null;
+          return merged;
         });
-        topIdRef.current = latest[0].id;
       } catch {
         // 静默失败
       }
