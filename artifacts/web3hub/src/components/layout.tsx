@@ -41,7 +41,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { data: meData } = useGetMe({ wallet: address ?? "" }, { query: { enabled: !!address } });
   const [location, navigate] = useLocation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const { activeCategory, setActiveCategory } = useEventFilter();
+  const { activeCategory, setActiveCategory, clearEcosystem } = useEventFilter();
   const isHome = location === "/";
   const [walletModalOpen, setWalletModalOpen] = useState(false);
   const [whitepaperOpen, setWhitepaperOpen] = useState(false);
@@ -148,6 +148,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const handleNavClick = (e: React.MouseEvent, href: string, _navKey: string) => {
     e.preventDefault();
+    clearEcosystem();
     navigate(href);
   };
 

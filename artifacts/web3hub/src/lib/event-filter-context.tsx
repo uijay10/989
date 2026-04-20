@@ -15,17 +15,43 @@ export const NAV_KEY_TO_CATEGORY: Record<string, string> = {
 interface EventFilterCtx {
   activeCategory: string;
   setActiveCategory: (c: string) => void;
+  activeChain: string | null;
+  setActiveChain: (c: string | null) => void;
+  activeExchange: string | null;
+  setActiveExchange: (e: string | null) => void;
+  clearEcosystem: () => void;
 }
 
 const EventFilterContext = createContext<EventFilterCtx>({
   activeCategory: "全部",
   setActiveCategory: () => {},
+  activeChain: null,
+  setActiveChain: () => {},
+  activeExchange: null,
+  setActiveExchange: () => {},
+  clearEcosystem: () => {},
 });
 
 export function EventFilterProvider({ children }: { children: ReactNode }) {
   const [activeCategory, setActiveCategory] = useState("全部");
+  const [activeChain, setActiveChain] = useState<string | null>(null);
+  const [activeExchange, setActiveExchange] = useState<string | null>(null);
+  const clearEcosystem = () => {
+    setActiveChain(null);
+    setActiveExchange(null);
+  };
   return (
-    <EventFilterContext.Provider value={{ activeCategory, setActiveCategory }}>
+    <EventFilterContext.Provider
+      value={{
+        activeCategory,
+        setActiveCategory,
+        activeChain,
+        setActiveChain,
+        activeExchange,
+        setActiveExchange,
+        clearEcosystem,
+      }}
+    >
       {children}
     </EventFilterContext.Provider>
   );
