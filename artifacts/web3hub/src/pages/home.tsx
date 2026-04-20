@@ -11,7 +11,6 @@ import { TagBadge } from "@/components/post-card";
 import { RoleBadge } from "@/components/role-badge";
 import { PriceTicker } from "@/components/PriceTicker";
 import { FEATURES } from "@/lib/feature-flags";
-import { HotEcosystemQuickEntry } from "@/components/hot-ecosystem-quick-entry";
 import { formatDistanceToNow } from "date-fns";
 import { enUS, zhCN } from "date-fns/locale";
 import { getApiBase } from "@/lib/api-base";
@@ -361,9 +360,6 @@ export default function Home() {
           </button>
         )}
       </div>
-
-      {/* Hot ecosystem quick entry (under navbar empty strip) */}
-      <HotEcosystemQuickEntry />
 
       {/* Encouragement + CTA */}
       <div className="rounded-2xl px-6 py-6 border border-blue-200/60" style={{background: "linear-gradient(135deg, #dbeafe 0%, #eff6ff 50%, #e0f2fe 100%)"}}>

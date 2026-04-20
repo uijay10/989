@@ -9,6 +9,7 @@ import { LogOut, ChevronDown, LayoutDashboard, ShieldCheck, PenSquare, FileText,
 import { cn, truncateAddress, generateGradient } from "@/lib/utils";
 import { useState, useRef, useEffect } from "react";
 import { useEventFilter, NAV_KEY_TO_CATEGORY } from "@/lib/event-filter-context";
+import { HotEcosystemQuickEntry } from "@/components/hot-ecosystem-quick-entry";
 import { formatDistanceToNow } from "date-fns";
 import { enUS, zhCN } from "date-fns/locale";
 import { getApiBase } from "@/lib/api-base";
@@ -366,6 +367,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
+
+      {/* ── Home-only strip under navbar: Chains/Exchanges quick links ── */}
+      {isHome && (
+        <div className="w-full bg-transparent">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+            <div className="rounded-2xl border border-slate-200/60 bg-white/55 backdrop-blur-sm px-3 py-2 shadow-sm">
+              <HotEcosystemQuickEntry />
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {children}

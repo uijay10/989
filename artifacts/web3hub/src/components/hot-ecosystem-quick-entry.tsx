@@ -45,15 +45,19 @@ const EXCHANGE_ITEMS: QuickItem[] = EXCHANGES.map((name) => ({
   hint: `查看 ${name} 专栏 - Listing、公告与机会`,
 }));
 
+const pillCls =
+  "relative px-3 py-1 rounded-full text-[14px] font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer " +
+  "text-slate-800 hover:text-slate-900 hover:bg-slate-100";
+
 function TagLinksRow({ items }: { items: QuickItem[] }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap items-center justify-center gap-x-0.5 gap-y-1">
       {items.map((it) => (
         <Link
           key={it.href}
           href={it.href}
           title={it.hint}
-          className="inline-flex items-center rounded-full border border-slate-200/70 bg-white/70 px-3 py-1 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur-sm transition hover:bg-white hover:text-slate-900 hover:border-slate-300"
+          className={pillCls}
         >
           {it.label}
         </Link>
@@ -64,24 +68,12 @@ function TagLinksRow({ items }: { items: QuickItem[] }) {
 
 export function HotEcosystemQuickEntry() {
   return (
-    <section className="w-full rounded-2xl border border-slate-200/60 bg-white/55 backdrop-blur-sm px-5 py-4 shadow-sm">
-      <div>
-        <div className="text-sm font-extrabold text-slate-900">热门生态快速入口</div>
-        <div className="mt-0.5 text-xs text-slate-500">按公链 / 交易所快速查看对应机会与公告</div>
+    <div className="w-full">
+      <div className="flex flex-col gap-1.5">
+        <TagLinksRow items={CHAIN_ITEMS} />
+        <TagLinksRow items={EXCHANGE_ITEMS} />
       </div>
-
-      <div className="mt-4 space-y-3">
-        <div className="flex items-start gap-3">
-          <div className="mt-1 w-12 shrink-0 text-xs font-bold text-slate-500">公链</div>
-          <TagLinksRow items={CHAIN_ITEMS} />
-        </div>
-
-        <div className="flex items-start gap-3">
-          <div className="mt-1 w-12 shrink-0 text-xs font-bold text-slate-500">交易所</div>
-          <TagLinksRow items={EXCHANGE_ITEMS} />
-        </div>
-      </div>
-    </section>
+    </div>
   );
 }
 
