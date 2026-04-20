@@ -7,6 +7,9 @@ import { classifyChainExchangeTags } from "../lib/tag-classifier";
 const router: IRouter = Router();
 
 router.get("/", async (req, res) => {
+  // Live feed must never be cached by CDN/browser/proxy — stale JSON looks like “7×24 stopped updating”.
+  res.setHeader("Cache-Control", "private, no-store, no-cache, must-revalidate");
+  res.setHeader("Pragma", "no-cache");
   try {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(1000, parseInt(req.query.limit as string) || 30);

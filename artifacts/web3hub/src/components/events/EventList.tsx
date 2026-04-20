@@ -339,6 +339,10 @@ const CACHE_TTL = 60_000; // 60 s — background-refresh after this
 /** Poll so new scraped posts appear without manual reload (tab visible only). */
 const AUTO_REFRESH_MS = 30_000;
 
+function feedGet(url: string) {
+  return fetch(url, { cache: "no-store", headers: { "Cache-Control": "no-cache" } });
+}
+
 /* ── EventList component ─────────────────────────────────── */
 
 export function EventList({
@@ -488,9 +492,9 @@ export function EventList({
     };
 
     Promise.all([
-      fetch(buildUrl(1)).then(r => r.ok ? r.json() : { items: [], total: 0, hasMore: false }),
+      feedGet(buildUrl(1)).then(r => r.ok ? r.json() : { items: [], total: 0, hasMore: false }),
       showPinned
-        ? fetch(`${getApiBase()}/posts?pinned=1&limit=16`).then(r => r.ok ? r.json() : { posts: [] })
+        ? feedGet(`${getApiBase()}/posts?pinned=1&limit=16`).then(r => r.ok ? r.json() : { posts: [] })
         : Promise.resolve({ posts: [] }),
     ]).then(([aiData, pinnedData]) => {
       const aiPosts: Array<Record<string, unknown>> = Array.isArray((aiData as any).items) ? (aiData as any).items : [];
@@ -573,7 +577,7 @@ export function EventList({
         (chain ? `&chain=${encodeURIComponent(chain)}` : "") +
         (exchange ? `&exchange=${encodeURIComponent(exchange)}` : "");
       const url = `${getApiBase()}/feed?category=${encodeURIComponent(cats)}&limit=${PAGE_LIMIT}&page=${nextPage}${extra}`;
-      const res = await fetch(url);
+      const res = await feedGet(url);
       const data = await res.json();
       const newItems: any[] = data.items || [];
 
