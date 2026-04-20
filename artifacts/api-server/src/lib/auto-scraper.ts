@@ -149,10 +149,6 @@ export const DEFAULT_SOURCES = [
   { name: "Messari Research", url: "https://messari.io/rss/news.xml", type: "rss", priority: 1 },
   { name: "DeFiLlama Blog", url: "https://defillama.com/blog/rss.xml", type: "rss", priority: 1 },
   { name: "OKX Blog", url: "https://www.okx.com/learn/category/news/feed", type: "rss", priority: 1 },
-  // OKX announcements don't offer stable RSS. Kept as a placeholder for a future Playwright-based fetcher.
-  { name: "OKX Latest Announcements (playwright)", url: "https://www.okx.com/en-us/help/section/announcements-latest-announcements", type: "playwright", priority: 1 },
-  { name: "OKX New Listings (playwright)", url: "https://www.okx.com/en-us/help/section/announcements-new-listings", type: "playwright", priority: 1 },
-  { name: "OKX Jumpstart (playwright)", url: "https://www.okx.com/help/section/announcements-jumpstart", type: "playwright", priority: 1 },
   { name: "Alchemy Blog", url: "https://www.alchemy.com/blog/rss.xml", type: "rss", priority: 2 },
   { name: "Foresight News", url: "https://foresightnews.pro/rss", type: "rss", priority: 1 },
   { name: "Panews", url: "https://www.panewslab.com/rss", type: "rss", priority: 1 },
@@ -209,6 +205,8 @@ export const DEFAULT_KEYWORDS = [
   "链游","元宇宙","去中心化","公链","侧链","二层","零知识","锁仓",
   "预售","内测","公测","开放","申请","报名","任务","活动","招募",
   "漏洞","赏金","资助","捐赠","赞助","孵化","加速器","招聘",
+  // OKX / exchange-specific keywords (keep mechanism unchanged; only widen matching)
+  "okx","okex","欧易","jumpstart","megadrop","new listing","spot trading","delisting",
   "融资轮","种子轮","战略投资","天使轮","安全审计","漏洞赏金",
   "监管","合规","政策","加密货币监管","数字资产","etf","合法化","禁令","牌照","央行",
   "RWA代币化","机构采购","比特币储备","稳定币","银行区块链","加密ETF",
