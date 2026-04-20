@@ -308,7 +308,7 @@ Routing priority (apply in order):
 Task: For each article decide: (a) Is it Web3/crypto? (b) Which section fits best? (c) Extract dates.
 
 Output rules:
-- Return ONLY a raw JSON array at the top level (not `{"articles":[...]}`) — no markdown, no code blocks
+- Return ONLY a raw JSON array at the top level. Do not wrap the array in an object (no "articles" / "data" wrapper) — no markdown, no code blocks
 - Skip non-Web3 content silently (return nothing for that item)
 - Return [] only if ALL articles are non-Web3
 - Web3 articles MUST always be included — use 快讯 if no specific section fits
