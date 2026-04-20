@@ -420,25 +420,25 @@ export function EventList({ sectionSlug, sectionName }: { sectionSlug?: string; 
     }
     setError("");
 
-    const buildUrl = (offset: number) => {
+    const buildUrl = (page: number) => {
       const lim = PAGE_LIMIT;
-      if (sectionSlug) {
-        if (sectionSlug === "quest")
-          return `${getApiBase()}/posts?sections=quest,airdrop&limit=${lim}&offset=${offset}`;
-        if (sectionSlug === "ido")
-          return `${getApiBase()}/posts?sections=ido,mainnet,exchange,presale&limit=${lim}&offset=${offset}`;
-        return `${getApiBase()}/posts?section=${encodeURIComponent(sectionSlug)}&limit=${lim}&offset=${offset}`;
-      }
-      return `${getApiBase()}/posts?authorType=ai&limit=${lim}&offset=${offset}`;
+      const cats = sectionSlug === "quest"
+        ? "quest,airdrop"
+        : sectionSlug === "ido"
+        ? "ido,mainnet,exchange,presale"
+        : sectionSlug
+        ? sectionSlug
+        : "all";
+      return `${getApiBase()}/feed?category=${encodeURIComponent(cats)}&limit=${lim}&page=${page}`;
     };
 
     Promise.all([
-      fetch(buildUrl(0)).then(r => r.ok ? r.json() : { posts: [] }),
+      fetch(buildUrl(1)).then(r => r.ok ? r.json() : { items: [], total: 0, hasMore: false }),
       sectionSlug
         ? Promise.resolve({ posts: [] })
         : fetch(`${getApiBase()}/posts?pinned=1&limit=16`).then(r => r.ok ? r.json() : { posts: [] }),
     ]).then(([aiData, pinnedData]) => {
-      const aiPosts: Array<Record<string, unknown>> = Array.isArray(aiData.posts) ? aiData.posts : [];
+      const aiPosts: Array<Record<string, unknown>> = Array.isArray((aiData as any).items) ? (aiData as any).items : [];
       const pinned: any[] = Array.isArray(pinnedData.posts) ? pinnedData.posts : [];
       setPinnedPosts(pinned);
 
@@ -446,22 +446,14 @@ export function EventList({ sectionSlug, sectionName }: { sectionSlug?: string; 
       const events: Web3Event[] = aiPosts
         .filter(p => !pinnedIds.has(p.id))
         .map((p) => ({
-          id: p.id as number,
+          id: p.id as number | string,
           title: p.title as string,
-          description: p.content as string,
-          project_name: p.authorName as string,
-          category: p.section ? [getSectionLabel(p.section as string, lang)] : [],
-          source_url: (p.sourceUrl as string) ?? undefined,
+          description: (p.summary as string) ?? (p.content as string),
+          project_name: (p.source as string) ?? "",
+          category: (p.category ? [getSectionLabel(p.category as string, lang)] : []) as string[],
+          source_url: (p.link as string) ?? (p.sourceUrl as string) ?? undefined,
           importance: (p.importance as string) ?? "medium",
-          start_time: (p.eventStartTime as string) ?? undefined,
-          end_time: (p.eventEndTime as string) ?? undefined,
-          crawl_time: p.createdAt as string,
-          ai_confidence: p.aiConfidence as number,
-          isPinned: p.isPinned as boolean,
-          pinnedUntil: p.pinnedUntil as string | null,
-          authorWallet: p.authorWallet as string,
-          authorType: p.authorType as string,
-          authorName: p.authorName as string,
+          crawl_time: (p.time as string) ?? (p.createdAt as string),
         }));
 
       // Write to cache
@@ -476,16 +468,12 @@ export function EventList({ sectionSlug, sectionName }: { sectionSlug?: string; 
         return timeB - timeA;
       }));
       setServerOffset(aiPosts.length);
-      setHasMore(aiPosts.length >= PAGE_LIMIT);
-      // Prefer totalAll (historical, no expiry filter) over total for count display
-      const displayCount = aiData.totalAll ?? aiData.total;
-      if (displayCount) {
-        setServerTotal(Number(displayCount));
-        _totalCache.set(cacheKey, Number(displayCount));
-      }
+      setHasMore(Boolean((aiData as any).hasMore));
+      const displayCount = Number((aiData as any).total ?? 0);
+      if (displayCount) { setServerTotal(displayCount); _totalCache.set(cacheKey, displayCount); }
       // 同步 ref，让 loadMore 从正确 offset 开始
       _lmOffset.current  = aiPosts.length;
-      _lmHasMore.current = aiPosts.length >= PAGE_LIMIT;
+      _lmHasMore.current = Boolean((aiData as any).hasMore);
       setLoading(false);
     }).catch(() => {
       setError(zh ? "数据加载失败，请刷新重试" : "Failed to load data, please refresh");
@@ -517,47 +505,36 @@ export function EventList({ sectionSlug, sectionName }: { sectionSlug?: string; 
     setLoadingMore(true);
 
     try {
-      const offset = _lmOffset.current;
-      let url: string;
-      if (sectionSlug === "quest") {
-        url = `${getApiBase()}/posts?sections=quest,airdrop&offset=${offset}&limit=50`;
-      } else if (sectionSlug === "ido") {
-        url = `${getApiBase()}/posts?sections=ido,mainnet,exchange,presale&offset=${offset}&limit=50`;
-      } else if (sectionSlug) {
-        url = `${getApiBase()}/posts?section=${encodeURIComponent(sectionSlug)}&offset=${offset}&limit=50`;
-      } else {
-        url = `${getApiBase()}/posts?authorType=ai&offset=${offset}&limit=50`;
-      }
+      const nextPage = page + 1;
+      const cats = sectionSlug === "quest"
+        ? "quest,airdrop"
+        : sectionSlug === "ido"
+        ? "ido,mainnet,exchange,presale"
+        : sectionSlug
+        ? sectionSlug
+        : "all";
 
-      const res  = await fetch(url);
+      const url = `${getApiBase()}/feed?category=${encodeURIComponent(cats)}&limit=${PAGE_LIMIT}&page=${nextPage}`;
+      const res = await fetch(url);
       const data = await res.json();
-      const newPosts: any[] = data.posts || [];
+      const newItems: any[] = data.items || [];
 
-      // 同步更新 offset（服务端实际返回量）
-      _lmOffset.current = offset + newPosts.length;
+      setPage(nextPage);
+      _lmOffset.current = _lmOffset.current + newItems.length;
+      _lmHasMore.current = Boolean(data.hasMore);
+      setHasMore(Boolean(data.hasMore));
+      const total = Number(data.total ?? 0);
+      if (total) { setServerTotal(total); _totalCache.set(cacheKey, total); }
 
-      if (newPosts.length < 50) {
-        _lmHasMore.current = false;
-        setHasMore(false);
-      }
-
-      const newEvents: Web3Event[] = newPosts.map((p: any) => ({
-        id:           p.id,
-        title:        p.title,
-        description:  p.content,
-        project_name: p.authorName,
-        category:     p.section ? [getSectionLabel(p.section, lang)] : [],
-        source_url:   p.sourceUrl,
-        importance:   p.importance ?? "medium",
-        start_time:   p.eventStartTime,
-        end_time:     p.eventEndTime,
-        crawl_time:   p.createdAt,
-        ai_confidence: p.aiConfidence,
-        isPinned:     p.isPinned ?? false,
-        pinnedUntil:  p.pinnedUntil,
-        authorWallet: p.authorWallet,
-        authorType:   p.authorType,
-        authorName:   p.authorName,
+      const newEvents: Web3Event[] = newItems.map((p: any) => ({
+        id: p.id,
+        title: p.title,
+        description: p.summary ?? p.content,
+        project_name: p.source ?? "",
+        category: p.category ? [getSectionLabel(p.category, lang)] : [],
+        source_url: p.link ?? p.sourceUrl,
+        importance: p.importance ?? "medium",
+        crawl_time: p.time ?? p.createdAt,
       }));
 
       setAllEvents(prev => {
@@ -572,7 +549,7 @@ export function EventList({ sectionSlug, sectionName }: { sectionSlug?: string; 
       _lmLoading.current = false;  // 同步重置，不等 useEffect
       setLoadingMore(false);
     }
-  }, [sectionSlug, deduplicateEvents]); // 不依赖 allEvents.length / loadingMore / hasMore
+  }, [sectionSlug, deduplicateEvents, page, lang]); // page drives feed paging
 
   // 检查是否接近底部，满足则加载下一批
   const checkScrollBottom = useCallback(() => {
