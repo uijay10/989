@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useLang } from '@/lib/i18n';
 import { getApiBase } from '@/lib/api-base';
 import { semanticDedupKey } from '@/lib/semantic-title-key';
+import { AI_FEED_PAGE_SIZE } from '@/lib/ai-feed-page-size';
 
 interface FeedItem {
   id: string;
@@ -183,7 +184,7 @@ const Unified724Feed: React.FC = () => {
       const tabParam = activeTab === 'all' ? '' : `&category=${activeTab}`;
       const currentPage = reset ? 1 : page;
 
-      const url = `${getApiBase()}/feed?page=${currentPage}&limit=30${tabParam}`;
+      const url = `${getApiBase()}/feed?page=${currentPage}&limit=${AI_FEED_PAGE_SIZE}${tabParam}`;
 
       const res = await fetch(url);
       const data = await res.json();
@@ -226,7 +227,7 @@ const Unified724Feed: React.FC = () => {
       if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
       try {
         const tabParam = activeTab === 'all' ? '' : `&category=${activeTab}`;
-        const res = await fetch(`${getApiBase()}/feed?page=1&limit=30${tabParam}`);
+        const res = await fetch(`${getApiBase()}/feed?page=1&limit=${AI_FEED_PAGE_SIZE}${tabParam}`);
         const data = await res.json();
         const latest: FeedItem[] = data.items || [];
         if (!latest.length) return;
