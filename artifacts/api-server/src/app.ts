@@ -432,7 +432,7 @@ async function tryClaimCronLeaderLease(instanceId: string): Promise<boolean> {
 //
 //  [DeepSeek cycle] Every 60 min (24 runs/day)
 //                   paidOnly=true — uses DeepSeek exclusively (never mixed into Groq cron)
-//                   Blocked only by UTC hourly USD cap (DEEPSEEK_HOURLY_BUDGET_USD, default 0.05); no 24h total cap.
+//                   Blocked only by app-side UTC hourly USD cap (DEEPSEEK_HOURLY_BUDGET_USD; 0=unlimited); no 24h total cap.
 //
 //  Both cycles use ALL combined keywords → AI classify →
 //  dual-publish to matched section(s) + 7×24快讯

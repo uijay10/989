@@ -6,6 +6,10 @@ import {
   areFreeProvidersDailyExhausted,
   canRunPaidUnifiedScrape,
   getDailyQuotaStats,
+  getDeepSeekHourlyBudgetUsd,
+  getDeepSeekHourlySpendUsd,
+  isDeepSeekBlockedByAppHourlyCap,
+  isDeepSeekHourlyCapDisabled,
   isFreeProviderAvailable,
 } from "../lib/ai-provider";
 import { getTodayArticlesProcessed, SCRAPE_CONFIG } from "../lib/auto-scraper";
@@ -69,6 +73,13 @@ router.get("/healthz/scrape", async (_req, res) => {
         canRunPaidDeepSeekUnified: canRunPaidUnifiedScrape(),
         quota: getDailyQuotaStats(),
       },
+      // App-side DeepSeek $/hour cap (NOT your DeepSeek account balance). Default was ~$0.05/h and could block publishes for a whole UTC hour.
+      deepSeekAppHourlyThrottle: {
+        capUsd: isDeepSeekHourlyCapDisabled() ? null : getDeepSeekHourlyBudgetUsd(),
+        disabled: isDeepSeekHourlyCapDisabled(),
+        estimatedSpentUsdThisUtcHour: getDeepSeekHourlySpendUsd(),
+        blockedByThisCap: isDeepSeekBlockedByAppHourlyCap(),
+      },
       lastAiPost: lastAiAt
         ? {
             at: lastAiAt.toISOString(),
@@ -91,7 +102,8 @@ router.get("/healthz/scrape", async (_req, res) => {
       hints: [
         "If scrapeCronDisabled=true: set DISABLE_SCRAPE_CRON!=true on the API host or cron will never run.",
         "If dailyArticleBudget.atCap=true: unified scraper stops until UTC date rolls (see scrape_logs SUM).",
-        "If allFreeGroqDailyExhausted=true but canRunPaidDeepSeekUnified=false: add/fix DEEPSEEK_API_KEY or raise DEEPSEEK_HOURLY_BUDGET_USD.",
+        "If blockedByThisCap=true in deepSeekAppHourlyThrottle: app hourly limit hit (set DEEPSEEK_HOURLY_BUDGET_USD higher or =0 to disable). Account balance is separate.",
+        "If allFreeGroqDailyExhausted=true but canRunPaidDeepSeekUnified=false: add/fix DEEPSEEK_API_KEY or fix throttle above.",
         "If lastScrapeLog is null: DB table scrape_logs may not exist or DB unreachable.",
         "If itemsFound>0 but itemsSaved=0: AI rejected or dedup/guards filtered everything, or DB insert failing.",
         "If lastScrapeLog.minutesAgo keeps increasing: process sleeping (e.g. host spun down), or leader lease held elsewhere, or only saves 0.",
