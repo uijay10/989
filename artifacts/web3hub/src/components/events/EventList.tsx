@@ -356,7 +356,8 @@ export function EventList({
   const zh = lang === "zh-CN";
   const { address } = useWeb3Auth();
   const adminUser = isAdmin(address);
-  const showPinned = !sectionSlug && !chain && !exchange;
+  // User requirement: no pinned area anywhere (including homepage).
+  const showPinned = false;
 
   /** Stable random seed for this browser session */
   const sessionSeed = useRef(Math.random() * 0xffffffff >>> 0);

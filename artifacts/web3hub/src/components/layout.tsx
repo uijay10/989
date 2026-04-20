@@ -372,9 +372,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         {/* ── Home-only strip under navbar: Chains/Exchanges quick links (sticky together) ── */}
         {isHome && (
-          <div className="w-full bg-transparent">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-              <div className="rounded-2xl border border-slate-200/60 bg-white/55 backdrop-blur-sm px-3 py-2 shadow-sm">
+          <div className="w-full bg-transparent -mt-1">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-0">
+              <div className="rounded-2xl border border-slate-200/60 bg-white/55 backdrop-blur-sm px-3 py-1 shadow-sm">
                 <HotEcosystemQuickEntry />
               </div>
             </div>
