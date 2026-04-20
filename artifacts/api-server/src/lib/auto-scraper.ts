@@ -480,18 +480,40 @@ async function getExistingTitles(titles: string[]): Promise<Set<string>> {
   } catch { return new Set(); }
 }
 
+/** Merge DB keywords with code DEFAULT_KEYWORDS (dedupe). If DB has any rows but only supplements new plates, we still keep the full base list — previously we returned ONLY DB rows and dropped DEFAULT_KEYWORDS. */
+function mergeKeywordLists(base: string[], extra: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const k of [...base, ...extra]) {
+    const t = String(k ?? "").trim();
+    if (!t) continue;
+    const low = t.toLowerCase();
+    if (seen.has(low)) continue;
+    seen.add(low);
+    out.push(t);
+  }
+  return out;
+}
+
 export async function getKeywordsFromDb(): Promise<string[]> {
   try {
     const rows = await db.execute(sql`SELECT keyword FROM scrape_keywords WHERE enabled = true`);
     const kws = (rows.rows as Array<{ keyword: string }> | undefined)?.map(r => r.keyword) ?? [];
-    // IMPORTANT: If the table exists but is empty (or everything disabled), DO NOT return [].
-    // An empty keyword list makes RSS pre-filter drop everything → "no new posts" forever.
+    // IMPORTANT: empty → [] would drop all RSS; use DEFAULT only.
     if (kws.length === 0) {
-      console.warn("[unified-scrape] scrape_keywords has 0 enabled rows — falling back to DEFAULT_KEYWORDS");
-      return DEFAULT_KEYWORDS;
+      console.warn("[unified-scrape] scrape_keywords has 0 enabled rows — using DEFAULT_KEYWORDS only");
+      return [...DEFAULT_KEYWORDS];
     }
-    return kws;
-  } catch { return DEFAULT_KEYWORDS; }
+    const merged = mergeKeywordLists(DEFAULT_KEYWORDS, kws);
+    if (merged.length > kws.length) {
+      console.log(
+        `[unified-scrape] merged DEFAULT_KEYWORDS (${DEFAULT_KEYWORDS.length} base) + scrape_keywords from DB (${kws.length}) → ${merged.length} unique`
+      );
+    }
+    return merged;
+  } catch {
+    return [...DEFAULT_KEYWORDS];
+  }
 }
 
 export async function getSourcesFromDb(): Promise<ScrapeSource[]> {
