@@ -15,6 +15,7 @@ import { formatDistanceToNow } from "date-fns";
 import { enUS, zhCN } from "date-fns/locale";
 import { getApiBase } from "@/lib/api-base";
 import { semanticTitleKey } from "@/lib/semantic-title-key";
+import { useEventFilter } from "@/lib/event-filter-context";
 
 const DATE_LOCALES: Record<string, Locale> = {
   "en": enUS, "zh-CN": zhCN,
@@ -278,6 +279,7 @@ function ImportantNews({ lang }: { lang: string }) {
 export default function Home() {
   const { t, lang } = useLang();
   const { address, isConnected } = useWeb3Auth();
+  const { activeChain, activeExchange } = useEventFilter();
   const { data: meData } = useGetMe({ wallet: address ?? "" }, { query: { enabled: !!address && isConnected } });
   const me = (meData as any)?.user ?? meData;
   const spaceStatus = me?.spaceStatus;
@@ -406,7 +408,7 @@ export default function Home() {
       {/* Two-column: main feed + 重要动态 */}
       <div className="flex gap-6 items-start">
         <div className="flex-1 min-w-0">
-          <EventList />
+          <EventList chain={activeChain ?? undefined} exchange={activeExchange ?? undefined} />
         </div>
         <div className="hidden lg:block w-72 xl:w-80 shrink-0">
           <ImportantNews lang={lang} />

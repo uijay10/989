@@ -356,6 +356,7 @@ export function EventList({
   const zh = lang === "zh-CN";
   const { address } = useWeb3Auth();
   const adminUser = isAdmin(address);
+  const showPinned = !sectionSlug && !chain && !exchange;
 
   /** Stable random seed for this browser session */
   const sessionSeed = useRef(Math.random() * 0xffffffff >>> 0);
@@ -447,9 +448,9 @@ export function EventList({
 
     Promise.all([
       fetch(buildUrl(1)).then(r => r.ok ? r.json() : { items: [], total: 0, hasMore: false }),
-      sectionSlug
-        ? Promise.resolve({ posts: [] })
-        : fetch(`${getApiBase()}/posts?pinned=1&limit=16`).then(r => r.ok ? r.json() : { posts: [] }),
+      showPinned
+        ? fetch(`${getApiBase()}/posts?pinned=1&limit=16`).then(r => r.ok ? r.json() : { posts: [] })
+        : Promise.resolve({ posts: [] }),
     ]).then(([aiData, pinnedData]) => {
       const aiPosts: Array<Record<string, unknown>> = Array.isArray((aiData as any).items) ? (aiData as any).items : [];
       const pinned: any[] = Array.isArray(pinnedData.posts) ? pinnedData.posts : [];
@@ -682,7 +683,7 @@ export function EventList({
   return (
     <div>
       {/* Pinned posts section */}
-      {pinnedPosts.length > 0 && (
+      {showPinned && pinnedPosts.length > 0 && (
         <div className="mb-6 space-y-3">
           <div className="flex items-center gap-2">
             <Pin className="w-4 h-4 text-violet-500" />
@@ -790,7 +791,7 @@ export function EventList({
                 event={event}
                 lang={lang}
                 tFn={(k) => t(k as any)}
-                adminUser={adminUser}
+                adminUser={showPinned && adminUser}
                 currentWallet={address ?? undefined}
                 onPinRequest={(id) => {
                   setPinTargetId(id);
