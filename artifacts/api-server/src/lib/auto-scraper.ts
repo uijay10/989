@@ -483,8 +483,14 @@ async function getExistingTitles(titles: string[]): Promise<Set<string>> {
 export async function getKeywordsFromDb(): Promise<string[]> {
   try {
     const rows = await db.execute(sql`SELECT keyword FROM scrape_keywords WHERE enabled = true`);
-    const kws = (rows.rows as Array<{ keyword: string }>).map(r => r.keyword);
-    return kws.length > 0 ? kws : DEFAULT_KEYWORDS;
+    const kws = (rows.rows as Array<{ keyword: string }> | undefined)?.map(r => r.keyword) ?? [];
+    // IMPORTANT: If the table exists but is empty (or everything disabled), DO NOT return [].
+    // An empty keyword list makes RSS pre-filter drop everything → "no new posts" forever.
+    if (kws.length === 0) {
+      console.warn("[unified-scrape] scrape_keywords has 0 enabled rows — falling back to DEFAULT_KEYWORDS");
+      return DEFAULT_KEYWORDS;
+    }
+    return kws;
   } catch { return DEFAULT_KEYWORDS; }
 }
 
