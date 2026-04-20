@@ -21,6 +21,8 @@ import AdminPage from "@/pages/admin";
 import MembersPage from "@/pages/members";
 import AboutPage from "@/pages/about";
 import NotFound from "@/pages/not-found";
+import ChainColumnPage from "@/pages/chain";
+import ExchangeColumnPage from "@/pages/exchange";
 
 function Router() {
   return (
@@ -40,6 +42,8 @@ function Router() {
       <Route path="/admin" component={AdminPage} />
       <Route path="/members" component={MembersPage} />
       <Route path="/about" component={AboutPage} />
+      <Route path="/chains/:slug" component={ChainColumnPage} />
+      <Route path="/exchanges/:slug" component={ExchangeColumnPage} />
       <Route component={NotFound} />
     </Switch>
   );

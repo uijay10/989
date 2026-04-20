@@ -15,6 +15,7 @@ import {
   getAvailableProviders,
   isDeepSeekBudgetAvailable,
 } from "./ai-provider";
+import { classifyChainExchangeTags } from "./tag-classifier";
 
 const VERSION = "v2.0_migrated_2026";
 console.log(`[auto-scraper] ${VERSION} loaded`);
@@ -583,6 +584,7 @@ async function insertPost(ev: ProcessedEvent, section: string): Promise<boolean>
     }
 
     const now = new Date();
+    const tags = classifyChainExchangeTags({ title: ev.title, description: ev.description ?? "" });
     const [inserted] = await db.insert(postsTable).values({
       title: ev.title.slice(0, 200),
       content: (ev.description ?? "").slice(0, 2000),
@@ -590,6 +592,8 @@ async function insertPost(ev: ProcessedEvent, section: string): Promise<boolean>
       authorWallet: AI_SYSTEM_WALLET,
       authorName: (ev.project_name?.slice(0, 100)) || AI_SYSTEM_NAME,
       authorType: "ai",
+      chainTags: tags.chainTags,
+      exchangeTags: tags.exchangeTags,
       sourceUrl: sourceUrl?.slice(0, 500) ?? null,
       aiConfidence: typeof ev.ai_confidence === "number" ? Math.min(1, Math.max(0, ev.ai_confidence)) : 0.8,
       importance: (["high", "medium", "low"] as const).includes(ev.importance as "high") ? ev.importance : "medium",
