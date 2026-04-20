@@ -1,7 +1,7 @@
 // VERSION: v2.0_migrated_2026
 // Unified scraper: Groq (freeOnly) + DeepSeek (paidOnly) each run the same pipeline.
 // Flow: keywords → RSS/Google News → AI classify → **always write 7×24 (`724news`) first**, then other matched plates (自动归纳).
-// Groq quota: wait for next run/day reset; DeepSeek: own schedule + env DEEPSEEK_HOURLY_BUDGET_USD (0 = no app-side hourly cap).
+// Groq quota: wait for next run/day reset; DeepSeek: own schedule; optional app cap via DEEPSEEK_HOURLY_BUDGET_USD (omit = no app cap).
 
 import Parser from "rss-parser";
 import { db, postsTable } from "@workspace/db";
@@ -14,6 +14,7 @@ import {
   isFreeProviderAvailable,
   getAvailableProviders,
   isDeepSeekBudgetAvailable,
+  explainWhyPaidDeepSeekBlocked,
 } from "./ai-provider";
 import { classifyChainExchangeTags } from "./tag-classifier";
 
@@ -745,6 +746,19 @@ async function logEntry(entry: ScrapeLogEntry): Promise<void> {
   } catch (e) { console.error("[unified-scrape] log error:", e); }
 }
 
+/** Persist why a full unified run exited early (so /healthz/scrape lastScrapeLog is not stuck on an old row). */
+async function logPipelineSkip(runId: string, message: string): Promise<void> {
+  await logEntry({
+    runId,
+    sourceName: "[unified-pipeline]",
+    sourceUrl: "",
+    status: "skip",
+    itemsFound: 0,
+    itemsSaved: 0,
+    errorMsg: message.slice(0, 900),
+  });
+}
+
 // ── Daily article budget from DB ───────────────────────────────────────────────
 /** Exported for /healthz/scrape diagnostics */
 export async function getTodayArticlesProcessed(): Promise<number> {
@@ -877,13 +891,19 @@ export async function runUnifiedScrape(opts: UnifiedScrapeOptions = {}): Promise
       const todayProcessed = await getTodayArticlesProcessed();
       if (todayProcessed >= SCRAPE_CONFIG.maxDailyArticles) {
         console.log(`[unified-scrape] Daily limit reached (${todayProcessed}/${SCRAPE_CONFIG.maxDailyArticles}). Skipping.`);
+        await logPipelineSkip(
+          runId,
+          `daily_cap: saved_in_logs_today=${todayProcessed} max=${SCRAPE_CONFIG.maxDailyArticles}`,
+        );
         return { runId, totalSources: 0, totalItemsFound: 0, totalItemsSaved: 0, errors: 0, durationMs: Date.now() - startMs };
       }
     }
 
-    // ── DeepSeek UTC hourly USD cap ──
+    // ── DeepSeek UTC hourly USD cap (optional; unset env = no cap in ai-provider) ──
     if (paidOnly && !isDeepSeekBudgetAvailable()) {
-      console.log(`[unified-scrape:ds] DeepSeek hourly budget exhausted — skipping this run`);
+      const why = explainWhyPaidDeepSeekBlocked() ?? "unknown";
+      console.warn(`[unified-scrape:ds] DeepSeek run skipped — ${why}`);
+      await logPipelineSkip(runId, `deepseek_skip: ${why}`);
       return { runId, totalSources: 0, totalItemsFound: 0, totalItemsSaved: 0, errors: 0, durationMs: Date.now() - startMs };
     }
 
