@@ -347,10 +347,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        {/* ── Nav rows ── */}
+        {/* ── Unified nav module (main nav + ecosystem) ── */}
         <div className="border-t border-slate-200/60 bg-white/70 backdrop-blur-md">
           <div className="max-w-7xl mx-auto px-2 py-1.5">
-            <div className="flex flex-wrap items-center justify-center gap-x-0.5 gap-y-1">
+            {/* Main nav: single-line, scrollable (no wrapping) */}
+            <div className="flex flex-nowrap items-center justify-center gap-x-0.5 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {/* All events shortcut — always visible, navigates to home */}
               <button
                 onClick={() => {
@@ -381,19 +382,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
               ))}
             </div>
           </div>
-        </div>
-        </div>
 
-        {/* ── Ecosystem strip under navbar (home + sections) ── */}
-        {showEcosystemStrip && (
-          <div className="w-full bg-transparent -mt-1">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-0">
-              <div className="rounded-2xl border border-slate-200/60 bg-white/55 backdrop-blur-sm px-3 py-1 shadow-sm">
+          {/* Ecosystem strip: same module, separated by divider */}
+          {showEcosystemStrip && (
+            <div className="border-t border-slate-200/60">
+              <div className="max-w-7xl mx-auto px-2 py-1.5">
                 <HotEcosystemQuickEntry />
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
+        </div>
       </header>
 
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
