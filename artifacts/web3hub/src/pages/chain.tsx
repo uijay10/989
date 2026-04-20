@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useParams } from "wouter";
-import { ColumnTemplatePage } from "@/pages/column-template";
+import { EventList } from "@/components/events/EventList";
+import { useLang } from "@/lib/i18n";
 
 const CHAINS: Record<string, { name: string; titleZh: string; titleEn: string; officialLinks?: { label: string; href: string }[] }> = {
   "ethereum": {
@@ -74,6 +75,7 @@ const CHAINS: Record<string, { name: string; titleZh: string; titleEn: string; o
 export default function ChainColumnPage() {
   const params = useParams() as { slug?: string };
   const slug = (params?.slug ?? "").toLowerCase();
+  const { lang } = useLang();
 
   const meta = useMemo(() => {
     const found = CHAINS[slug];
@@ -89,6 +91,11 @@ export default function ChainColumnPage() {
     };
   }, [slug]);
 
-  return <ColumnTemplatePage kind="chain" meta={meta} />;
+  const title = lang === "zh-CN" ? meta.titleZh : meta.titleEn;
+  return (
+    <div className="max-w-3xl mx-auto space-y-8">
+      <EventList key={`chain:${slug}`} sectionName={title} chain={meta.name} />
+    </div>
+  );
 }
 

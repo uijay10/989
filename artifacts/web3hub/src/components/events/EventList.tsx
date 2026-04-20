@@ -340,7 +340,17 @@ const AUTO_REFRESH_MS = 30_000;
 
 /* ── EventList component ─────────────────────────────────── */
 
-export function EventList({ sectionSlug, sectionName }: { sectionSlug?: string; sectionName?: string } = {}) {
+export function EventList({
+  sectionSlug,
+  sectionName,
+  chain,
+  exchange,
+}: {
+  sectionSlug?: string;
+  sectionName?: string;
+  chain?: string;
+  exchange?: string;
+} = {}) {
   const { activeCategory } = useEventFilter();
   const { t, lang } = useLang();
   const zh = lang === "zh-CN";
@@ -429,7 +439,10 @@ export function EventList({ sectionSlug, sectionName }: { sectionSlug?: string; 
         : sectionSlug
         ? sectionSlug
         : "all";
-      return `${getApiBase()}/feed?category=${encodeURIComponent(cats)}&limit=${lim}&page=${page}`;
+      const extra =
+        (chain ? `&chain=${encodeURIComponent(chain)}` : "") +
+        (exchange ? `&exchange=${encodeURIComponent(exchange)}` : "");
+      return `${getApiBase()}/feed?category=${encodeURIComponent(cats)}&limit=${lim}&page=${page}${extra}`;
     };
 
     Promise.all([
@@ -514,7 +527,10 @@ export function EventList({ sectionSlug, sectionName }: { sectionSlug?: string; 
         ? sectionSlug
         : "all";
 
-      const url = `${getApiBase()}/feed?category=${encodeURIComponent(cats)}&limit=${PAGE_LIMIT}&page=${nextPage}`;
+      const extra =
+        (chain ? `&chain=${encodeURIComponent(chain)}` : "") +
+        (exchange ? `&exchange=${encodeURIComponent(exchange)}` : "");
+      const url = `${getApiBase()}/feed?category=${encodeURIComponent(cats)}&limit=${PAGE_LIMIT}&page=${nextPage}${extra}`;
       const res = await fetch(url);
       const data = await res.json();
       const newItems: any[] = data.items || [];
@@ -549,7 +565,7 @@ export function EventList({ sectionSlug, sectionName }: { sectionSlug?: string; 
       _lmLoading.current = false;  // 同步重置，不等 useEffect
       setLoadingMore(false);
     }
-  }, [sectionSlug, deduplicateEvents, page, lang]); // page drives feed paging
+  }, [sectionSlug, deduplicateEvents, page, lang, chain, exchange]); // page drives feed paging
 
   // 检查是否接近底部，满足则加载下一批
   const checkScrollBottom = useCallback(() => {
