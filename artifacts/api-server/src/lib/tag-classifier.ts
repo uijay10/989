@@ -11,24 +11,24 @@ export type ChainTag =
 export type ExchangeTag = "Binance" | "OKX" | "Bybit" | "Coinbase" | "Kraken";
 
 /**
- * 公链 / 交易所：只保留第二排导航上的展示名作为唯一关键词。
- * 标题+正文中只要出现该名字（不区分大小写）即归入对应标签；不再使用别名、缩写、中文别称等。
- * 其它业务板块（测试网、IDO、融资等）的分类逻辑与此无关。
+ * 公链 / 交易所：导航展示名 + 常用代币符号（如 Solana + SOL）。
+ * 短符号走 keywordHit 的单词边界；Base 不附带 ETH，避免 L2 文普遍误标 Ethereum。
+ * 其它业务板块（测试网、IDO、融资等）与此无关。
  */
 export const CHAIN_KEYWORDS: Record<ChainTag, string[]> = {
-  Ethereum: ["Ethereum"],
-  Solana: ["Solana"],
-  "BNB Chain": ["BNB Chain"],
-  Arbitrum: ["Arbitrum"],
+  Ethereum: ["Ethereum", "ETH"],
+  Solana: ["Solana", "SOL"],
+  "BNB Chain": ["BNB Chain", "BNB"],
+  Arbitrum: ["Arbitrum", "ARB"],
   Base: ["Base"],
-  Optimism: ["Optimism"],
-  Sui: ["Sui"],
-  Aptos: ["Aptos"],
+  Optimism: ["Optimism", "OP"],
+  Sui: ["Sui", "SUI"],
+  Aptos: ["Aptos", "APT"],
 };
 
 export const EXCHANGE_KEYWORDS: Record<ExchangeTag, string[]> = {
-  Binance: ["Binance"],
-  OKX: ["OKX"],
+  Binance: ["Binance", "BNB"],
+  OKX: ["OKX", "OKB"],
   Bybit: ["Bybit"],
   Coinbase: ["Coinbase"],
   Kraken: ["Kraken"],
