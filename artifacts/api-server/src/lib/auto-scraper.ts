@@ -308,7 +308,7 @@ Routing priority (apply in order):
 Task: For each article decide: (a) Is it Web3/crypto? (b) Which section fits best? (c) Extract dates.
 
 Output rules:
-- Return ONLY a raw JSON array — no markdown, no code blocks
+- Return ONLY a raw JSON array at the top level (not `{"articles":[...]}`) — no markdown, no code blocks
 - Skip non-Web3 content silently (return nothing for that item)
 - Return [] only if ALL articles are non-Web3
 - Web3 articles MUST always be included — use 快讯 if no specific section fits
@@ -420,9 +420,150 @@ function markFingerprintSeen(fp: string): void {
   seenTitleFingerprints.set(fp, Date.now());
 }
 
+type RssArticleSlice = { title: string; description: string; link: string; pubDate?: string };
+
+/** Models often wrap the array in `{ "articles": [...] }` or add prose — we still paid for tokens, so extract aggressively. */
+function extractJsonArrayFromModelOutput(raw: string): unknown[] {
+  const stripped = raw.trim().replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "");
+  const tryParse = (s: string): unknown => {
+    try {
+      return JSON.parse(s);
+    } catch {
+      return null;
+    }
+  };
+  let root = tryParse(stripped);
+  if (Array.isArray(root)) return root;
+  if (root && typeof root === "object") {
+    const o = root as Record<string, unknown>;
+    for (const key of ["events", "articles", "data", "results", "items", "posts", "output", "records"]) {
+      const v = o[key];
+      if (Array.isArray(v)) return v;
+    }
+  }
+  const i0 = stripped.indexOf("[");
+  const i1 = stripped.lastIndexOf("]");
+  if (i0 >= 0 && i1 > i0) {
+    root = tryParse(stripped.slice(i0, i1 + 1));
+    if (Array.isArray(root)) return root;
+  }
+  return [];
+}
+
+function coerceParsedItem(row: unknown): ProcessedEvent | null {
+  if (!row || typeof row !== "object") return null;
+  const o = row as Record<string, unknown>;
+  const title = typeof o.title === "string" ? o.title.trim() : "";
+  if (!title) return null;
+  const catRaw = o.category;
+  const category = Array.isArray(catRaw)
+    ? catRaw.map((c) => String(c).trim()).filter(Boolean)
+    : catRaw != null && String(catRaw).trim()
+      ? [String(catRaw).trim()]
+      : ["快讯"];
+  const imp = o.importance;
+  const importance: "high" | "medium" | "low" =
+    imp === "high" || imp === "medium" || imp === "low" ? imp : "medium";
+  let ac = typeof o.ai_confidence === "number" ? o.ai_confidence : Number(o.ai_confidence);
+  if (!Number.isFinite(ac)) ac = 0.8;
+  const su =
+    (typeof o.source_url === "string" && o.source_url.trim()) ||
+    (typeof o.url === "string" && o.url.trim()) ||
+    (typeof o.link === "string" && o.link.trim()) ||
+    "";
+  return {
+    title,
+    project_name: typeof o.project_name === "string" ? o.project_name.trim() : "",
+    description: typeof o.description === "string" ? o.description.trim() : "",
+    category,
+    start_time: typeof o.start_time === "string" ? o.start_time : null,
+    end_time: typeof o.end_time === "string" ? o.end_time : null,
+    source_url: su,
+    importance,
+    ai_confidence: Math.min(1, Math.max(0, ac)),
+  };
+}
+
+/**
+ * Align model output to RSS rows: fix missing/wrong `source_url`, and emit RSS-only 快讯 rows when the model
+ * dropped items (common cause of “DeepSeek billed, zero inserts”).
+ */
+function mergeAiEventsWithSourceArticles(batch: RssArticleSlice[], rawEvents: ProcessedEvent[]): ProcessedEvent[] {
+  const norm = normalizeSourceUrl;
+  const matchedBatchIdx = new Set<number>();
+  const out: ProcessedEvent[] = [];
+
+  for (const ev of rawEvents) {
+    if (!ev.title?.trim()) continue;
+    let idx = -1;
+    const nu = ev.source_url?.trim() ? norm(ev.source_url) : "";
+    if (nu) {
+      idx = batch.findIndex((b, i) => !matchedBatchIdx.has(i) && norm(b.link) === nu);
+    }
+    if (idx < 0) {
+      const nt = ev.title.toLowerCase().replace(/\s+/g, " ").trim();
+      idx = batch.findIndex((b, i) => {
+        if (matchedBatchIdx.has(i)) return false;
+        const bt = b.title.toLowerCase().replace(/\s+/g, " ").trim();
+        if (bt === nt) return true;
+        if (bt.length >= 28 && (nt.includes(bt.slice(0, 28)) || bt.includes(nt.slice(0, 28)))) return true;
+        return false;
+      });
+    }
+    if (idx >= 0) {
+      matchedBatchIdx.add(idx);
+      const b = batch[idx]!;
+      out.push({
+        ...ev,
+        source_url: b.link,
+        description: ev.description?.trim() ? ev.description : b.description,
+      });
+    } else if (ev.source_url?.trim()) {
+      out.push(ev);
+    } else {
+      const uidx = batch.findIndex((_, i) => !matchedBatchIdx.has(i));
+      if (uidx >= 0) {
+        matchedBatchIdx.add(uidx);
+        const b = batch[uidx]!;
+        out.push({ ...ev, source_url: b.link, description: ev.description?.trim() ? ev.description : b.description });
+      } else {
+        console.warn(`[unified-scrape] drop AI row (no URL, no batch slot): ${ev.title.slice(0, 48)}`);
+      }
+    }
+  }
+
+  if (out.length === 0 && rawEvents.length === batch.length && rawEvents.every((e) => e.title?.trim())) {
+    return batch.map((b, i) => ({
+      ...rawEvents[i]!,
+      source_url: b.link,
+      description: rawEvents[i]!.description?.trim() ? rawEvents[i]!.description : b.description,
+    }));
+  }
+
+  for (let bi = 0; bi < batch.length; bi++) {
+    if (matchedBatchIdx.has(bi)) continue;
+    const b = batch[bi]!;
+    if (out.some((e) => norm(e.source_url) === norm(b.link))) continue;
+    console.warn(`[unified-scrape] RSS fallback 快讯 (model omitted / unmatched): ${norm(b.link).slice(0, 96)}`);
+    out.push({
+      title: b.title.slice(0, 200),
+      project_name: AI_SYSTEM_NAME,
+      description: (b.description || b.title).slice(0, 2000),
+      category: ["快讯"],
+      start_time: null,
+      end_time: null,
+      source_url: b.link,
+      importance: "medium",
+      ai_confidence: 0.55,
+    });
+  }
+
+  return out;
+}
+
 // ── AI batch processor (unified for all sections) ─────────────────────────────
 async function processBatch(
-  articles: Array<{ title: string; description: string; link: string; pubDate?: string }>,
+  articles: RssArticleSlice[],
   paidOnly = false,
   retries = MAX_RETRIES,
 ): Promise<ProcessedEvent[]> {
@@ -443,16 +584,14 @@ async function processBatch(
       paidOnly,
     );
     if (raw) {
-      const cleaned = raw.trim()
-        .replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "");
-      let parsed: ProcessedEvent[];
-      try {
-        parsed = JSON.parse(cleaned);
-        if (!Array.isArray(parsed)) parsed = [];
-      } catch {
-        parsed = [];
+      const arr = extractJsonArrayFromModelOutput(raw);
+      const coerced = arr.map(coerceParsedItem).filter((x): x is ProcessedEvent => x !== null);
+      if (coerced.length !== articles.length) {
+        console.warn(
+          `[unified-scrape] AI row count ${coerced.length} vs batch ${articles.length} — merge / RSS fallback will run`,
+        );
       }
-      return parsed.filter(ev => ev && typeof ev.title === "string" && ev.title.trim());
+      return mergeAiEventsWithSourceArticles(articles, coerced);
     }
     if (attempt < retries) await sleep(attempt * 2000);
   }
@@ -725,7 +864,12 @@ function normalizePlateSection(s: string): string {
 }
 
 async function dualPublish(ev: ProcessedEvent): Promise<number> {
-  const aiCategories = Array.isArray(ev.category) ? ev.category : [];
+  const rawCat = ev.category as unknown;
+  const aiCategories = Array.isArray(rawCat)
+    ? rawCat.map((c) => String(c).trim()).filter(Boolean)
+    : rawCat != null && String(rawCat).trim()
+      ? [String(rawCat).trim()]
+      : [];
   const matchedSections = mapAllCategories(aiCategories, ev.title);
 
   const plates = new Set<string>();

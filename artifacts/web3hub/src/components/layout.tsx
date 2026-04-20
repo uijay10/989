@@ -360,20 +360,37 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="max-w-7xl mx-auto px-3 sm:px-4 py-1.5">
             {/* Main nav: single-line, scrollable (no wrapping) — centered to match ecosystem row */}
             <div className="flex flex-nowrap items-center justify-center gap-x-0.5 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {/* All events shortcut — always visible, navigates to home */}
+              {/* 主页：与顶部 HOME 一致，回到首页 7×24 聚合视图 */}
               <button
+                type="button"
                 onClick={() => {
-                  // 7×24 should route to HOME (single feed view), not a separate 724 page.
                   clearEcosystem();
                   setActiveCategory("全部");
                   setOptimisticNavHref("/");
                   navigate("/");
                 }}
                 className={cn(
-                  "relative px-2.5 py-0.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer",
+                  "relative px-2.5 py-0.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer shrink-0",
+                  activeHref === "/" && activeCategory === "全部"
+                    ? "text-blue-800 bg-blue-50 shadow-sm ring-1 ring-blue-200/80"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100",
+                )}
+              >
+                {lang === "zh-CN" ? "主页" : "Home"}
+              </button>
+              {/* 7×24 主入口 — 与主页同路由，用实心蓝强调当前栏目 */}
+              <button
+                onClick={() => {
+                  clearEcosystem();
+                  setActiveCategory("全部");
+                  setOptimisticNavHref("/");
+                  navigate("/");
+                }}
+                className={cn(
+                  "relative px-2.5 py-0.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer shrink-0",
                   activeHref === "/" && activeCategory === "全部"
                     ? "text-white bg-blue-600 shadow-sm"
-                    : "text-slate-800 hover:text-slate-900 hover:bg-slate-100"
+                    : "text-slate-800 hover:text-slate-900 hover:bg-slate-100",
                 )}
               >
                 {lang === "zh-CN" ? "7*24快讯" : "7*24 News"}
