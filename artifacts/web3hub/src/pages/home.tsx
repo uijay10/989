@@ -10,6 +10,7 @@ import { generateGradient } from "@/lib/utils";
 import { TagBadge } from "@/components/post-card";
 import { RoleBadge } from "@/components/role-badge";
 import { PriceTicker } from "@/components/PriceTicker";
+import { FEATURES } from "@/lib/feature-flags";
 import { formatDistanceToNow } from "date-fns";
 import { enUS, zhCN } from "date-fns/locale";
 import { getApiBase } from "@/lib/api-base";
@@ -346,7 +347,9 @@ export default function Home() {
     <div className="space-y-6 pb-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-end gap-3 pt-2">
-        <DailyLuckyBtn lastSlotPull={me?.lastSlotPull ?? null} label={t("dailyLucky")} />
+        {FEATURES.dailyLucky && (
+          <DailyLuckyBtn lastSlotPull={me?.lastSlotPull ?? null} label={t("dailyLucky")} />
+        )}
         {isConnected && address && (
           <button
             type="button"

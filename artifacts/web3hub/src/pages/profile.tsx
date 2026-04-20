@@ -14,6 +14,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useLang } from "@/lib/i18n";
 import { isAdmin } from "@/lib/admin";
 import { SlotMachine } from "@/components/slot-machine";
+import { FEATURES } from "@/lib/feature-flags";
 import { Link } from "wouter";
 import AdminPage from "./admin";
 import { getApiBase } from "@/lib/api-base";
@@ -729,7 +730,7 @@ export default function Profile() {
         <main className="flex-1 min-w-0 space-y-5">
 
           {/* Slot Machine — hidden when admin panel is active */}
-          {activeTab !== "admin" && (
+          {FEATURES.dailyLucky && activeTab !== "admin" && (
             <div className="rounded-2xl p-5 bg-card border border-border">
               <SlotMachine
                 wallet={address ?? ""}
