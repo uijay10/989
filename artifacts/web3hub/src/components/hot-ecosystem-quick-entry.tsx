@@ -28,6 +28,7 @@ const CHAINS = [
 
 const EXCHANGES = [
   "Binance",
+  "OKX",
   "Bybit",
   "Coinbase",
   "Kraken",

@@ -8,7 +8,7 @@ export type ChainTag =
   | "Sui"
   | "Aptos";
 
-export type ExchangeTag = "Binance" | "Bybit" | "Coinbase" | "Kraken";
+export type ExchangeTag = "Binance" | "OKX" | "Bybit" | "Coinbase" | "Kraken";
 
 export const CHAIN_KEYWORDS: Record<ChainTag, string[]> = {
   Ethereum: ["Ethereum", "ETH", "Layer 1", "Mainnet", "L2", "Rollup", "Dencun", "Cancun", "ESP", "Ethereum Foundation"],
@@ -23,6 +23,14 @@ export const CHAIN_KEYWORDS: Record<ChainTag, string[]> = {
 
 export const EXCHANGE_KEYWORDS: Record<ExchangeTag, string[]> = {
   Binance: ["Binance", "Launchpad", "Launchpool", "IEO", "Binance Listing", "Announcement"],
+  OKX: [
+    "OKX", "OKX Exchange", "OKEx", "欧易",
+    "Jumpstart", "Megadrop", "OKX Jumpstart", "OKX Megadrop",
+    "Listing", "New Listing", "Spot Trading", "Will List", "Launch", "To list", "Will launch", "Spot listing",
+    "OKX to list", "OKX will launch", "新币上线", "现货上线",
+    "Delisting", "Trading Pair", "USDT Pair", "Perpetual", "Futures", "Announcement", "Update", "Support", "Migration", "Flash News",
+    "欧易上市", "OKX 新币", "OKX 上市",
+  ],
   Bybit: ["Bybit", "Bybit Launchpad"],
   Coinbase: ["Coinbase", "Coinbase Listing", "Advanced Trade"],
   Kraken: ["Kraken", "Kraken Exchange", "Kraken Listing"],

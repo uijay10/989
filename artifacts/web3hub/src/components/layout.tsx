@@ -153,8 +153,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col" style={{background: "#EEF5FF"}}>
-      {/* ── Top Navbar ──────────────────────────────── */}
-      <header className="sticky top-0 z-50 w-full glass-panel !border-l-0 !border-r-0 !border-t-0 border-b border-border/40">
+      {/* ── Top Navbar (+ Home ecosystem strip) ──────────────────────────────── */}
+      <header className="sticky top-0 z-50 w-full">
+        <div className="glass-panel !border-l-0 !border-r-0 !border-t-0 border-b border-border/40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo — 1.5× bigger */}
@@ -366,18 +367,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </div>
-      </header>
+        </div>
 
-      {/* ── Home-only strip under navbar: Chains/Exchanges quick links ── */}
-      {isHome && (
-        <div className="w-full bg-transparent">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-            <div className="rounded-2xl border border-slate-200/60 bg-white/55 backdrop-blur-sm px-3 py-2 shadow-sm">
-              <HotEcosystemQuickEntry />
+        {/* ── Home-only strip under navbar: Chains/Exchanges quick links (sticky together) ── */}
+        {isHome && (
+          <div className="w-full bg-transparent">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+              <div className="rounded-2xl border border-slate-200/60 bg-white/55 backdrop-blur-sm px-3 py-2 shadow-sm">
+                <HotEcosystemQuickEntry />
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </header>
 
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {children}

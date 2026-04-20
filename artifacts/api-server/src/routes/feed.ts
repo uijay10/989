@@ -1,22 +1,30 @@
 import { Router, type IRouter } from "express";
 import { db, postsTable } from "@workspace/db";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, inArray } from "drizzle-orm";
 import { readArticlesBackupFile } from "../lib/articles-backup";
+import { classifyChainExchangeTags } from "../lib/tag-classifier";
 
 const router: IRouter = Router();
 
 router.get("/", async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(100, parseInt(req.query.limit as string) || 30);
+    const limit = Math.min(1000, parseInt(req.query.limit as string) || 30);
     const category = (req.query.category as string) || "all";
+    const chain = (req.query.chain as string | undefined)?.trim();
+    const exchange = (req.query.exchange as string | undefined)?.trim();
     const offset = (page - 1) * limit;
 
     const conditions: ReturnType<typeof eq>[] = [
       eq(postsTable.authorType, "ai"),
     ];
     if (category !== "all") {
-      conditions.push(eq(postsTable.section, category));
+      const cats = category.split(",").map(s => s.trim()).filter(Boolean);
+      if (cats.length > 1) {
+        conditions.push(inArray(postsTable.section, cats as any));
+      } else if (cats.length === 1) {
+        conditions.push(eq(postsTable.section, cats[0]!));
+      }
     }
     const where = and(...conditions);
 
@@ -43,8 +51,19 @@ router.get("/", async (req, res) => {
         .offset(offset),
     ]);
 
-    const total = Number(countResult[0]?.count ?? 0);
-    const hasMore = offset + rows.length < total;
+    let total = Number(countResult[0]?.count ?? 0);
+    let filteredRows = rows;
+    if (chain || exchange) {
+      filteredRows = rows.filter((r) => {
+        const tags = classifyChainExchangeTags({ title: r.title ?? "", description: r.content ?? "" });
+        const chainHit = chain ? tags.chainTags.some((t) => String(t).toLowerCase() === chain.toLowerCase()) : true;
+        const exHit = exchange ? tags.exchangeTags.some((t) => String(t).toLowerCase() === exchange.toLowerCase()) : true;
+        return chainHit && exHit;
+      });
+      // total is best-effort when filtering without DB tag columns.
+      total = filteredRows.length + offset; // monotonic enough for UI; hasMore is derived below
+    }
+    const hasMore = offset + filteredRows.length < total;
 
     // Fallback: when DB is empty/unavailable, serve from local JSONL backup (best-effort).
     // This preserves the existing DB-first mechanism while allowing legacy data to show.
@@ -61,8 +80,17 @@ router.get("/", async (req, res) => {
           return Number(b.id) - Number(a.id);
         });
 
-      const paged = backup.slice(offset, offset + limit);
-      const backupTotal = backup.length;
+      let backupFiltered = backup;
+      if (chain || exchange) {
+        backupFiltered = backup.filter((a) => {
+          const tags = classifyChainExchangeTags({ title: a.title ?? "", description: a.content ?? "" });
+          const chainHit = chain ? tags.chainTags.some((t) => String(t).toLowerCase() === chain.toLowerCase()) : true;
+          const exHit = exchange ? tags.exchangeTags.some((t) => String(t).toLowerCase() === exchange.toLowerCase()) : true;
+          return chainHit && exHit;
+        });
+      }
+      const paged = backupFiltered.slice(offset, offset + limit);
+      const backupTotal = backupFiltered.length;
       const backupHasMore = offset + paged.length < backupTotal;
 
       return res.json({
@@ -84,7 +112,7 @@ router.get("/", async (req, res) => {
     }
 
     res.json({
-      items: rows.map((r) => ({
+      items: filteredRows.map((r) => ({
         id: String(r.id),
         title: r.title,
         summary: r.content ? r.content.slice(0, 200) : "",
