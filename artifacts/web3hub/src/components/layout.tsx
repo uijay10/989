@@ -357,9 +357,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         {/* ── Unified nav module (main nav + ecosystem) ── */}
         <div className="border-t border-slate-200/60 bg-white/70 backdrop-blur-md">
-          <div className="max-w-7xl mx-auto px-3 sm:px-4 py-1.5">
-            {/* Main nav: single-line, scrollable (no wrapping) — centered to match ecosystem row */}
-            <div className="flex flex-nowrap items-center justify-center gap-x-0.5 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1.5">
+            {/* Main nav: left-aligned — same inset as ecosystem row + main content so rows line up */}
+            <div className="flex flex-nowrap items-center justify-start gap-x-0.5 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {/* 主页：与顶部 HOME 一致，回到首页 7×24 聚合视图 */}
               <button
                 type="button"
@@ -411,7 +411,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           {/* Ecosystem strip: same module, separated by divider */}
           {showEcosystemStrip && (
             <div className="border-t border-slate-200/60">
-              <div className="max-w-7xl mx-auto px-3 sm:px-4 py-1.5">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1.5">
                 <HotEcosystemQuickEntry />
               </div>
             </div>
