@@ -43,11 +43,15 @@ function incrementGroqSlot(): void {
 }
 
 // ==================== DeepSeek：仅按 UTC 自然小时上限（无 24h 总预算）====================
-// 每小时花费上限由环境变量 DEEPSEEK_HOURLY_BUDGET_USD 控制（默认 0.05 USD/UTC 小时）。
+// 应用内估算花费封顶（与 DeepSeek 控制台余额无关）。未设置时默认 0.05 USD/UTC 小时，与历史行为一致。
+// DEEPSEEK_HOURLY_BUDGET_USD=0 表示关闭应用层小时上限。
 // 花费持久化到 ai_cost_hourly_bucket（bucket_key = `YYYY-MM-DDTHH` UTC），重启后按当前小时恢复。
-const DEEPSEEK_HOURLY_BUDGET_USD = (() => {
-  const v = parseFloat(process.env.DEEPSEEK_HOURLY_BUDGET_USD ?? "0.05");
-  return Number.isFinite(v) && v > 0 ? v : 0.05;
+const DEEPSEEK_HOURLY_BUDGET_USD: number = (() => {
+  const raw = process.env.DEEPSEEK_HOURLY_BUDGET_USD;
+  if (raw === "0") return 0;
+  const v = parseFloat(raw ?? "0.05");
+  if (!Number.isFinite(v) || v < 0) return 0.05;
+  return v;
 })();
 
 let deepseekBudgetInitialized = false;
@@ -71,9 +75,25 @@ function syncDeepSeekUtcHourBucket(nowMs: number): void {
   deepseekHourlyCost = 0;
 }
 
-/** 供 /api/auto-scrape/status 等展示当前小时上限 */
+/** 供 /api/auto-scrape/status 等展示当前小时上限（0 = 应用层不限制） */
 export function getDeepSeekHourlyBudgetUsd(): number {
   return DEEPSEEK_HOURLY_BUDGET_USD;
+}
+
+export function getDeepSeekHourlySpendUsd(): number {
+  return deepseekHourlyCost;
+}
+
+/** 应用层小时上限是否关闭（DEEPSEEK_HOURLY_BUDGET_USD=0） */
+export function isDeepSeekHourlyCapDisabled(): boolean {
+  return DEEPSEEK_HOURLY_BUDGET_USD <= 0;
+}
+
+/** 供 health：是否因应用层小时封顶而无法再调 DeepSeek（与账户余额无关） */
+export function isDeepSeekBlockedByAppHourlyCap(): boolean {
+  if (!deepseekBudgetInitialized) return false;
+  if (DEEPSEEK_HOURLY_BUDGET_USD <= 0) return false;
+  return deepseekHourlyCost >= DEEPSEEK_HOURLY_BUDGET_USD;
 }
 
 async function ensureDeepSeekBudgetTables(): Promise<void> {
@@ -112,14 +132,20 @@ export async function initDeepSeekDailyBudget(): Promise<void> {
     `);
     if ((hourResult as any).rows?.length > 0) {
       deepseekHourlyCost = Number(((hourResult as any).rows[0] as any).deepseek_cost_usd ?? 0);
+      const capLine =
+        DEEPSEEK_HOURLY_BUDGET_USD <= 0
+          ? "应用层小时上限：关闭"
+          : `上限 $${DEEPSEEK_HOURLY_BUDGET_USD.toFixed(2)}/h（UTC）`;
       console.log(
-        `[DeepSeek Budget] UTC 小时桶 ${deepseekHourBucketKey}：已用 $${deepseekHourlyCost.toFixed(4)} / $${DEEPSEEK_HOURLY_BUDGET_USD.toFixed(4)}（仅小时上限，无日总预算）`
+        `[DeepSeek Budget] UTC 小时桶 ${deepseekHourBucketKey}：已用 $${deepseekHourlyCost.toFixed(4)} | ${capLine}`
       );
     } else {
       deepseekHourlyCost = 0;
-      console.log(
-        `[DeepSeek Budget] UTC 小时桶 ${deepseekHourBucketKey} 首次记录（上限 $${DEEPSEEK_HOURLY_BUDGET_USD.toFixed(4)}/h）`
-      );
+      const capLine =
+        DEEPSEEK_HOURLY_BUDGET_USD <= 0
+          ? "应用层小时上限：关闭"
+          : `上限 $${DEEPSEEK_HOURLY_BUDGET_USD.toFixed(2)}/h（UTC）`;
+      console.log(`[DeepSeek Budget] UTC 小时桶 ${deepseekHourBucketKey} 首次记录 | ${capLine}`);
     }
 
     const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
@@ -185,11 +211,13 @@ export async function resetDeepSeekBudgetNow(): Promise<void> {
 
 function checkDeepSeekBudget(_category: string): boolean {
   if (!deepseekBudgetInitialized) return true;
+  if (DEEPSEEK_HOURLY_BUDGET_USD <= 0) return true;
   const nowMs = Date.now();
   syncDeepSeekUtcHourBucket(nowMs);
   if (deepseekHourlyCost >= DEEPSEEK_HOURLY_BUDGET_USD) {
     console.warn(
-      `[DeepSeek Budget] 本 UTC 小时已达上限 $${DEEPSEEK_HOURLY_BUDGET_USD.toFixed(4)}（已用 $${deepseekHourlyCost.toFixed(4)}，桶=${deepseekHourBucketKey}）`
+      `[DeepSeek Budget] 本 UTC 小时应用层封顶 $${DEEPSEEK_HOURLY_BUDGET_USD.toFixed(4)}（估算已用 $${deepseekHourlyCost.toFixed(4)}，桶=${deepseekHourBucketKey}）。` +
+        ` 提高/关闭请设 DEEPSEEK_HOURLY_BUDGET_USD（0=不限制）。`
     );
     return false;
   }
@@ -201,9 +229,9 @@ function recordDeepSeekCost(_category: string, inputTokens: number, outputTokens
   const nowMs = Date.now();
   syncDeepSeekUtcHourBucket(nowMs);
   deepseekHourlyCost += cost;
-  console.log(
-    `[DeepSeek Cost] 本次 $${cost.toFixed(5)} | UTC 小时 ${deepseekHourBucketKey} 累计 $${deepseekHourlyCost.toFixed(4)} / $${DEEPSEEK_HOURLY_BUDGET_USD.toFixed(4)}`
-  );
+  const cap =
+    DEEPSEEK_HOURLY_BUDGET_USD <= 0 ? "无应用层上限" : `$${DEEPSEEK_HOURLY_BUDGET_USD.toFixed(2)}`;
+  console.log(`[DeepSeek Cost] 本次 $${cost.toFixed(5)} | UTC 小时 ${deepseekHourBucketKey} 累计 $${deepseekHourlyCost.toFixed(4)} / ${cap}`);
   persistDeepSeekHourlyCost();
 }
 
@@ -363,6 +391,15 @@ export function areFreeProvidersDailyExhausted(): boolean {
  */
 export function isDeepSeekBudgetAvailable(): boolean {
   return checkDeepSeekBudget("budget-check");
+}
+
+/** True if a `paidOnly` unified scrape could run (DeepSeek configured, not blocked, hourly budget OK). */
+export function canRunPaidUnifiedScrape(): boolean {
+  const ds = providers.find(p => p.name === "deepseek");
+  if (!ds) return false;
+  checkDailyReset(ds);
+  if (isRateLimited(ds) || isDailyExhausted(ds)) return false;
+  return isDeepSeekBudgetAvailable();
 }
 
 /** @deprecated Same as isDeepSeekBudgetAvailable (hourly-only cap). */
