@@ -276,7 +276,16 @@ router.get("/", async (req, res) => {
     ? await db.select({ wallet: usersTable.wallet, username: usersTable.username, avatar: usersTable.avatar, tags: (usersTable as any).tags, spaceType: usersTable.spaceType })
         .from(usersTable).where(sql`${usersTable.wallet} = ANY(ARRAY[${sql.join(wallets.map(w => sql`${w}`), sql`, `)}]::text[])`)
     : [];
-  const userMap = Object.fromEntries(users.map(u => [u.wallet, { ...u, parsedTags: (u as any).tags ? JSON.parse((u as any).tags) : [] }]));
+  const userMap = Object.fromEntries(users.map(u => {
+    let parsedTags: string[] = [];
+    try {
+      parsedTags = (u as any).tags ? JSON.parse((u as any).tags) : [];
+      if (!Array.isArray(parsedTags)) parsedTags = [];
+    } catch {
+      parsedTags = [];
+    }
+    return [u.wallet, { ...u, parsedTags }];
+  }));
 
   res.json({
     posts: posts.map(p => {

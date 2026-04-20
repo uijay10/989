@@ -8,6 +8,7 @@ import { useLocation } from "wouter";
 import { AlertCircle, CheckCircle2, PenSquare, X, Pin, Sparkles, Copy, Check } from "lucide-react";
 import { isAdmin } from "@/lib/admin";
 import { getApiBase } from "@/lib/api-base";
+import { CHAINS, EXCHANGES, makeEcosystemSectionId, parseEcosystemSectionId, getEcosystemDisplayNameBySlug } from "@/lib/ecosystem";
 
 const NAV_SECTIONS = [
   "ido", "funding", "quest", "policy",
@@ -35,6 +36,19 @@ const SECTION_LABEL_KEYS: Record<string, string> = {
   recruiting: "nav_recruiting", devbounty: "nav_devbounty",
   grant: "nav_grant",
 };
+
+function sectionLabel(sectionId: string, lang: string, t: (k: string) => string) {
+  const key = SECTION_LABEL_KEYS[sectionId];
+  if (key) return t(key);
+  const eco = parseEcosystemSectionId(sectionId);
+  if (eco) {
+    const name = getEcosystemDisplayNameBySlug(eco.kind, eco.slug);
+    return lang === "zh-CN"
+      ? `${eco.kind === "chain" ? "公链" : "交易所"}：${name}`
+      : `${eco.kind === "chain" ? "Chain" : "Exchange"}: ${name}`;
+  }
+  return sectionId;
+}
 
 function getSections(spaceType: string, adminUser: boolean): string[] {
   if (adminUser) return PROJECT_SECTIONS;
@@ -218,7 +232,12 @@ ${typeInfo.tag} #${projectName} #Web3Release #Web3
   };
 
   const isAdminUser = isAdmin(address);
-  const availableSections = getSections(spaceType, isAdminUser);
+  const baseSections = getSections(spaceType, isAdminUser);
+  const ecoSections = [
+    ...CHAINS.map((n) => makeEcosystemSectionId("chain", n)),
+    ...EXCHANGES.map((n) => makeEcosystemSectionId("exchange", n)),
+  ];
+  const availableSections = [...baseSections, ...ecoSections];
   const inputCls = "w-full p-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/20 outline-none transition-all text-foreground placeholder:text-muted-foreground";
 
   const withPin = wantToPin && pinCount > 0;
@@ -551,7 +570,7 @@ ${typeInfo.tag} #${projectName} #Web3Release #Web3
             <select value={section} onChange={e => setSection(e.target.value)} className={inputCls}>
               <option value="">{t("postFormSection")}...</option>
               {availableSections.map(s => (
-                <option key={s} value={s}>{t(SECTION_LABEL_KEYS[s] ?? s)}</option>
+                <option key={s} value={s}>{sectionLabel(s, lang, t)}</option>
               ))}
             </select>
             {!spaceType && !isAdminUser && (
