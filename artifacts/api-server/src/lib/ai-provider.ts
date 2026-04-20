@@ -365,6 +365,15 @@ export function isDeepSeekBudgetAvailable(): boolean {
   return checkDeepSeekBudget("budget-check");
 }
 
+/** True if a `paidOnly` unified scrape could run (DeepSeek configured, not blocked, hourly budget OK). */
+export function canRunPaidUnifiedScrape(): boolean {
+  const ds = providers.find(p => p.name === "deepseek");
+  if (!ds) return false;
+  checkDailyReset(ds);
+  if (isRateLimited(ds) || isDailyExhausted(ds)) return false;
+  return isDeepSeekBudgetAvailable();
+}
+
 /** @deprecated Same as isDeepSeekBudgetAvailable (hourly-only cap). */
 export function isDeepSeekHourlyBudgetAvailable(): boolean {
   return checkDeepSeekBudget("hourly-budget-check");

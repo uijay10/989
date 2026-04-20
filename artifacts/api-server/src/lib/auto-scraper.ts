@@ -673,7 +673,8 @@ async function logEntry(entry: ScrapeLogEntry): Promise<void> {
 }
 
 // ── Daily article budget from DB ───────────────────────────────────────────────
-async function getTodayArticlesProcessed(): Promise<number> {
+/** Exported for /healthz/scrape diagnostics */
+export async function getTodayArticlesProcessed(): Promise<number> {
   try {
     const result = await db.execute(sql`
       SELECT COALESCE(SUM(items_saved), 0) AS total

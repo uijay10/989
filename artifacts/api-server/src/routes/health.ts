@@ -2,6 +2,13 @@ import { Router, type IRouter } from "express";
 import { HealthCheckResponse } from "@workspace/api-zod";
 import { db, postsTable } from "@workspace/db";
 import { sql, desc } from "drizzle-orm";
+import {
+  areFreeProvidersDailyExhausted,
+  canRunPaidUnifiedScrape,
+  getDailyQuotaStats,
+  isFreeProviderAvailable,
+} from "../lib/ai-provider";
+import { getTodayArticlesProcessed, SCRAPE_CONFIG } from "../lib/auto-scraper";
 
 const router: IRouter = Router();
 
@@ -44,9 +51,24 @@ router.get("/healthz/scrape", async (_req, res) => {
     const lastAiAt = lastAi?.createdAt ? new Date(lastAi.createdAt) : null;
     const lastLogAt = lastLog?.created_at ? new Date(lastLog.created_at) : null;
 
+    const todaySaved = await getTodayArticlesProcessed();
+    const cronDisabled = process.env.DISABLE_SCRAPE_CRON === "true";
+
     res.json({
       status: "ok",
       now: now.toISOString(),
+      scrapeCronDisabled: cronDisabled,
+      dailyArticleBudget: {
+        processedTodayViaLogs: todaySaved,
+        maxPerDay: SCRAPE_CONFIG.maxDailyArticles,
+        atCap: todaySaved >= SCRAPE_CONFIG.maxDailyArticles,
+      },
+      aiProviders: {
+        freeGroqUsable: isFreeProviderAvailable(),
+        allFreeGroqDailyExhausted: areFreeProvidersDailyExhausted(),
+        canRunPaidDeepSeekUnified: canRunPaidUnifiedScrape(),
+        quota: getDailyQuotaStats(),
+      },
       lastAiPost: lastAiAt
         ? {
             at: lastAiAt.toISOString(),
@@ -67,9 +89,12 @@ router.get("/healthz/scrape", async (_req, res) => {
           }
         : null,
       hints: [
+        "If scrapeCronDisabled=true: set DISABLE_SCRAPE_CRON!=true on the API host or cron will never run.",
+        "If dailyArticleBudget.atCap=true: unified scraper stops until UTC date rolls (see scrape_logs SUM).",
+        "If allFreeGroqDailyExhausted=true but canRunPaidDeepSeekUnified=false: add/fix DEEPSEEK_API_KEY or raise DEEPSEEK_HOURLY_BUDGET_USD.",
         "If lastScrapeLog is null: DB table scrape_logs may not exist or DB unreachable.",
         "If itemsFound>0 but itemsSaved=0: AI rejected or dedup/guards filtered everything, or DB insert failing.",
-        "If lastScrapeLog.minutesAgo keeps increasing: cron may be sleeping/disabled or process not running.",
+        "If lastScrapeLog.minutesAgo keeps increasing: process sleeping (e.g. host spun down), or leader lease held elsewhere, or only saves 0.",
       ],
     });
   } catch (e: unknown) {

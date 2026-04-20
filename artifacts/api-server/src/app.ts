@@ -75,7 +75,34 @@ async function maybeKickStaleUnifiedScrape(reason: "traffic" | "timer"): Promise
     const instanceId = getCronInstanceId();
     if (!(await tryClaimCronLeaderLease(instanceId))) return;
 
-    const { runUnifiedScrape, SCRAPE_CONFIG, isGroqScrapeRunning } = await import("./lib/auto-scraper");
+    const { runUnifiedScrape, SCRAPE_CONFIG, isGroqScrapeRunning, isDeepSeekScrapeRunning } =
+      await import("./lib/auto-scraper");
+    const { areFreeProvidersDailyExhausted, canRunPaidUnifiedScrape } = await import("./lib/ai-provider");
+
+    const freeExhausted = areFreeProvidersDailyExhausted();
+    // When all Groq keys hit daily quota, freeOnly runs save 0 forever — recover with DeepSeek if possible.
+    if (freeExhausted && canRunPaidUnifiedScrape()) {
+      if (isDeepSeekScrapeRunning()) return;
+      lastStaleKickMs = Date.now();
+      console.log(
+        `[stale-kick:${reason}] free AI daily exhausted — triggering unified DeepSeek scrape — ` +
+          `scrapeStale=${scrapeStale} aiStale=${aiStale}`
+      );
+      void runUnifiedScrape({
+        paidOnly: true,
+        maxArticlesPerRun: Math.min(40, SCRAPE_CONFIG.maxArticlesPerDeepSeekRun),
+      }).catch((e) => console.error(`[stale-kick:${reason}] paid scrape error:`, e));
+      return;
+    }
+    if (freeExhausted && !canRunPaidUnifiedScrape()) {
+      console.warn(
+        `[stale-kick:${reason}] All free Groq quota exhausted and DeepSeek unavailable — cannot auto-recover ` +
+          `(configure DEEPSEEK_* / raise DEEPSEEK_HOURLY_BUDGET_USD or wait UTC reset)`
+      );
+      lastStaleKickMs = Date.now();
+      return;
+    }
+
     if (isGroqScrapeRunning()) return;
 
     lastStaleKickMs = Date.now();
@@ -439,6 +466,11 @@ if (process.env.NODE_ENV !== "test" && process.env.DISABLE_SCRAPE_CRON !== "true
 
   const tickGroq = async () => {
     if (!(await tryClaimCronLeaderLease(instanceId))) return;
+    const { areFreeProvidersDailyExhausted } = await import("./lib/ai-provider");
+    if (areFreeProvidersDailyExhausted()) {
+      console.log("[cron:groq] Skipped — all free Groq providers daily exhausted (DeepSeek cycle may still run)");
+      return;
+    }
     const { runUnifiedScrape, SCRAPE_CONFIG, isGroqScrapeRunning } = await import("./lib/auto-scraper");
     if (isGroqScrapeRunning()) {
       console.warn("[cron:groq] Skipped tick — Groq scrape still running");
