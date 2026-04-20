@@ -1,7 +1,7 @@
 // VERSION: v2.0_migrated_2026
-// Unified scraper: all 11 Groq + 1 DeepSeek instances
-// Single flow: system keywords (DB scrape_keywords → DEFAULT_KEYWORDS) → AI classify → section + 7×24快讯 dual-publish
-// All plate-specific scraping logic has been removed and replaced with this unified approach.
+// Unified scraper: Groq (freeOnly) + DeepSeek (paidOnly) each run the same pipeline.
+// Flow: keywords → RSS/Google News → AI classify → **always write 7×24 (`724news`) first**, then other matched plates (自动归纳).
+// Groq quota: wait for next run/day reset; DeepSeek: own schedule + env DEEPSEEK_HOURLY_BUDGET_USD (0 = no app-side hourly cap).
 
 import Parser from "rss-parser";
 import { db, postsTable } from "@workspace/db";
@@ -699,25 +699,36 @@ async function insertPost(ev: ProcessedEvent, section: string): Promise<boolean>
   }
 }
 
-// ── Dual-publish: section(s) + always 724news ─────────────────────────────────
-// v2.0 rule: every article that passes AI review is published to 7×24快讯.
-// Additionally published to any specific matched section.
+// ── Dual-publish: 7×24 first, then other plates (自动归纳) ────────────────────
+// Design: unified pipeline publishes into **724news** as the primary stream; additional rows for ido/funding/etc. when AI maps categories.
+// Insert order is guaranteed: **724news before** any secondary section (same logical story as “快讯为主、其它为归纳”).
+const PRIMARY_724_SECTION = "724news";
+
+function normalizePlateSection(s: string): string {
+  return s === "flash" ? PRIMARY_724_SECTION : s;
+}
+
 async function dualPublish(ev: ProcessedEvent): Promise<number> {
   const aiCategories = Array.isArray(ev.category) ? ev.category : [];
   const matchedSections = mapAllCategories(aiCategories, ev.title);
 
-  // Build final section set: matched sections + always 724news
-  const sectionsToPublish = new Set<string>(matchedSections);
-  sectionsToPublish.add("724news");
+  const plates = new Set<string>();
+  for (const s of matchedSections) {
+    plates.add(normalizePlateSection(s));
+  }
+  plates.add(PRIMARY_724_SECTION);
 
-  // Remove 724news from matched before logging (to avoid double-logging)
-  const specificSections = matchedSections.filter(s => s !== "724news");
-  if (specificSections.length > 0) {
-    console.log(`[unified-scrape] Dual-publish "${ev.title.slice(0, 60)}" → [${specificSections.join(", ")}] + 724news`);
+  const secondary = [...plates].filter((s) => s !== PRIMARY_724_SECTION).sort();
+  const ordered: string[] = [PRIMARY_724_SECTION, ...secondary];
+
+  if (secondary.length > 0) {
+    console.log(
+      `[unified-scrape] "${ev.title.slice(0, 60)}…" → ${PRIMARY_724_SECTION} first, then [${secondary.join(", ")}]`,
+    );
   }
 
   let saved = 0;
-  for (const section of sectionsToPublish) {
+  for (const section of ordered) {
     const ok = await insertPost(ev, section);
     if (ok) saved++;
   }

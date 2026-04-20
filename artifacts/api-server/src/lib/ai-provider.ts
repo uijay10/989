@@ -402,6 +402,22 @@ export function canRunPaidUnifiedScrape(): boolean {
   return isDeepSeekBudgetAvailable();
 }
 
+/** Human-readable reason when paid DeepSeek unified scrape cannot run (for logs / ops). Separate from your DeepSeek account hourly quota. */
+export function explainWhyPaidDeepSeekBlocked(): string | null {
+  const ds = providers.find(p => p.name === "deepseek");
+  if (!ds) {
+    return "DeepSeek not configured (set DEEPSEEK_API_KEY or DEEPSEEK)";
+  }
+  checkDailyReset(ds);
+  if (isRateLimited(ds)) return "DeepSeek rate-limit cooldown";
+  if (isDailyExhausted(ds)) return "DeepSeek marked daily exhausted";
+  if (!isDeepSeekBudgetAvailable()) {
+    if (isDeepSeekHourlyCapDisabled()) return "App hourly cap disabled but budget check failed (bug)";
+    return `App-side hourly USD cap (DEEPSEEK_HOURLY_BUDGET_USD=${getDeepSeekHourlyBudgetUsd()}); set to 0 to rely only on DeepSeek billing`;
+  }
+  return null;
+}
+
 /** @deprecated Same as isDeepSeekBudgetAvailable (hourly-only cap). */
 export function isDeepSeekHourlyBudgetAvailable(): boolean {
   return checkDeepSeekBudget("hourly-budget-check");
