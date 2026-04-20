@@ -150,7 +150,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const navLinkClass = (href: string, _navKey?: string) => {
     const isActive = activeHref === href;
     return cn(
-      "relative px-3 py-1 rounded-full text-[14px] font-semibold whitespace-nowrap transition-all duration-200 group cursor-pointer",
+      "relative px-2.5 py-0.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-all duration-200 group cursor-pointer",
       isActive
         ? "text-white bg-blue-600 shadow-sm"
         : "text-slate-800 hover:text-slate-900 hover:bg-slate-100"
@@ -177,16 +177,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 className="flex items-center gap-2.5 group cursor-pointer">
                 <img src="/logo.png" alt="Web3 Release" className="w-10 h-10 object-contain" />
                 <span className="font-display font-bold text-2xl tracking-tight text-blue-600">Web3 Release</span>
-              </a>
-              <a href="/" onClick={e => { e.preventDefault(); clearEcosystem(); setActiveCategory("全部"); setOptimisticNavHref("/"); navigate("/"); }}
-                className={cn(
-                  "px-3.5 py-1.5 rounded-full text-sm font-semibold border transition-all cursor-pointer",
-                  activeHref === "/"
-                    ? "bg-blue-600 text-white border-blue-600 shadow"
-                    : "bg-white dark:bg-slate-800 text-blue-600 border-blue-300 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40"
-                )}
-              >
-                {t("navHome")}
               </a>
             </div>
 
@@ -362,7 +352,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   navigate("/");
                 }}
                 className={cn(
-                  "relative px-3 py-1 rounded-full text-[14px] font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer",
+                  "relative px-2.5 py-0.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer",
                   activeHref === "/" && activeCategory === "全部"
                     ? "text-white bg-blue-600 shadow-sm"
                     : "text-slate-800 hover:text-slate-900 hover:bg-slate-100"
