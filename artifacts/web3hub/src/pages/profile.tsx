@@ -18,6 +18,7 @@ import { FEATURES } from "@/lib/feature-flags";
 import { Link } from "wouter";
 import AdminPage from "./admin";
 import { getApiBase } from "@/lib/api-base";
+import { CHAINS, EXCHANGES, makeEcosystemSectionId } from "@/lib/ecosystem";
 
 const apiBase = getApiBase();
 
@@ -428,21 +429,71 @@ export default function Profile() {
           <p className="text-sm text-muted-foreground">
             {zh ? "点击标签切换订阅状态，订阅后将收到该栏目的新内容推送。" : "Click to toggle subscription."}
           </p>
-          <div className="flex flex-wrap gap-2">
-            {ALL_SECTIONS.map(s => {
-              const active = subscriptions.includes(s);
-              return (
-                <button key={s} onClick={() => toggleSubscription(s)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
-                    active
-                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                      : "bg-muted/50 text-muted-foreground border-border hover:border-primary hover:text-primary"
-                  }`}>
-                  {active && <Check className="w-3 h-3 inline mr-1.5" />}
-                  {zh ? s : (SECTION_EN[s] ?? s)}
-                </button>
-              );
-            })}
+          <div className="space-y-4">
+            {/* Existing sections */}
+            <div className="space-y-2">
+              <div className="text-xs font-semibold text-muted-foreground">{zh ? "板块" : "Sections"}</div>
+              <div className="flex flex-wrap gap-2">
+                {ALL_SECTIONS.map(s => {
+                  const active = subscriptions.includes(s);
+                  return (
+                    <button key={s} onClick={() => toggleSubscription(s)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
+                        active
+                          ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                          : "bg-muted/50 text-muted-foreground border-border hover:border-primary hover:text-primary"
+                      }`}>
+                      {active && <Check className="w-3 h-3 inline mr-1.5" />}
+                      {zh ? s : (SECTION_EN[s] ?? s)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Chains */}
+            <div className="space-y-2">
+              <div className="text-xs font-semibold text-muted-foreground">{zh ? "公链" : "Chains"}</div>
+              <div className="flex flex-wrap gap-2">
+                {CHAINS.map((name) => {
+                  const id = makeEcosystemSectionId("chain", name);
+                  const active = subscriptions.includes(id);
+                  return (
+                    <button key={id} onClick={() => toggleSubscription(id)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
+                        active
+                          ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                          : "bg-muted/50 text-muted-foreground border-border hover:border-primary hover:text-primary"
+                      }`}>
+                      {active && <Check className="w-3 h-3 inline mr-1.5" />}
+                      {name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Exchanges */}
+            <div className="space-y-2">
+              <div className="text-xs font-semibold text-muted-foreground">{zh ? "交易所" : "Exchanges"}</div>
+              <div className="flex flex-wrap gap-2">
+                {EXCHANGES.map((name) => {
+                  const id = makeEcosystemSectionId("exchange", name);
+                  const active = subscriptions.includes(id);
+                  return (
+                    <button key={id} onClick={() => toggleSubscription(id)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
+                        active
+                          ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                          : "bg-muted/50 text-muted-foreground border-border hover:border-primary hover:text-primary"
+                      }`}>
+                      {active && <Check className="w-3 h-3 inline mr-1.5" />}
+                      {name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       );

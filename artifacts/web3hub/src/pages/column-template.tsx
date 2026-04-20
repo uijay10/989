@@ -6,29 +6,6 @@ import { getApiBase } from "@/lib/api-base";
 
 export type ColumnKind = "chain" | "exchange";
 
-type TabKey =
-  | "all"
-  | "flash"
-  | "grants"
-  | "airdrop"
-  | "testnet"
-  | "ido"
-  | "listing"
-  | "nodes"
-  | "funding";
-
-const TABS: { key: TabKey; labelZh: string; labelEn: string }[] = [
-  { key: "all",     labelZh: "全部",          labelEn: "All" },
-  { key: "flash",   labelZh: "7*24快讯",      labelEn: "7*24" },
-  { key: "grants",  labelZh: "Grants",        labelEn: "Grants" },
-  { key: "airdrop", labelZh: "Airdrop",       labelEn: "Airdrop" },
-  { key: "testnet", labelZh: "Testnet",       labelEn: "Testnet" },
-  { key: "ido",     labelZh: "IDO/Launchpad", labelEn: "IDO/Launchpad" },
-  { key: "listing", labelZh: "Listing",       labelEn: "Listing" },
-  { key: "nodes",   labelZh: "节点招募",      labelEn: "Nodes" },
-  { key: "funding", labelZh: "Funding",       labelEn: "Funding" },
-];
-
 type ColumnMeta = {
   name: string;            // display name, e.g. "Solana" / "BNB Chain"
   slug: string;            // url slug, e.g. "solana" / "bnb-chain"
@@ -47,10 +24,6 @@ type Item = {
   tags?: string[] | null;
 };
 
-function tabLabel(lang: string, tab: (typeof TABS)[number]) {
-  return lang === "zh-CN" ? tab.labelZh : tab.labelEn;
-}
-
 function humanTime(ts?: string | null) {
   if (!ts) return "";
   const d = new Date(ts);
@@ -68,7 +41,6 @@ export function ColumnTemplatePage({
   const { lang } = useLang();
   const isZh = lang === "zh-CN";
 
-  const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [loading, setLoading] = useState(false);
@@ -85,15 +57,12 @@ export function ColumnTemplatePage({
     const p = new URLSearchParams();
     p.set("limit", "40");
     p.set("page", "1");
-    // Proposed filters (backend can implement later):
-    // - tab: "flash/grants/airdrop/testnet/ido/listing/nodes/funding"
-    if (activeTab !== "all") p.set("tab", activeTab);
     if (debounced) p.set("q", debounced);
     // - tag filters:
     if (kind === "chain") p.set("chain", meta.name);
     if (kind === "exchange") p.set("exchange", meta.name);
     return p.toString();
-  }, [activeTab, debounced, kind, meta.name]);
+  }, [debounced, kind, meta.name]);
 
   useEffect(() => {
     let cancelled = false;
@@ -141,25 +110,8 @@ export function ColumnTemplatePage({
           </button>
         </div>
 
-        {/* Tabs + Search */}
+        {/* Search */}
         <div className="mt-4 flex flex-col lg:flex-row lg:items-center gap-3">
-          <div className="flex flex-wrap items-center gap-1.5 bg-slate-100/70 rounded-2xl p-1">
-            {TABS.map((t) => (
-              <button
-                key={t.key}
-                type="button"
-                onClick={() => setActiveTab(t.key)}
-                className={`px-3.5 py-1.5 rounded-2xl text-sm font-semibold transition-all ${
-                  activeTab === t.key
-                    ? "bg-white text-slate-900 shadow-sm border border-slate-200/70"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                {tabLabel(lang, t)}
-              </button>
-            ))}
-          </div>
-
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
