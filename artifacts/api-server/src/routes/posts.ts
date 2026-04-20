@@ -191,11 +191,12 @@ router.get("/", async (req, res) => {
   );
 
   // Column tag filters (require DB columns chain_tags / exchange_tags)
+  // NOTE: keep the SQL explicit so it's easy to remove if schema isn't migrated.
   if (chain) {
-    conditions.push(sql`${postsTable.chainTags} @> ARRAY[${chain}]::text[]`);
+    conditions.push(sql`chain_tags @> ARRAY[${chain}]::text[]`);
   }
   if (exchange) {
-    conditions.push(sql`${postsTable.exchangeTags} @> ARRAY[${exchange}]::text[]`);
+    conditions.push(sql`exchange_tags @> ARRAY[${exchange}]::text[]`);
   }
 
   // Optional tab → section mapping (lightweight, can be expanded later)
@@ -222,11 +223,53 @@ router.get("/", async (req, res) => {
     ? [asc(sql`CASE WHEN ${postsTable.authorType} IS NULL THEN 1 ELSE 0 END`), desc(postsTable.createdAt)]
     : [desc(postsTable.createdAt)];
 
-  const [all, allHistorical, posts] = await Promise.all([
+  // NOTE: avoid selecting optional/new columns by default (e.g. chain_tags/exchange_tags)
+  // so the endpoint stays compatible even if DB schema isn't pushed yet.
+  const POST_SELECT = {
+    id: postsTable.id,
+    title: postsTable.title,
+    content: postsTable.content,
+    section: postsTable.section,
+    authorWallet: postsTable.authorWallet,
+    authorName: postsTable.authorName,
+    authorAvatar: postsTable.authorAvatar,
+    authorType: postsTable.authorType,
+    views: postsTable.views,
+    likes: postsTable.likes,
+    comments: postsTable.comments,
+    kolLikePoints: postsTable.kolLikePoints,
+    kolCommentPoints: postsTable.kolCommentPoints,
+    isPinned: postsTable.isPinned,
+    pinnedUntil: postsTable.pinnedUntil,
+    pinQueued: postsTable.pinQueued,
+    pinQueuedAt: postsTable.pinQueuedAt,
+    expiresAt: postsTable.expiresAt,
+    createdAt: postsTable.createdAt,
+    sourceUrl: postsTable.sourceUrl,
+    aiConfidence: postsTable.aiConfidence,
+    importance: postsTable.importance,
+    eventStartTime: postsTable.eventStartTime,
+    eventEndTime: postsTable.eventEndTime,
+  } as const;
+
+  const [all, allHistorical] = await Promise.all([
     db.select({ count: sql<number>`count(*)` }).from(postsTable).where(where),
     db.select({ count: sql<number>`count(*)` }).from(postsTable).where(whereAll),
-    db.select().from(postsTable).where(where).orderBy(...orderBy).limit(limit).offset(offset),
   ]);
+
+  let posts: any[] = [];
+  try {
+    posts = await db.select(POST_SELECT).from(postsTable).where(where).orderBy(...orderBy).limit(limit).offset(offset);
+  } catch (e) {
+    // If chain/exchange filters are used but DB isn't migrated yet, retry without those filters.
+    if (chain || exchange) {
+      const fallbackConds = conditions.filter((c) => String(c).includes("chain_tags") === false && String(c).includes("exchange_tags") === false);
+      const fallbackWhere = fallbackConds.length ? and(...fallbackConds) : undefined;
+      posts = await db.select(POST_SELECT).from(postsTable).where(fallbackWhere).orderBy(...orderBy).limit(limit).offset(offset);
+    } else {
+      throw e;
+    }
+  }
 
   const wallets = [...new Set(posts.map(p => p.authorWallet))];
   const users = wallets.length

@@ -585,7 +585,9 @@ async function insertPost(ev: ProcessedEvent, section: string): Promise<boolean>
 
     const now = new Date();
     const tags = classifyChainExchangeTags({ title: ev.title, description: ev.description ?? "" });
-    const [inserted] = await db.insert(postsTable).values({
+
+    // Insert with tags (preferred). If DB hasn't been migrated yet, retry without tag columns.
+    const insertValues: any = {
       title: ev.title.slice(0, 200),
       content: (ev.description ?? "").slice(0, 2000),
       section,
@@ -602,7 +604,21 @@ async function insertPost(ev: ProcessedEvent, section: string): Promise<boolean>
       expiresAt: new Date(now.getTime() + SIXTY_DAYS_MS),
       views: 0, likes: 0, comments: 0, kolLikePoints: 0, kolCommentPoints: 0,
       isPinned: false, pinQueued: false,
-    }).returning();
+    };
+
+    let inserted: any;
+    try {
+      [inserted] = await db.insert(postsTable).values(insertValues).returning();
+    } catch (e: any) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (/chain_tags|exchange_tags/i.test(msg)) {
+        delete insertValues.chainTags;
+        delete insertValues.exchangeTags;
+        [inserted] = await db.insert(postsTable).values(insertValues).returning();
+      } else {
+        throw e;
+      }
+    }
 
     if (inserted) appendToBackupFile(inserted as unknown as Record<string, unknown>);
     return true;
