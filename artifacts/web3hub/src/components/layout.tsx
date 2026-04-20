@@ -40,6 +40,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { address, isConnected, user, disconnect } = useWeb3Auth();
   const { data: meData } = useGetMe({ wallet: address ?? "" }, { query: { enabled: !!address } });
   const [location, navigate] = useLocation();
+  const [optimisticNavHref, setOptimisticNavHref] = useState<string | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { activeCategory, setActiveCategory, clearEcosystem } = useEventFilter();
   const isHome = location === "/";
@@ -138,8 +139,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    // Once route change completes, drop optimistic highlight.
+    if (optimisticNavHref && location === optimisticNavHref) {
+      setOptimisticNavHref(null);
+    }
+  }, [location, optimisticNavHref]);
+
+  const activeHref = optimisticNavHref ?? location;
   const navLinkClass = (href: string, _navKey?: string) => {
-    const isActive = location === href;
+    const isActive = activeHref === href;
     return cn(
       "relative px-3 py-1 rounded-full text-[14px] font-semibold whitespace-nowrap transition-all duration-200 group cursor-pointer",
       isActive
@@ -151,6 +160,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const handleNavClick = (e: React.MouseEvent, href: string, _navKey: string) => {
     e.preventDefault();
     clearEcosystem();
+    setOptimisticNavHref(href);
     navigate(href);
   };
 
@@ -163,15 +173,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="flex justify-between items-center h-16">
             {/* Logo — 1.5× bigger */}
             <div className="flex items-center gap-3 shrink-0">
-              <a href="/" onClick={e => { e.preventDefault(); setActiveCategory("全部"); navigate("/"); }}
+              <a href="/" onClick={e => { e.preventDefault(); clearEcosystem(); setActiveCategory("全部"); setOptimisticNavHref("/"); navigate("/"); }}
                 className="flex items-center gap-2.5 group cursor-pointer">
                 <img src="/logo.png" alt="Web3 Release" className="w-10 h-10 object-contain" />
                 <span className="font-display font-bold text-2xl tracking-tight text-blue-600">Web3 Release</span>
               </a>
-              <a href="/" onClick={e => { e.preventDefault(); setActiveCategory("全部"); navigate("/"); }}
+              <a href="/" onClick={e => { e.preventDefault(); clearEcosystem(); setActiveCategory("全部"); setOptimisticNavHref("/"); navigate("/"); }}
                 className={cn(
                   "px-3.5 py-1.5 rounded-full text-sm font-semibold border transition-all cursor-pointer",
-                  location === "/"
+                  activeHref === "/"
                     ? "bg-blue-600 text-white border-blue-600 shadow"
                     : "bg-white dark:bg-slate-800 text-blue-600 border-blue-300 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40"
                 )}
@@ -347,11 +357,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   // 7×24 should route to HOME (single feed view), not a separate 724 page.
                   clearEcosystem();
                   setActiveCategory("全部");
+                  setOptimisticNavHref("/");
                   navigate("/");
                 }}
                 className={cn(
                   "relative px-3 py-1 rounded-full text-[14px] font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer",
-                  isHome && activeCategory === "全部"
+                  activeHref === "/" && activeCategory === "全部"
                     ? "text-white bg-blue-600 shadow-sm"
                     : "text-slate-800 hover:text-slate-900 hover:bg-slate-100"
                 )}

@@ -13,6 +13,56 @@ app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
+// ── Traffic-based safety net ───────────────────────────────────────────────────
+// Some hosting environments may sleep, causing cron to pause. When traffic resumes,
+// we do a cheap check and (at most) kick one unified Groq scrape if the feed is stale.
+let lastTrafficKickMs = 0;
+async function maybeKickUnifiedScrapeOnTraffic(): Promise<void> {
+  // throttle: at most once per 30 minutes per process
+  if (Date.now() - lastTrafficKickMs < 30 * 60 * 1000) return;
+  // only in non-test envs
+  if (process.env.NODE_ENV === "test") return;
+
+  try {
+    // If the scrape_logs table doesn't exist yet, this will fail; skip silently.
+    const r = await db.execute(sql`
+      SELECT created_at
+      FROM scrape_logs
+      WHERE run_id LIKE ${"unified_%"}
+      ORDER BY created_at DESC
+      LIMIT 1
+    `);
+    const last = (r as { rows?: Array<{ created_at?: string | Date }> }).rows?.[0]?.created_at;
+    const lastAt = last ? new Date(last) : null;
+
+    // Stale threshold: 2 hours without any unified scrape log.
+    if (lastAt && Date.now() - lastAt.getTime() < 2 * 60 * 60 * 1000) return;
+
+    const instanceId = getCronInstanceId();
+    if (!(await tryClaimCronLeaderLease(instanceId))) return;
+
+    const { runUnifiedScrape, SCRAPE_CONFIG, isGroqScrapeRunning } = await import("./lib/auto-scraper");
+    if (isGroqScrapeRunning()) return;
+
+    lastTrafficKickMs = Date.now();
+    console.log("[traffic-kick] feed stale; triggering one unified Groq scrape (dual-publish)");
+    void runUnifiedScrape({
+      freeOnly: true,
+      maxArticlesPerRun: Math.min(60, SCRAPE_CONFIG.maxArticlesPerGroqRun),
+    }).catch((e) => console.error("[traffic-kick] scrape error:", e));
+  } catch {
+    // ignore
+  }
+}
+
+app.use("/api", (req, _res, next) => {
+  // Only kick on feed-like traffic to avoid unnecessary DB work.
+  if (req.path.startsWith("/feed")) {
+    void maybeKickUnifiedScrapeOnTraffic();
+  }
+  next();
+});
+
 app.use("/api", router);
 
 // Ensure tables added in recent migrations exist (safe to run on every startup)
