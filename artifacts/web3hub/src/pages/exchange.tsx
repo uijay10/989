@@ -12,6 +12,17 @@ const EXCHANGES: Record<string, { name: string; titleZh: string; titleEn: string
       { label: "Binance Announcements", href: "https://www.binance.com/en/support/announcement" },
     ],
   },
+  "okx": {
+    name: "OKX",
+    titleZh: "OKX 专栏 - 公告与机会",
+    titleEn: "OKX Column - Announcements & Opportunities",
+    officialLinks: [
+      { label: "OKX Latest Announcements", href: "https://www.okx.com/en-us/help/section/announcements-latest-announcements" },
+      { label: "OKX New Listings", href: "https://www.okx.com/en-us/help/section/announcements-new-listings" },
+      { label: "OKX Jumpstart", href: "https://www.okx.com/help/section/announcements-jumpstart" },
+      { label: "OKX Announcements (Telegram)", href: "https://t.me/OKXAnnouncements" },
+    ],
+  },
   "bybit": {
     name: "Bybit",
     titleZh: "Bybit 专栏 - 公告与机会",

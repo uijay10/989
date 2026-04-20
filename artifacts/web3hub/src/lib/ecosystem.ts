@@ -13,6 +13,7 @@ export const CHAINS = [
 
 export const EXCHANGES = [
   "Binance",
+  "OKX",
   "Bybit",
   "Coinbase",
   "Kraken",

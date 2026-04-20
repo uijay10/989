@@ -149,6 +149,10 @@ export const DEFAULT_SOURCES = [
   { name: "Messari Research", url: "https://messari.io/rss/news.xml", type: "rss", priority: 1 },
   { name: "DeFiLlama Blog", url: "https://defillama.com/blog/rss.xml", type: "rss", priority: 1 },
   { name: "OKX Blog", url: "https://www.okx.com/learn/category/news/feed", type: "rss", priority: 1 },
+  // OKX announcements don't offer stable RSS. Kept as a placeholder for a future Playwright-based fetcher.
+  { name: "OKX Latest Announcements (playwright)", url: "https://www.okx.com/en-us/help/section/announcements-latest-announcements", type: "playwright", priority: 1 },
+  { name: "OKX New Listings (playwright)", url: "https://www.okx.com/en-us/help/section/announcements-new-listings", type: "playwright", priority: 1 },
+  { name: "OKX Jumpstart (playwright)", url: "https://www.okx.com/help/section/announcements-jumpstart", type: "playwright", priority: 1 },
   { name: "Alchemy Blog", url: "https://www.alchemy.com/blog/rss.xml", type: "rss", priority: 2 },
   { name: "Foresight News", url: "https://foresightnews.pro/rss", type: "rss", priority: 1 },
   { name: "Panews", url: "https://www.panewslab.com/rss", type: "rss", priority: 1 },
