@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Search, ExternalLink, Pin, Shuffle, Trash2 } from "lucide-react";
 import { createPortal } from "react-dom";
 import {
@@ -361,8 +361,17 @@ export function EventList({
 
   /** Stable random seed for this browser session */
   const sessionSeed = useRef(Math.random() * 0xffffffff >>> 0);
+  const lastFreshSkipKeyRef = useRef<string | null>(null);
 
-  const cacheKey = sectionSlug ?? "__home__";
+  // IMPORTANT: cache must be keyed by *all* feed dimensions, otherwise different pages
+  // (chain/exchange columns vs home vs sections) will reuse the same cached list.
+  const cacheKey = useMemo(() => {
+    const sec = sectionSlug ?? "__home__";
+    const cat = sectionSlug ? "__section__" : activeCategory;
+    const ch = chain?.trim() ? chain.trim() : "";
+    const ex = exchange?.trim() ? exchange.trim() : "";
+    return `${sec}::cat=${cat}::ch=${ch}::ex=${ex}::lang=${lang}`;
+  }, [sectionSlug, activeCategory, chain, exchange, lang]);
 
   const [allEvents, setAllEvents] = useState<Web3Event[]>(() => _eventsCache.get(cacheKey) ?? []);
   const [pinnedPosts, setPinnedPosts] = useState<any[]>(() => _pinnedCache.get(cacheKey) ?? []);
@@ -400,6 +409,32 @@ export function EventList({
     return () => clearInterval(id);
   }, [cacheKey]);
 
+  // When the cache dimension changes, reset paging + local UI state that must not leak across views.
+  useEffect(() => {
+    setPage(1);
+    setServerOffset(0);
+    setHasMore(true);
+    setError("");
+    setSearchTerm("");
+    setSortBy("time");
+
+    const cached = _eventsCache.get(cacheKey) ?? [];
+    const cachedTotal = _totalCache.get(cacheKey) ?? 0;
+    setAllEvents(cached);
+    setPinnedPosts(_pinnedCache.get(cacheKey) ?? []);
+    setServerTotal(cachedTotal);
+    setLoading(!_eventsCache.has(cacheKey));
+
+    // Reset infinite-scroll guards based on the new cache slice.
+    const cachedLen = cached.length;
+    _lmLoading.current = false;
+    _lmHasMore.current = cachedLen === 0 || cachedLen >= PAGE_LIMIT;
+    _lmOffset.current = cachedLen;
+
+    // Force a fresh fetch decision for the new key (avoid stale fetchTick>0 skipping refresh).
+    setFetchTick(0);
+  }, [cacheKey]);
+
   // ==================== 新增：全局去重函数（放在 refetch 之后） ====================
   const deduplicateEvents = useCallback((events: Web3Event[]) => {
     const seen = new Set<string>();
@@ -418,7 +453,11 @@ export function EventList({
     const stale = Date.now() - ts > CACHE_TTL;
 
     // If we have fresh cache — show immediately, skip network
-    if (cached && !stale && fetchTick === 0) {
+    // Only skip once per (cacheKey + initial mount tick). If cacheKey changes but fetchTick
+    // is still >0 from auto-refresh, we MUST NOT skip or we'll show the wrong list.
+    const freshSkipKey = `${cacheKey}::__init__`;
+    if (cached && !stale && fetchTick === 0 && lastFreshSkipKeyRef.current !== freshSkipKey) {
+      lastFreshSkipKeyRef.current = freshSkipKey;
       const cachedTotal = _totalCache.get(cacheKey);
       if (cachedTotal !== undefined) setServerTotal(cachedTotal);
       return;
@@ -494,7 +533,7 @@ export function EventList({
       setError(zh ? "数据加载失败，请刷新重试" : "Failed to load data, please refresh");
       setLoading(false);
     });
-  }, [fetchTick, sectionSlug, cacheKey]);
+  }, [fetchTick, sectionSlug, chain, exchange, activeCategory, lang, zh, cacheKey, deduplicateEvents, showPinned]);
 
   // ==================== 无限滚动 - 全用 ref 做守卫，彻底消除竞争 ====================
   // 初始值从缓存推算：缓存有50条说明可能还有更多，缓存有N<50条说明已全部加载
@@ -511,7 +550,7 @@ export function EventList({
     _lmHasMore.current = true;
     _lmOffset.current  = 0;
     setHasMore(true);
-  }, [sectionSlug]);
+  }, [sectionSlug, chain, exchange]);
 
   const loadMore = useCallback(async () => {
     if (_lmLoading.current || !_lmHasMore.current) return;
