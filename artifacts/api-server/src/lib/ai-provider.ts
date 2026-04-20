@@ -43,14 +43,17 @@ function incrementGroqSlot(): void {
 }
 
 // ==================== DeepSeek：仅按 UTC 自然小时上限（无 24h 总预算）====================
-// 应用内估算花费封顶（与 DeepSeek 控制台余额无关）。未设置时默认 0.05 USD/UTC 小时，与历史行为一致。
-// DEEPSEEK_HOURLY_BUDGET_USD=0 表示关闭应用层小时上限。
+// 应用内估算 USD/UTC 小时封顶（与 DeepSeek 控制台「每小时额度」无关）。
+// - **未设置环境变量**：不启用应用层封顶（0），只按官方扣费 —— 与「仅在 Secrets 里配 DEEPSEEK_API_KEY」的常见部署一致，避免因默认 0.05 儿分钟内封顶导致整日无新文。
+// - 显式设为 0：同上。
+// - 显式设正数（如 0.05）：启用该美元/小时估算上限。
 // 花费持久化到 ai_cost_hourly_bucket（bucket_key = `YYYY-MM-DDTHH` UTC），重启后按当前小时恢复。
 const DEEPSEEK_HOURLY_BUDGET_USD: number = (() => {
   const raw = process.env.DEEPSEEK_HOURLY_BUDGET_USD;
   if (raw === "0") return 0;
-  const v = parseFloat(raw ?? "0.05");
-  if (!Number.isFinite(v) || v < 0) return 0.05;
+  if (raw === undefined || raw === "") return 0;
+  const v = parseFloat(raw);
+  if (!Number.isFinite(v) || v < 0) return 0;
   return v;
 })();
 
