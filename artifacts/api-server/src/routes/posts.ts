@@ -3,6 +3,7 @@ import { db, postsTable, usersTable, commentsTable, commentLikesTable, notificat
 import { eq, and, desc, asc, sql, gte, or, ilike, inArray } from "drizzle-orm";
 import { checkContent, filterErrorMessage } from "../content-filter";
 import { awardInviterBonus } from "../lib/invite-bonus";
+import { classifyChainExchangeTags } from "../lib/tag-classifier";
 
 const router: IRouter = Router();
 
@@ -95,6 +96,8 @@ function formatPost(p: typeof postsTable.$inferSelect & { authorNameLive?: strin
     importance: p.importance ?? null,
     eventStartTime: p.eventStartTime ? p.eventStartTime.toISOString() : null,
     eventEndTime: p.eventEndTime ? p.eventEndTime.toISOString() : null,
+    chainTags: (p as any).chainTags ?? [],
+    exchangeTags: (p as any).exchangeTags ?? [],
   };
 }
 
@@ -138,6 +141,9 @@ router.get("/", async (req, res) => {
   // home=1 means filter by project-type only (home page both zones)
   const homeMode = req.query.home === "1";
   const q = (req.query.q as string | undefined)?.trim();
+  const chain = (req.query.chain as string | undefined)?.trim();
+  const exchange = (req.query.exchange as string | undefined)?.trim();
+  const tab = (req.query.tab as string | undefined)?.trim(); // column tab filter (optional)
   const page = Math.max(1, parseInt(req.query.page as string ?? "1"));
   const limit = Math.min(1000, parseInt(req.query.limit as string ?? "30") || 30);
   // 同时支持 ?offset=N（直接偏移）和 ?page=N（分页），offset 优先
@@ -183,6 +189,30 @@ router.get("/", async (req, res) => {
       ilike(postsTable.authorWallet, `%${q}%`)
     )!
   );
+
+  // Column tag filters (require DB columns chain_tags / exchange_tags)
+  if (chain) {
+    conditions.push(sql`${postsTable.chainTags} @> ARRAY[${chain}]::text[]`);
+  }
+  if (exchange) {
+    conditions.push(sql`${postsTable.exchangeTags} @> ARRAY[${exchange}]::text[]`);
+  }
+
+  // Optional tab → section mapping (lightweight, can be expanded later)
+  if (tab) {
+    const TAB_TO_SECTION: Record<string, string> = {
+      flash: "724news",
+      grants: "grant",
+      airdrop: "quest",
+      testnet: "testnet",
+      ido: "ido",
+      nodes: "nodes",
+      funding: "funding",
+      listing: "ido",
+    };
+    const sec = TAB_TO_SECTION[tab];
+    if (sec) conditions.push(eq(postsTable.section, sec));
+  }
 
   const where = conditions.length ? and(...conditions) : undefined;
   const whereAll = conditionsAll.length ? and(...conditionsAll) : undefined;
@@ -303,6 +333,7 @@ router.post("/", async (req, res) => {
 
   // Admin who hasn't set a spaceType still posts as "project" so it appears on the home feed
   const resolvedAuthorType = user?.spaceType ?? (isAdmin ? "project" : null);
+  const tags = classifyChainExchangeTags({ title: String(title), description: String(content) });
 
   const inserted = await db.insert(postsTable).values({
     title,
@@ -312,6 +343,8 @@ router.post("/", async (req, res) => {
     authorName: user?.username || user?.spaceType || null,
     authorAvatar: user?.avatar ?? null,
     authorType: resolvedAuthorType,
+    chainTags: tags.chainTags,
+    exchangeTags: tags.exchangeTags,
     likes: 0,
     comments: 0,
     kolLikePoints: 0,

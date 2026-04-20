@@ -11,6 +11,8 @@ export const postsTable = pgTable("posts", {
   authorName: text("author_name"),
   authorAvatar: text("author_avatar"),
   authorType: text("author_type"),
+  chainTags: text("chain_tags").array(),
+  exchangeTags: text("exchange_tags").array(),
   views: integer("views").notNull().default(0),
   likes: integer("likes").notNull().default(0),
   comments: integer("comments").notNull().default(0),

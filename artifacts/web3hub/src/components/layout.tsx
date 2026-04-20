@@ -373,6 +373,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {/* ── Floating Right Panel: Social + Scroll ─── */}
       <div className="fixed right-4 bottom-8 z-50 flex flex-col gap-1.5">
+        {/* Disclaimer */}
+        <button
+          type="button"
+          onClick={() => setWhitepaperOpen(true)}
+          title={t("disclaimerBtn")}
+          className="w-9 h-9 rounded-lg bg-white/80 hover:bg-white flex items-center justify-center transition-all shadow-md backdrop-blur-sm border border-slate-200/70 group"
+        >
+          <FileText className="w-4 h-4 text-slate-600 group-hover:text-slate-800 transition-colors" />
+        </button>
+
         {/* Social buttons */}
         <a href="https://x.com/Web3Release" target="_blank" rel="noreferrer" title="X / Twitter"
           className="w-9 h-9 rounded-lg bg-slate-600/75 hover:bg-slate-700/90 flex items-center justify-center transition-all shadow-md backdrop-blur-sm group">
@@ -447,12 +457,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     {dc.clauses.map(({ heading, body }) => (
                       <div key={heading} className="rounded-xl border border-border/40 dark:border-slate-800 bg-muted/30 dark:bg-slate-800/30 px-4 py-3">
                         <p className="font-semibold text-sm text-foreground mb-1">{heading}</p>
-                        <p className="text-sm text-muted-foreground leading-relaxed">{body}</p>
+                        <p className="text-sm text-muted-foreground leading-relaxed" style={{ whiteSpace: "pre-wrap" }}>{body}</p>
                       </div>
                     ))}
                     <div className="rounded-xl border border-amber-200 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-900/10 px-4 py-3">
                       <p className="font-semibold text-sm text-amber-700 dark:text-amber-400 mb-1">{dc.warningTitle}</p>
-                      <p className="text-sm text-muted-foreground leading-relaxed">{dc.warning}</p>
+                      <p className="text-sm text-muted-foreground leading-relaxed" style={{ whiteSpace: "pre-wrap" }}>{dc.warning}</p>
                     </div>
                     <p className="text-right text-xs text-muted-foreground pb-1">{dc.footer}</p>
                   </div>
