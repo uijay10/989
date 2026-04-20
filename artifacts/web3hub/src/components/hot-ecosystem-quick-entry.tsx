@@ -4,6 +4,7 @@ import { useEventFilter } from "@/lib/event-filter-context";
 type QuickItem = {
   label: string;
   kind: "chain" | "exchange";
+  href: string;
   hint: string;
 };
 
@@ -38,12 +39,14 @@ const EXCHANGES = [
 const CHAIN_ITEMS: QuickItem[] = CHAINS.map((name) => ({
   label: name,
   kind: "chain",
+  href: `/chains/${slugify(name)}`,
   hint: `查看 ${name} 专栏 - Grants、Testnet、Airdrop 等机会`,
 }));
 
 const EXCHANGE_ITEMS: QuickItem[] = EXCHANGES.map((name) => ({
   label: name,
   kind: "exchange",
+  href: `/exchanges/${slugify(name)}`,
   hint: `查看 ${name} 专栏 - Listing、公告与机会`,
 }));
 
@@ -53,13 +56,7 @@ const pillCls =
 
 function TagLinksRow({ items }: { items: QuickItem[] }) {
   const [location, navigate] = useLocation();
-  const {
-    activeChains,
-    setActiveChains,
-    activeExchanges,
-    setActiveExchanges,
-    setActiveCategory,
-  } = useEventFilter();
+  const { clearEcosystem, setActiveCategory } = useEventFilter();
   return (
     <div className="flex flex-nowrap items-center justify-start gap-x-0.5 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {items.map((it) => (
@@ -68,28 +65,13 @@ function TagLinksRow({ items }: { items: QuickItem[] }) {
           type="button"
           title={it.hint}
           onClick={() => {
-            // Behavior: like top nav tabs — filter current main module as data source.
-            // If we're not already on a content page, route to home first.
-            if (location === "/chains" || location === "/exchanges") navigate("/");
-
+            // Match top-nav behavior: click navigates to a dedicated page, no multi-select filtering.
+            clearEcosystem();
             setActiveCategory("全部");
-            if (it.kind === "chain") {
-              setActiveChains(
-                activeChains.includes(it.label)
-                  ? activeChains.filter((x) => x !== it.label)
-                  : [...activeChains, it.label]
-              );
-            } else {
-              setActiveExchanges(
-                activeExchanges.includes(it.label)
-                  ? activeExchanges.filter((x) => x !== it.label)
-                  : [...activeExchanges, it.label]
-              );
-            }
+            navigate(it.href);
           }}
           className={`${pillCls} ${
-            (it.kind === "chain" && activeChains.includes(it.label)) ||
-            (it.kind === "exchange" && activeExchanges.includes(it.label))
+            location === it.href
               ? "text-white bg-blue-600 shadow-sm hover:bg-blue-700 hover:text-white"
               : ""
           }`}
