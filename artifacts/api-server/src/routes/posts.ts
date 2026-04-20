@@ -132,6 +132,7 @@ async function expireAndPromote() {
 }
 
 router.get("/", async (req, res) => {
+  try {
   const section = req.query.section as string | undefined;
   const sections = req.query.sections as string | undefined;
   const authorType = req.query.authorType as string | undefined;
@@ -346,6 +347,55 @@ router.get("/", async (req, res) => {
     page,
     totalPages: Math.ceil(Number(all[0]?.count ?? 0) / limit),
   });
+  } catch (err) {
+    // Absolute last-resort fallback: never 500 the homepage feed.
+    // This handles any unexpected legacy-schema mismatch (missing columns like expires_at, etc.).
+    console.error("[posts] GET /posts failed; returning legacy fallback:", err);
+    try {
+      const page = Math.max(1, parseInt((req.query.page as string) ?? "1"));
+      const limit = Math.min(1000, parseInt((req.query.limit as string ?? "30") || 30));
+      const rawOffset = req.query.offset !== undefined ? parseInt(req.query.offset as string) : NaN;
+      const offset = !isNaN(rawOffset) ? rawOffset : (page - 1) * limit;
+
+      const posts = await db
+        .select({
+          id: postsTable.id,
+          title: postsTable.title,
+          content: postsTable.content,
+          section: postsTable.section,
+          authorWallet: postsTable.authorWallet,
+          authorName: postsTable.authorName,
+          authorAvatar: postsTable.authorAvatar,
+          authorType: postsTable.authorType,
+          views: postsTable.views,
+          likes: postsTable.likes,
+          comments: postsTable.comments,
+          kolLikePoints: postsTable.kolLikePoints,
+          kolCommentPoints: postsTable.kolCommentPoints,
+          isPinned: postsTable.isPinned,
+          pinnedUntil: postsTable.pinnedUntil,
+          pinQueued: postsTable.pinQueued,
+          pinQueuedAt: postsTable.pinQueuedAt,
+          createdAt: postsTable.createdAt,
+        } as const)
+        .from(postsTable)
+        .orderBy(desc(postsTable.createdAt))
+        .limit(limit)
+        .offset(offset);
+
+      res.json({
+        posts: posts.map((p) => formatPost(p as any)),
+        total: posts.length,
+        totalAll: posts.length,
+        page,
+        totalPages: 1,
+      });
+    } catch (fallbackErr) {
+      console.error("[posts] legacy fallback also failed:", fallbackErr);
+      // Still avoid throwing: return empty list rather than 500 to stop UI flicker.
+      res.json({ posts: [], total: 0, totalAll: 0, page: 1, totalPages: 1 });
+    }
+  }
 });
 
 router.post("/", async (req, res) => {
