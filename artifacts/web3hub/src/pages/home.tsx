@@ -279,7 +279,7 @@ function ImportantNews({ lang }: { lang: string }) {
 export default function Home() {
   const { t, lang } = useLang();
   const { address, isConnected } = useWeb3Auth();
-  const { activeChain, activeExchange } = useEventFilter();
+  const { activeChains, activeExchanges } = useEventFilter();
   const { data: meData } = useGetMe({ wallet: address ?? "" }, { query: { enabled: !!address && isConnected } });
   const me = (meData as any)?.user ?? meData;
   const spaceStatus = me?.spaceStatus;
@@ -408,7 +408,10 @@ export default function Home() {
       {/* Two-column: main feed + 重要动态 */}
       <div className="flex gap-6 items-start">
         <div className="flex-1 min-w-0">
-          <EventList chain={activeChain ?? undefined} exchange={activeExchange ?? undefined} />
+          <EventList
+            chain={activeChains.length ? activeChains.join(",") : undefined}
+            exchange={activeExchanges.length ? activeExchanges.join(",") : undefined}
+          />
         </div>
         <div className="hidden lg:block w-72 xl:w-80 shrink-0">
           <ImportantNews lang={lang} />

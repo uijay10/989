@@ -13,6 +13,8 @@ router.get("/", async (req, res) => {
     const category = (req.query.category as string) || "all";
     const chain = (req.query.chain as string | undefined)?.trim();
     const exchange = (req.query.exchange as string | undefined)?.trim();
+    const chainList = chain ? chain.split(",").map(s => s.trim()).filter(Boolean) : [];
+    const exchangeList = exchange ? exchange.split(",").map(s => s.trim()).filter(Boolean) : [];
     const offset = (page - 1) * limit;
 
     const conditions: ReturnType<typeof eq>[] = [
@@ -53,11 +55,15 @@ router.get("/", async (req, res) => {
 
     let total = Number(countResult[0]?.count ?? 0);
     let filteredRows = rows;
-    if (chain || exchange) {
+    if (chainList.length > 0 || exchangeList.length > 0) {
       filteredRows = rows.filter((r) => {
         const tags = classifyChainExchangeTags({ title: r.title ?? "", description: r.content ?? "" });
-        const chainHit = chain ? tags.chainTags.some((t) => String(t).toLowerCase() === chain.toLowerCase()) : true;
-        const exHit = exchange ? tags.exchangeTags.some((t) => String(t).toLowerCase() === exchange.toLowerCase()) : true;
+        const chainHit = chainList.length > 0
+          ? tags.chainTags.some((t) => chainList.includes(String(t)))
+          : true;
+        const exHit = exchangeList.length > 0
+          ? tags.exchangeTags.some((t) => exchangeList.includes(String(t)))
+          : true;
         return chainHit && exHit;
       });
       // total is best-effort when filtering without DB tag columns.
@@ -81,11 +87,15 @@ router.get("/", async (req, res) => {
         });
 
       let backupFiltered = backup;
-      if (chain || exchange) {
+      if (chainList.length > 0 || exchangeList.length > 0) {
         backupFiltered = backup.filter((a) => {
           const tags = classifyChainExchangeTags({ title: a.title ?? "", description: a.content ?? "" });
-          const chainHit = chain ? tags.chainTags.some((t) => String(t).toLowerCase() === chain.toLowerCase()) : true;
-          const exHit = exchange ? tags.exchangeTags.some((t) => String(t).toLowerCase() === exchange.toLowerCase()) : true;
+          const chainHit = chainList.length > 0
+            ? tags.chainTags.some((t) => chainList.includes(String(t)))
+            : true;
+          const exHit = exchangeList.length > 0
+            ? tags.exchangeTags.some((t) => exchangeList.includes(String(t)))
+            : true;
           return chainHit && exHit;
         });
       }

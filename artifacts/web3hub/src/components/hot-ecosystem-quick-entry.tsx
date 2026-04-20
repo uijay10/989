@@ -53,7 +53,13 @@ const pillCls =
 
 function TagLinksRow({ items }: { items: QuickItem[] }) {
   const [, navigate] = useLocation();
-  const { activeChain, activeExchange, setActiveChain, setActiveExchange, setActiveCategory } = useEventFilter();
+  const {
+    activeChains,
+    setActiveChains,
+    activeExchanges,
+    setActiveExchanges,
+    setActiveCategory,
+  } = useEventFilter();
   return (
     <div className="flex flex-nowrap items-center justify-start gap-x-0.5 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {items.map((it) => (
@@ -65,17 +71,23 @@ function TagLinksRow({ items }: { items: QuickItem[] }) {
             // Keep as a single "whole" position: navigate home and filter in-place
             setActiveCategory("全部");
             if (it.href.startsWith("/chains/")) {
-              setActiveExchange(null);
-              setActiveChain(it.label);
+              setActiveChains(
+                activeChains.includes(it.label)
+                  ? activeChains.filter((x) => x !== it.label)
+                  : [...activeChains, it.label]
+              );
             } else if (it.href.startsWith("/exchanges/")) {
-              setActiveChain(null);
-              setActiveExchange(it.label);
+              setActiveExchanges(
+                activeExchanges.includes(it.label)
+                  ? activeExchanges.filter((x) => x !== it.label)
+                  : [...activeExchanges, it.label]
+              );
             }
             navigate("/");
           }}
           className={`${pillCls} ${
-            (activeChain && it.href.startsWith("/chains/") && activeChain === it.label) ||
-            (activeExchange && it.href.startsWith("/exchanges/") && activeExchange === it.label)
+            (it.href.startsWith("/chains/") && activeChains.includes(it.label)) ||
+            (it.href.startsWith("/exchanges/") && activeExchanges.includes(it.label))
               ? "text-white bg-blue-600 shadow-sm hover:bg-blue-700 hover:text-white"
               : ""
           }`}
