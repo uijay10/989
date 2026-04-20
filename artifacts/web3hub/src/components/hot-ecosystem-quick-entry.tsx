@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useEventFilter } from "@/lib/event-filter-context";
 
@@ -57,6 +58,16 @@ const pillCls =
 function TagLinksRow({ items }: { items: QuickItem[] }) {
   const [location, navigate] = useLocation();
   const { clearEcosystem, setActiveCategory } = useEventFilter();
+  const [optimisticHref, setOptimisticHref] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Once navigation completes, drop optimistic state.
+    if (optimisticHref && location === optimisticHref) {
+      setOptimisticHref(null);
+    }
+  }, [location, optimisticHref]);
+
+  const isActiveHref = (href: string) => (optimisticHref ?? location) === href;
   return (
     <div className="flex flex-nowrap items-center justify-start gap-x-0.5 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {items.map((it) => (
@@ -66,12 +77,13 @@ function TagLinksRow({ items }: { items: QuickItem[] }) {
           title={it.hint}
           onClick={() => {
             // Match top-nav behavior: click navigates to a dedicated page, no multi-select filtering.
+            setOptimisticHref(it.href);
             clearEcosystem();
             setActiveCategory("全部");
             navigate(it.href);
           }}
           className={`${pillCls} ${
-            location === it.href
+            isActiveHref(it.href)
               ? "text-white bg-blue-600 shadow-sm hover:bg-blue-700 hover:text-white"
               : ""
           }`}
