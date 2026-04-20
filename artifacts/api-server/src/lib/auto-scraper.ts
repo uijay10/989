@@ -312,6 +312,7 @@ Output rules:
 - Skip non-Web3 content silently (return nothing for that item)
 - Return [] only if ALL articles are non-Web3
 - Web3 articles MUST always be included — use 快讯 if no specific section fits
+- For 快讯 (and other general market/protocol news): set start_time and end_time to null. Do NOT copy historical dates mentioned inside the article (e.g. \"ETF approved in 2024\") into start_time — those are narrative context, not this post's event window. Only set dates for real future/ongoing campaigns (TGE deadlines, claim windows, testnet windows).
 
 Format:
 {
@@ -583,10 +584,20 @@ function appendToBackupFile(row: Record<string, unknown>): void {
   }
 }
 
+/** Feeds where rows are timeline headlines: AI often fills historical story dates into start_time → insert guards / startup cleanup then drop valid items. We keep event dates on secondary sections (ido, quest, …) only. */
+const NEWS_TIMELINE_SECTIONS = new Set<string>(["724news", "flash", "meme"]);
+
+function processEventForSection(raw: ProcessedEvent, section: string): ProcessedEvent {
+  if (!NEWS_TIMELINE_SECTIONS.has(section)) return raw;
+  return { ...raw, start_time: null, end_time: null };
+}
+
 // ── Post insert (single section) ──────────────────────────────────────────────
 async function insertPost(ev: ProcessedEvent, section: string): Promise<boolean> {
   try {
+    ev = processEventForSection(ev, section);
     const sourceUrl = ev.source_url?.trim();
+    const eventAgeLimit = SECTION_EVENT_MAX_AGE_DAYS[section] ?? DEFAULT_EVENT_MAX_AGE_DAYS;
 
     // Guard 0-A: URL dedup (global, any section)
     if (sourceUrl) {
@@ -605,7 +616,6 @@ async function insertPost(ev: ProcessedEvent, section: string): Promise<boolean>
     }
 
     // Guard 0-C: event_start_time age
-    const eventAgeLimit = SECTION_EVENT_MAX_AGE_DAYS[section] ?? DEFAULT_EVENT_MAX_AGE_DAYS;
     if (ev.start_time) {
       const evStart = safeDate(ev.start_time);
       if (evStart) {
@@ -614,8 +624,8 @@ async function insertPost(ev: ProcessedEvent, section: string): Promise<boolean>
       }
     }
 
-    // Guard 0-D: URL-embedded date
-    if (sourceUrl) {
+    // Guard 0-D: URL-embedded date — skip for timeline sections (path often reflects story month, not publish time)
+    if (!NEWS_TIMELINE_SECTIONS.has(section) && sourceUrl) {
       const urlDateMatch = sourceUrl.match(/\/(20\d{2})[\/\-](0[1-9]|1[0-2])/);
       if (urlDateMatch) {
         const urlDate = new Date(parseInt(urlDateMatch[1], 10), parseInt(urlDateMatch[2], 10) - 1, 1);
@@ -642,10 +652,15 @@ async function insertPost(ev: ProcessedEvent, section: string): Promise<boolean>
       if ((fuzzyDup.rows as Array<unknown>).length > 0) return false;
     } catch { /* pg_trgm not available */ }
 
-    // Guard 3: same project burst (3h)
+    // Guard 3: same project burst (3h) — not for 724 timeline (many headlines share project tickers)
     const projectName = ev.project_name?.trim();
     const GENERIC_NAMES = new Set(["AI精选", "ai-system", "", "Unknown", "N/A"]);
-    if (projectName && projectName.length >= 3 && !GENERIC_NAMES.has(projectName)) {
+    if (
+      !NEWS_TIMELINE_SECTIONS.has(section) &&
+      projectName &&
+      projectName.length >= 3 &&
+      !GENERIC_NAMES.has(projectName)
+    ) {
       const burstDup = await db.execute(
         sql`SELECT id FROM posts WHERE section = ${section}
             AND LOWER(TRIM(author_name)) = ${projectName.toLowerCase().trim()}
