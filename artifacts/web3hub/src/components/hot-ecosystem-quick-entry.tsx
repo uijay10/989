@@ -51,7 +51,7 @@ const pillCls =
 
 function TagLinksRow({ items }: { items: QuickItem[] }) {
   return (
-    <div className="flex flex-wrap items-center justify-center gap-x-0.5 gap-y-1">
+    <div className="flex flex-nowrap items-center justify-start gap-x-0.5 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {items.map((it) => (
         <Link
           key={it.href}
@@ -67,11 +67,11 @@ function TagLinksRow({ items }: { items: QuickItem[] }) {
 }
 
 export function HotEcosystemQuickEntry() {
+  const all = [...CHAIN_ITEMS, ...EXCHANGE_ITEMS];
   return (
     <div className="w-full">
       <div className="flex flex-col gap-1.5">
-        <TagLinksRow items={CHAIN_ITEMS} />
-        <TagLinksRow items={EXCHANGE_ITEMS} />
+        <TagLinksRow items={all} />
       </div>
     </div>
   );
