@@ -43,6 +43,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { activeCategory, setActiveCategory, clearEcosystem } = useEventFilter();
   const isHome = location === "/";
+  const showEcosystemStrip = isHome || location.startsWith("/section/");
   const [walletModalOpen, setWalletModalOpen] = useState(false);
   const [whitepaperOpen, setWhitepaperOpen] = useState(false);
   const { t, lang, setLang } = useLang();
@@ -343,6 +344,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <button
                 onClick={() => {
                   // 7×24 should route to HOME (single feed view), not a separate 724 page.
+                  clearEcosystem();
                   setActiveCategory("全部");
                   navigate("/");
                 }}
@@ -370,8 +372,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
         </div>
 
-        {/* ── Home-only strip under navbar: Chains/Exchanges quick links (sticky together) ── */}
-        {isHome && (
+        {/* ── Ecosystem strip under navbar (home + sections) ── */}
+        {showEcosystemStrip && (
           <div className="w-full bg-transparent -mt-1">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-0">
               <div className="rounded-2xl border border-slate-200/60 bg-white/55 backdrop-blur-sm px-3 py-1 shadow-sm">
