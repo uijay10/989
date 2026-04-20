@@ -3,7 +3,7 @@ import { useEventFilter } from "@/lib/event-filter-context";
 
 type QuickItem = {
   label: string;
-  href: string;
+  kind: "chain" | "exchange";
   hint: string;
 };
 
@@ -37,13 +37,13 @@ const EXCHANGES = [
 
 const CHAIN_ITEMS: QuickItem[] = CHAINS.map((name) => ({
   label: name,
-  href: `/chains/${slugify(name)}`,
+  kind: "chain",
   hint: `查看 ${name} 专栏 - Grants、Testnet、Airdrop 等机会`,
 }));
 
 const EXCHANGE_ITEMS: QuickItem[] = EXCHANGES.map((name) => ({
   label: name,
-  href: `/exchanges/${slugify(name)}`,
+  kind: "exchange",
   hint: `查看 ${name} 专栏 - Listing、公告与机会`,
 }));
 
@@ -52,7 +52,7 @@ const pillCls =
   "text-slate-800 hover:text-slate-900 hover:bg-slate-100";
 
 function TagLinksRow({ items }: { items: QuickItem[] }) {
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const {
     activeChains,
     setActiveChains,
@@ -64,30 +64,32 @@ function TagLinksRow({ items }: { items: QuickItem[] }) {
     <div className="flex flex-nowrap items-center justify-start gap-x-0.5 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {items.map((it) => (
         <button
-          key={it.href}
+          key={`${it.kind}:${it.label}`}
           type="button"
           title={it.hint}
           onClick={() => {
-            // Keep as a single "whole" position: navigate home and filter in-place
+            // Behavior: like top nav tabs — filter current main module as data source.
+            // If we're not already on a content page, route to home first.
+            if (location === "/chains" || location === "/exchanges") navigate("/");
+
             setActiveCategory("全部");
-            if (it.href.startsWith("/chains/")) {
+            if (it.kind === "chain") {
               setActiveChains(
                 activeChains.includes(it.label)
                   ? activeChains.filter((x) => x !== it.label)
                   : [...activeChains, it.label]
               );
-            } else if (it.href.startsWith("/exchanges/")) {
+            } else {
               setActiveExchanges(
                 activeExchanges.includes(it.label)
                   ? activeExchanges.filter((x) => x !== it.label)
                   : [...activeExchanges, it.label]
               );
             }
-            navigate("/");
           }}
           className={`${pillCls} ${
-            (it.href.startsWith("/chains/") && activeChains.includes(it.label)) ||
-            (it.href.startsWith("/exchanges/") && activeExchanges.includes(it.label))
+            (it.kind === "chain" && activeChains.includes(it.label)) ||
+            (it.kind === "exchange" && activeExchanges.includes(it.label))
               ? "text-white bg-blue-600 shadow-sm hover:bg-blue-700 hover:text-white"
               : ""
           }`}

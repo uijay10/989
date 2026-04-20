@@ -9,6 +9,7 @@ import { generateGradient, truncateAddress } from "@/lib/utils";
 import { RoleBadge } from "@/components/role-badge";
 import { TagBadge } from "@/components/post-card";
 import { getApiBase } from "@/lib/api-base";
+import { useEventFilter } from "@/lib/event-filter-context";
 
 
 const SECTION_ICONS: Record<string, string> = {
@@ -229,6 +230,7 @@ export default function SectionPage() {
   const params = useParams<{ slug: string }>();
   const slug = params.slug ?? "";
   const { t } = useLang();
+  const { activeChains, activeExchanges } = useEventFilter();
 
   const keys = SECTION_I18N_KEYS[slug];
   const sectionLabel = keys ? t(keys.label) : slug;
@@ -244,7 +246,13 @@ export default function SectionPage() {
       ) : isShowcase ? (
         <ShowcaseDirectory />
       ) : (
-        <EventList key={slug} sectionSlug={slug} sectionName={`${icon} ${sectionLabel}`} />
+        <EventList
+          key={`${slug}:${activeChains.join("|")}:${activeExchanges.join("|")}`}
+          sectionSlug={slug}
+          sectionName={`${icon} ${sectionLabel}`}
+          chain={activeChains.length ? activeChains.join(",") : undefined}
+          exchange={activeExchanges.length ? activeExchanges.join(",") : undefined}
+        />
       )}
     </div>
   );

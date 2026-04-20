@@ -777,9 +777,15 @@ export function EventList({
         {!loading && !error && filtered.length === 0 && (
           <div className="text-center py-16 text-slate-400 dark:text-slate-500">
             <div className="text-3xl mb-2">📭</div>
-            <p className="text-sm font-medium">{zh ? "暂无相关事件" : "No events found"}</p>
+            <p className="text-sm font-medium">
+              {zh
+                ? (chain || exchange ? "暂无该链/交易所的相关信息" : "暂无相关事件")
+                : (chain || exchange ? "No matching chain/exchange info" : "No events found")}
+            </p>
             <p className="text-xs mt-1 opacity-70">
-              {zh ? "尝试切换分类或清空搜索条件" : "Try switching category or clearing search"}
+              {zh
+                ? (chain || exchange ? "可取消上方标签选择以恢复“全部”视图" : "尝试切换分类或清空搜索条件")
+                : (chain || exchange ? "Unselect tags above to return to “All”" : "Try switching category or clearing search")}
             </p>
           </div>
         )}
