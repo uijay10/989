@@ -516,13 +516,53 @@ export async function getKeywordsFromDb(): Promise<string[]> {
   }
 }
 
+function normalizeSourceUrl(url: string): string {
+  return String(url).trim().toLowerCase().replace(/\/+$/, "");
+}
+
+/** DEFAULT_SOURCES plus DB rows (same URL in DB overrides name/priority). Avoids DB-only partial list replacing the entire built-in RSS set. */
+function mergeSourceLists(
+  base: Array<{ name: string; url: string; type: string; priority: number }>,
+  dbRows: ScrapeSource[],
+): ScrapeSource[] {
+  const map = new Map<string, ScrapeSource>();
+  for (const s of base) {
+    const u = normalizeSourceUrl(s.url);
+    if (!u) continue;
+    map.set(u, { name: s.name, url: s.url.trim(), type: s.type, priority: s.priority, enabled: true });
+  }
+  for (const s of dbRows) {
+    const u = normalizeSourceUrl(s.url);
+    if (!u) continue;
+    map.set(u, {
+      id: s.id,
+      name: s.name,
+      url: s.url.trim(),
+      type: s.type,
+      priority: s.priority,
+      enabled: true,
+    });
+  }
+  return [...map.values()].sort((a, b) => a.priority - b.priority || a.name.localeCompare(b.name));
+}
+
 export async function getSourcesFromDb(): Promise<ScrapeSource[]> {
   try {
     const rows = await db.execute(sql`SELECT id, name, url, type, priority, enabled FROM scrape_sources WHERE enabled = true ORDER BY priority ASC, id ASC`);
-    const sources = rows.rows as ScrapeSource[];
-    if (sources.length > 0) return sources;
+    const sources = (rows.rows as ScrapeSource[]) ?? [];
+    if (sources.length === 0) {
+      return DEFAULT_SOURCES.map(s => ({ ...s, enabled: true }));
+    }
+    const merged = mergeSourceLists(DEFAULT_SOURCES, sources);
+    if (merged.length > sources.length) {
+      console.log(
+        `[unified-scrape] merged DEFAULT_SOURCES (${DEFAULT_SOURCES.length}) + scrape_sources from DB (${sources.length}) → ${merged.length} RSS feeds`,
+      );
+    }
+    return merged;
+  } catch {
     return DEFAULT_SOURCES.map(s => ({ ...s, enabled: true }));
-  } catch { return DEFAULT_SOURCES.map(s => ({ ...s, enabled: true })); }
+  }
 }
 
 // ── Backup file (dev only) ─────────────────────────────────────────────────────
