@@ -13,18 +13,16 @@ app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// ── Traffic-based safety net ───────────────────────────────────────────────────
-// Some hosting environments may sleep, causing cron to pause. When traffic resumes,
-// we do a cheap check and (at most) kick one unified Groq scrape if the feed is stale.
-let lastTrafficKickMs = 0;
-async function maybeKickUnifiedScrapeOnTraffic(): Promise<void> {
-  // throttle: at most once per 30 minutes per process
-  if (Date.now() - lastTrafficKickMs < 30 * 60 * 1000) return;
-  // only in non-test envs
-  if (process.env.NODE_ENV === "test") return;
+// ── Stale-feed safety net (traffic + periodic) ───────────────────────────────
+// Hosting environments may sleep, cron may stall, or scrapes may run but save 0 items.
+// We periodically (and on /api/feed traffic) check staleness against BOTH:
+// - last unified scrape log timestamp
+// - last AI post created_at
+// If either is too old, we kick ONE Groq unified scrape (throttled).
+let lastStaleKickMs = 0;
 
+async function readLastUnifiedScrapeAt(): Promise<Date | null> {
   try {
-    // If the scrape_logs table doesn't exist yet, this will fail; skip silently.
     const r = await db.execute(sql`
       SELECT created_at
       FROM scrape_logs
@@ -33,10 +31,46 @@ async function maybeKickUnifiedScrapeOnTraffic(): Promise<void> {
       LIMIT 1
     `);
     const last = (r as { rows?: Array<{ created_at?: string | Date }> }).rows?.[0]?.created_at;
-    const lastAt = last ? new Date(last) : null;
+    return last ? new Date(last) : null;
+  } catch {
+    return null;
+  }
+}
 
-    // Stale threshold: 2 hours without any unified scrape log.
-    if (lastAt && Date.now() - lastAt.getTime() < 2 * 60 * 60 * 1000) return;
+async function readLastAiPostAt(): Promise<Date | null> {
+  try {
+    const r = await db.execute(sql`
+      SELECT created_at
+      FROM posts
+      WHERE author_type = 'ai'
+      ORDER BY created_at DESC
+      LIMIT 1
+    `);
+    const last = (r as { rows?: Array<{ created_at?: string | Date }> }).rows?.[0]?.created_at;
+    return last ? new Date(last) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function maybeKickStaleUnifiedScrape(reason: "traffic" | "timer"): Promise<void> {
+  // throttle: at most once per 15 minutes per process (all reasons share the same throttle)
+  if (Date.now() - lastStaleKickMs < 15 * 60 * 1000) return;
+  if (process.env.NODE_ENV === "test") return;
+
+  const staleScrapeMs = Number(process.env.STALE_SCRAPE_MS ?? "");
+  const staleAiMs = Number(process.env.STALE_AI_POST_MS ?? "");
+  const scrapeThreshold = Number.isFinite(staleScrapeMs) && staleScrapeMs > 60_000 ? staleScrapeMs : 2 * 60 * 60 * 1000; // 2h
+  const aiThreshold = Number.isFinite(staleAiMs) && staleAiMs > 60_000 ? staleAiMs : 2 * 60 * 60 * 1000; // 2h
+
+  try {
+    const lastScrapeAt = await readLastUnifiedScrapeAt();
+    const lastAiAt = await readLastAiPostAt();
+    const now = Date.now();
+
+    const scrapeStale = !lastScrapeAt || (now - lastScrapeAt.getTime() > scrapeThreshold);
+    const aiStale = !lastAiAt || (now - lastAiAt.getTime() > aiThreshold);
+    if (!scrapeStale && !aiStale) return;
 
     const instanceId = getCronInstanceId();
     if (!(await tryClaimCronLeaderLease(instanceId))) return;
@@ -44,12 +78,15 @@ async function maybeKickUnifiedScrapeOnTraffic(): Promise<void> {
     const { runUnifiedScrape, SCRAPE_CONFIG, isGroqScrapeRunning } = await import("./lib/auto-scraper");
     if (isGroqScrapeRunning()) return;
 
-    lastTrafficKickMs = Date.now();
-    console.log("[traffic-kick] feed stale; triggering one unified Groq scrape (dual-publish)");
+    lastStaleKickMs = Date.now();
+    console.log(
+      `[stale-kick:${reason}] triggering unified Groq scrape — scrapeStale=${scrapeStale} aiStale=${aiStale} ` +
+        `(lastScrape=${lastScrapeAt?.toISOString() ?? "none"}, lastAi=${lastAiAt?.toISOString() ?? "none"})`
+    );
     void runUnifiedScrape({
       freeOnly: true,
-      maxArticlesPerRun: Math.min(60, SCRAPE_CONFIG.maxArticlesPerGroqRun),
-    }).catch((e) => console.error("[traffic-kick] scrape error:", e));
+      maxArticlesPerRun: Math.min(80, SCRAPE_CONFIG.maxArticlesPerGroqRun),
+    }).catch((e) => console.error(`[stale-kick:${reason}] scrape error:`, e));
   } catch {
     // ignore
   }
@@ -58,7 +95,7 @@ async function maybeKickUnifiedScrapeOnTraffic(): Promise<void> {
 app.use("/api", (req, _res, next) => {
   // Only kick on feed-like traffic to avoid unnecessary DB work.
   if (req.path.startsWith("/feed")) {
-    void maybeKickUnifiedScrapeOnTraffic();
+    void maybeKickStaleUnifiedScrape("traffic");
   }
   next();
 });
@@ -454,6 +491,18 @@ if (process.env.NODE_ENV !== "test" && process.env.DISABLE_SCRAPE_CRON !== "true
 
 } else if (process.env.DISABLE_SCRAPE_CRON === "true") {
   console.log("[cron] DISABLE_SCRAPE_CRON=true — scraper disabled, all API quota reserved for production");
+}
+
+// Periodic stale check (independent of user traffic hitting /api/feed).
+// This complements the built-in cron: if cron sleeps, DB insert pipeline stalls, or scrapes save 0,
+// we still attempt recovery on a predictable cadence.
+if (process.env.NODE_ENV !== "test") {
+  const timerMin = Number(process.env.STALE_KICK_TIMER_MIN ?? "10");
+  const ms = Number.isFinite(timerMin) && timerMin >= 1 ? Math.round(timerMin) * 60 * 1000 : 10 * 60 * 1000;
+  setInterval(() => {
+    void maybeKickStaleUnifiedScrape("timer");
+  }, ms);
+  console.log(`[stale-kick] timer enabled every ${Math.round(ms / 60000)}min`);
 }
 
 // In production, serve the built frontend SPA
