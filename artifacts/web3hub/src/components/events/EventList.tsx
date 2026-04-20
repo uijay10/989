@@ -14,6 +14,7 @@ import { isAdmin } from "@/lib/admin";
 import { AdminPinModal, PostCard } from "@/components/post-card";
 import { getApiBase } from "@/lib/api-base";
 import { semanticDedupKey } from "@/lib/semantic-title-key";
+import { AI_FEED_PAGE_SIZE } from "@/lib/ai-feed-page-size";
 
 const SECTION_TO_ZH: Record<string, string> = {
   testnet:   "测试网",
@@ -386,7 +387,7 @@ export function EventList({
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<"time" | "importance" | "random">("time");
   const [fetchTick, setFetchTick] = useState(0);
-  const PAGE_LIMIT = 50;
+  const PAGE_LIMIT = AI_FEED_PAGE_SIZE;
 
   const [pinTargetId, setPinTargetId] = useState<number | string | null>(null);
   const [pinHours, setPinHours] = useState<number | "">(72);
@@ -536,10 +537,10 @@ export function EventList({
   }, [fetchTick, sectionSlug, chain, exchange, activeCategory, lang, zh, cacheKey, deduplicateEvents, showPinned]);
 
   // ==================== 无限滚动 - 全用 ref 做守卫，彻底消除竞争 ====================
-  // 初始值从缓存推算：缓存有50条说明可能还有更多，缓存有N<50条说明已全部加载
+  // 初始值从缓存推算：缓存满一页说明可能还有更多，不足一页则可能已尽
   const _cachedLen  = _eventsCache.get(cacheKey)?.length ?? 0;
   const _lmLoading  = useRef(false);
-  const _lmHasMore  = useRef(_cachedLen === 0 || _cachedLen >= PAGE_LIMIT); // 无缓存或缓存满50条→可能还有更多
+  const _lmHasMore  = useRef(_cachedLen === 0 || _cachedLen >= PAGE_LIMIT);
   const _lmOffset   = useRef(_cachedLen);  // 从缓存长度开始，跳过已展示的数据
 
   // 当 section 切换时重置（跳过首次挂载，避免把刚从缓存初始化的 offset 清零）
