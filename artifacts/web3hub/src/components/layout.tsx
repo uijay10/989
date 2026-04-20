@@ -43,7 +43,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { activeCategory, setActiveCategory, clearEcosystem } = useEventFilter();
   const isHome = location === "/";
-  const showEcosystemStrip = isHome || location.startsWith("/section/");
+  // Keep ecosystem strip always visible for consistent UX across all main modules.
+  const showEcosystemStrip = true;
   const [walletModalOpen, setWalletModalOpen] = useState(false);
   const [whitepaperOpen, setWhitepaperOpen] = useState(false);
   const { t, lang, setLang } = useLang();
