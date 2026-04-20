@@ -178,24 +178,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <img src="/logo.png" alt="Web3 Release" className="w-10 h-10 object-contain shrink-0" />
                 <span className="font-display font-bold text-2xl tracking-tight text-blue-600 truncate">Web3 Release</span>
               </a>
-              <a
-                href="/"
-                onClick={(e) => {
-                  e.preventDefault();
+              {/* 顶部唯一「回首页」药丸；第二行不再重复「主页」 */}
+              <button
+                type="button"
+                onClick={() => {
                   clearEcosystem();
                   setActiveCategory("全部");
                   setOptimisticNavHref("/");
                   navigate("/");
                 }}
-                className={cn(
-                  "shrink-0 text-sm font-bold tracking-wide whitespace-nowrap transition-colors",
-                  activeHref === "/" && activeCategory === "全部"
-                    ? "text-blue-600"
-                    : "text-slate-600 hover:text-blue-600"
-                )}
+                className="shrink-0 px-4 py-1.5 rounded-full text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors"
               >
-                {lang === "en" ? "HOME" : t("navHome")}
-              </a>
+                {lang === "en" ? "Home" : t("navHome")}
+              </button>
             </div>
 
             <div className="flex items-center gap-2 ml-auto">
@@ -360,25 +355,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1.5">
             {/* Main nav: left-aligned — same inset as ecosystem row + main content so rows line up */}
             <div className="flex flex-nowrap items-center justify-start gap-x-0.5 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {/* 主页：与顶部 HOME 一致，回到首页 7×24 聚合视图 */}
-              <button
-                type="button"
-                onClick={() => {
-                  clearEcosystem();
-                  setActiveCategory("全部");
-                  setOptimisticNavHref("/");
-                  navigate("/");
-                }}
-                className={cn(
-                  "relative px-2.5 py-0.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer shrink-0",
-                  activeHref === "/" && activeCategory === "全部"
-                    ? "text-blue-800 bg-blue-50 shadow-sm ring-1 ring-blue-200/80"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100",
-                )}
-              >
-                {lang === "zh-CN" ? "主页" : "Home"}
-              </button>
-              {/* 7×24 主入口 — 与主页同路由，用实心蓝强调当前栏目 */}
+              {/* 7×24 主入口（回首页聚合）；顶部已有单独 Home 药丸，此处不再放第二个「主页」 */}
               <button
                 onClick={() => {
                   clearEcosystem();
