@@ -172,11 +172,29 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo — 1.5× bigger */}
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center gap-3 shrink-0 min-w-0">
               <a href="/" onClick={e => { e.preventDefault(); clearEcosystem(); setActiveCategory("全部"); setOptimisticNavHref("/"); navigate("/"); }}
-                className="flex items-center gap-2.5 group cursor-pointer">
-                <img src="/logo.png" alt="Web3 Release" className="w-10 h-10 object-contain" />
-                <span className="font-display font-bold text-2xl tracking-tight text-blue-600">Web3 Release</span>
+                className="flex items-center gap-2.5 group cursor-pointer min-w-0">
+                <img src="/logo.png" alt="Web3 Release" className="w-10 h-10 object-contain shrink-0" />
+                <span className="font-display font-bold text-2xl tracking-tight text-blue-600 truncate">Web3 Release</span>
+              </a>
+              <a
+                href="/"
+                onClick={(e) => {
+                  e.preventDefault();
+                  clearEcosystem();
+                  setActiveCategory("全部");
+                  setOptimisticNavHref("/");
+                  navigate("/");
+                }}
+                className={cn(
+                  "shrink-0 text-sm font-bold tracking-wide whitespace-nowrap transition-colors",
+                  activeHref === "/" && activeCategory === "全部"
+                    ? "text-blue-600"
+                    : "text-slate-600 hover:text-blue-600"
+                )}
+              >
+                {lang === "en" ? "HOME" : t("navHome")}
               </a>
             </div>
 
