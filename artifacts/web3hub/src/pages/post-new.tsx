@@ -241,6 +241,11 @@ ${typeInfo.tag} #${projectName} #Web3Release #Web3
   const inputCls = "w-full p-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/20 outline-none transition-all text-foreground placeholder:text-muted-foreground";
 
   const withPin = wantToPin && pinCount > 0;
+  const ecoSelected = !!parseEcosystemSectionId(section);
+
+  useEffect(() => {
+    if (ecoSelected && wantToPin) setWantToPin(false);
+  }, [ecoSelected, wantToPin]);
 
   const validateForm = () => {
     if (!title.trim()) { setError(t("postErrNoTitle")); return false; }
@@ -603,8 +608,8 @@ ${typeInfo.tag} #${projectName} #Web3Release #Web3
             <div className="text-xs text-muted-foreground text-right mt-1">{content.length}/5000</div>
           </div>
 
-          {/* Pin option — project users and admins */}
-          {pinCount > 0 && (spaceType === "project" || isAdminUser) && (
+          {/* Pin option — project users and admins (disabled for chain/exchange sections) */}
+          {!ecoSelected && pinCount > 0 && (spaceType === "project" || isAdminUser) && (
             <label className="flex items-center gap-3 p-4 rounded-xl border-2 border-dashed cursor-pointer transition-colors
               hover:border-amber-300 has-[:checked]:border-amber-400 has-[:checked]:bg-amber-50 dark:has-[:checked]:bg-amber-950/20">
               <input type="checkbox" checked={wantToPin} onChange={e => setWantToPin(e.target.checked)}

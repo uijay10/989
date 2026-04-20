@@ -918,6 +918,11 @@ router.post("/:id/pin", async (req, res) => {
   if (isAdminUser) {
     const postRows = await db.select().from(postsTable).where(eq(postsTable.id, id)).limit(1);
     if (!postRows.length) return res.status(404).json({ error: "Post not found" });
+    const sec = String((postRows[0] as any).section ?? "");
+    // Ecosystem columns are NOT pinnable.
+    if (sec.startsWith("chain:") || sec.startsWith("exchange:")) {
+      return res.status(400).json({ error: "ECOSECTION_NOT_PINNABLE" });
+    }
 
     const hours = Math.max(1, Math.min(8760, Number(durationHours) || 72)); // clamp 1h–1yr
     const pinnedUntil = new Date(Date.now() + hours * 3600_000);
