@@ -11,25 +11,27 @@ export type ChainTag =
 export type ExchangeTag = "Binance" | "OKX" | "Bybit" | "Coinbase" | "Kraken";
 
 export const CHAIN_KEYWORDS: Record<ChainTag, string[]> = {
-  Ethereum: ["Ethereum", "ETH", "Layer 1", "Mainnet", "L2", "Rollup", "Dencun", "Cancun", "ESP", "Ethereum Foundation"],
-  Solana: ["Solana", "SOL", "Saga", "Breakpoint", "Solana Testnet"],
-  "BNB Chain": ["BNB Chain", "BSC", "BNB", "Binance Smart Chain", "Launchpool"],
-  Arbitrum: ["Arbitrum", "ARB", "Orbit", "Nova"],
-  Base: ["Base", "Coinbase L2", "Base Chain"],
+  // NOTE: keep these keywords fairly strict to avoid "everything matches everything".
+  // If a chain isn't explicitly mentioned, it should NOT be tagged.
+  Ethereum: ["Ethereum", "ETH", "Ether", "Ethereum Foundation", "Dencun", "Cancun"],
+  Solana: ["Solana", "SOL", "Solana Foundation", "Breakpoint", "Saga"],
+  "BNB Chain": ["BNB Chain", "BSC", "Binance Smart Chain"],
+  Arbitrum: ["Arbitrum", "ARB", "Arbitrum Orbit", "Arbitrum Nova"],
+  Base: ["Base", "Base Chain", "Coinbase L2"],
   Optimism: ["Optimism", "OP", "OP Stack", "Superchain"],
   Sui: ["Sui"],
   Aptos: ["Aptos"],
 };
 
 export const EXCHANGE_KEYWORDS: Record<ExchangeTag, string[]> = {
-  Binance: ["Binance", "Launchpad", "Launchpool", "IEO", "Binance Listing", "Announcement"],
+  // Exchange keywords must be brand-specific; generic words like "Announcement" or "Listing"
+  // will make nearly all posts match and destroy filter quality.
+  Binance: ["Binance", "Binance Launchpad", "Binance Launchpool", "Binance Listing"],
   OKX: [
     "OKX", "OKX Exchange", "OKEx", "欧易",
-    "Jumpstart", "Megadrop", "OKX Jumpstart", "OKX Megadrop",
-    "Listing", "New Listing", "Spot Trading", "Will List", "Launch", "To list", "Will launch", "Spot listing",
-    "OKX to list", "OKX will launch", "新币上线", "现货上线",
-    "Delisting", "Trading Pair", "USDT Pair", "Perpetual", "Futures", "Announcement", "Update", "Support", "Migration", "Flash News",
-    "欧易上市", "OKX 新币", "OKX 上市",
+    "OKX Jumpstart", "OKX Megadrop",
+    "OKX to list", "OKX will list", "OKX will launch",
+    "欧易上市", "OKX 上市",
   ],
   Bybit: ["Bybit", "Bybit Launchpad"],
   Coinbase: ["Coinbase", "Coinbase Listing", "Advanced Trade"],
