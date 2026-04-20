@@ -132,6 +132,7 @@ async function expireAndPromote() {
 }
 
 router.get("/", async (req, res) => {
+  try {
   const section = req.query.section as string | undefined;
   const sections = req.query.sections as string | undefined;
   const authorType = req.query.authorType as string | undefined;
@@ -153,8 +154,9 @@ router.get("/", async (req, res) => {
   await expireAndPromote();
 
   const conditions = [];
-  // Always filter out expired posts
-  conditions.push(sql`(${postsTable.expiresAt} IS NULL OR ${postsTable.expiresAt} > now())`);
+  // Always filter out expired posts (may be missing on legacy DBs; guarded by fallback below)
+  const expiryCond = sql`(${postsTable.expiresAt} IS NULL OR ${postsTable.expiresAt} > now())`;
+  conditions.push(expiryCond);
 
   // Historical conditions (no expiry filter) — for display count
   const conditionsAll = [];
@@ -217,6 +219,9 @@ router.get("/", async (req, res) => {
 
   const where = conditions.length ? and(...conditions) : undefined;
   const whereAll = conditionsAll.length ? and(...conditionsAll) : undefined;
+  const whereNoExpiry = conditions.filter(c => c !== expiryCond).length
+    ? and(...conditions.filter(c => c !== expiryCond))
+    : undefined;
 
   // Jobs section: KOL/dev posts float above normal-user posts
   const orderBy = section === "jobs"
@@ -252,22 +257,66 @@ router.get("/", async (req, res) => {
     eventEndTime: postsTable.eventEndTime,
   } as const;
 
-  const [all, allHistorical] = await Promise.all([
-    db.select({ count: sql<number>`count(*)` }).from(postsTable).where(where),
-    db.select({ count: sql<number>`count(*)` }).from(postsTable).where(whereAll),
-  ]);
+  let all: { count: number }[] = [];
+  let allHistorical: { count: number }[] = [];
+  try {
+    [all, allHistorical] = await Promise.all([
+      db.select({ count: sql<number>`count(*)` }).from(postsTable).where(where),
+      db.select({ count: sql<number>`count(*)` }).from(postsTable).where(whereAll),
+    ]);
+  } catch {
+    // Legacy DB compatibility: if expires_at (or other newer columns) doesn't exist yet,
+    // fall back to a simpler where clause without the expiry condition for counts.
+    [all, allHistorical] = await Promise.all([
+      db.select({ count: sql<number>`count(*)` }).from(postsTable).where(whereNoExpiry),
+      db.select({ count: sql<number>`count(*)` }).from(postsTable).where(whereAll),
+    ]);
+  }
 
   let posts: any[] = [];
   try {
     posts = await db.select(POST_SELECT).from(postsTable).where(where).orderBy(...orderBy).limit(limit).offset(offset);
   } catch (e) {
-    // If chain/exchange filters are used but DB isn't migrated yet, retry without those filters.
-    if (chain || exchange) {
+    // Compatibility fallbacks:
+    // 1) If chain/exchange filters are used but DB isn't migrated yet, retry without those filters.
+    // 2) If legacy DB is missing expires_at or other newer columns, retry with a smaller select + no-expiry where.
+    const withoutTagFilters = () => {
       const fallbackConds = conditions.filter((c) => String(c).includes("chain_tags") === false && String(c).includes("exchange_tags") === false);
-      const fallbackWhere = fallbackConds.length ? and(...fallbackConds) : undefined;
+      return fallbackConds.length ? and(...fallbackConds) : undefined;
+    };
+
+    if (chain || exchange) {
+      const fallbackWhere = withoutTagFilters();
       posts = await db.select(POST_SELECT).from(postsTable).where(fallbackWhere).orderBy(...orderBy).limit(limit).offset(offset);
     } else {
-      throw e;
+      const LEGACY_SELECT = {
+        id: postsTable.id,
+        title: postsTable.title,
+        content: postsTable.content,
+        section: postsTable.section,
+        authorWallet: postsTable.authorWallet,
+        authorName: postsTable.authorName,
+        authorAvatar: postsTable.authorAvatar,
+        authorType: postsTable.authorType,
+        views: postsTable.views,
+        likes: postsTable.likes,
+        comments: postsTable.comments,
+        kolLikePoints: postsTable.kolLikePoints,
+        kolCommentPoints: postsTable.kolCommentPoints,
+        isPinned: postsTable.isPinned,
+        pinnedUntil: postsTable.pinnedUntil,
+        pinQueued: postsTable.pinQueued,
+        pinQueuedAt: postsTable.pinQueuedAt,
+        createdAt: postsTable.createdAt,
+      } as const;
+
+      posts = await db
+        .select(LEGACY_SELECT)
+        .from(postsTable)
+        .where(whereNoExpiry)
+        .orderBy(...orderBy)
+        .limit(limit)
+        .offset(offset);
     }
   }
 
@@ -298,6 +347,55 @@ router.get("/", async (req, res) => {
     page,
     totalPages: Math.ceil(Number(all[0]?.count ?? 0) / limit),
   });
+  } catch (err) {
+    // Absolute last-resort fallback: never 500 the homepage feed.
+    // This handles any unexpected legacy-schema mismatch (missing columns like expires_at, etc.).
+    console.error("[posts] GET /posts failed; returning legacy fallback:", err);
+    try {
+      const page = Math.max(1, parseInt((req.query.page as string) ?? "1"));
+      const limit = Math.min(1000, parseInt((req.query.limit as string ?? "30") || 30));
+      const rawOffset = req.query.offset !== undefined ? parseInt(req.query.offset as string) : NaN;
+      const offset = !isNaN(rawOffset) ? rawOffset : (page - 1) * limit;
+
+      const posts = await db
+        .select({
+          id: postsTable.id,
+          title: postsTable.title,
+          content: postsTable.content,
+          section: postsTable.section,
+          authorWallet: postsTable.authorWallet,
+          authorName: postsTable.authorName,
+          authorAvatar: postsTable.authorAvatar,
+          authorType: postsTable.authorType,
+          views: postsTable.views,
+          likes: postsTable.likes,
+          comments: postsTable.comments,
+          kolLikePoints: postsTable.kolLikePoints,
+          kolCommentPoints: postsTable.kolCommentPoints,
+          isPinned: postsTable.isPinned,
+          pinnedUntil: postsTable.pinnedUntil,
+          pinQueued: postsTable.pinQueued,
+          pinQueuedAt: postsTable.pinQueuedAt,
+          createdAt: postsTable.createdAt,
+        } as const)
+        .from(postsTable)
+        .orderBy(desc(postsTable.createdAt))
+        .limit(limit)
+        .offset(offset);
+
+      res.json({
+        posts: posts.map((p) => formatPost(p as any)),
+        total: posts.length,
+        totalAll: posts.length,
+        page,
+        totalPages: 1,
+      });
+    } catch (fallbackErr) {
+      console.error("[posts] legacy fallback also failed:", fallbackErr);
+      // Still avoid throwing: return empty list rather than 500 to stop UI flicker.
+      res.json({ posts: [], total: 0, totalAll: 0, page: 1, totalPages: 1 });
+    }
+  }
 });
 
 router.post("/", async (req, res) => {
