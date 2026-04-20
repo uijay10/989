@@ -77,7 +77,8 @@ async function maybeKickStaleUnifiedScrape(reason: "traffic" | "timer"): Promise
 
     const { runUnifiedScrape, SCRAPE_CONFIG, isGroqScrapeRunning, isDeepSeekScrapeRunning } =
       await import("./lib/auto-scraper");
-    const { areFreeProvidersDailyExhausted, canRunPaidUnifiedScrape } = await import("./lib/ai-provider");
+    const { areFreeProvidersDailyExhausted, canRunPaidUnifiedScrape, explainWhyPaidDeepSeekBlocked } =
+      await import("./lib/ai-provider");
 
     const freeExhausted = areFreeProvidersDailyExhausted();
     // When all Groq keys hit daily quota, freeOnly runs save 0 forever — recover with DeepSeek if possible.
@@ -95,9 +96,9 @@ async function maybeKickStaleUnifiedScrape(reason: "traffic" | "timer"): Promise
       return;
     }
     if (freeExhausted && !canRunPaidUnifiedScrape()) {
+      const detail = explainWhyPaidDeepSeekBlocked() ?? "unknown";
       console.warn(
-        `[stale-kick:${reason}] All free Groq quota exhausted and DeepSeek unavailable — cannot auto-recover ` +
-          `(configure DEEPSEEK_* / raise DEEPSEEK_HOURLY_BUDGET_USD or wait UTC reset)`
+        `[stale-kick:${reason}] Groq daily quota exhausted; paid DeepSeek recovery skipped — ${detail}`
       );
       lastStaleKickMs = Date.now();
       return;
