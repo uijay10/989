@@ -10,32 +10,28 @@ export type ChainTag =
 
 export type ExchangeTag = "Binance" | "OKX" | "Bybit" | "Coinbase" | "Kraken";
 
+/**
+ * 公链 / 交易所：只保留第二排导航上的展示名作为唯一关键词。
+ * 标题+正文中只要出现该名字（不区分大小写）即归入对应标签；不再使用别名、缩写、中文别称等。
+ * 其它业务板块（测试网、IDO、融资等）的分类逻辑与此无关。
+ */
 export const CHAIN_KEYWORDS: Record<ChainTag, string[]> = {
-  // NOTE: keep these keywords fairly strict to avoid "everything matches everything".
-  // If a chain isn't explicitly mentioned, it should NOT be tagged.
-  Ethereum: ["Ethereum", "ETH", "Ether", "Ethereum Foundation", "Dencun", "Cancun"],
-  Solana: ["Solana", "SOL", "Solana Foundation", "Breakpoint", "Saga"],
-  "BNB Chain": ["BNB Chain", "BSC", "Binance Smart Chain"],
-  Arbitrum: ["Arbitrum", "ARB", "Arbitrum Orbit", "Arbitrum Nova"],
-  Base: ["Base", "Base Chain", "Coinbase L2"],
-  Optimism: ["Optimism", "OP", "OP Stack", "Superchain"],
+  Ethereum: ["Ethereum"],
+  Solana: ["Solana"],
+  "BNB Chain": ["BNB Chain"],
+  Arbitrum: ["Arbitrum"],
+  Base: ["Base"],
+  Optimism: ["Optimism"],
   Sui: ["Sui"],
   Aptos: ["Aptos"],
 };
 
 export const EXCHANGE_KEYWORDS: Record<ExchangeTag, string[]> = {
-  // Exchange keywords must be brand-specific; generic words like "Announcement" or "Listing"
-  // will make nearly all posts match and destroy filter quality.
-  Binance: ["Binance", "Binance Launchpad", "Binance Launchpool", "Binance Listing"],
-  OKX: [
-    "OKX", "OKX Exchange", "OKEx", "欧易",
-    "OKX Jumpstart", "OKX Megadrop",
-    "OKX to list", "OKX will list", "OKX will launch",
-    "欧易上市", "OKX 上市",
-  ],
-  Bybit: ["Bybit", "Bybit Launchpad"],
-  Coinbase: ["Coinbase", "Coinbase Listing", "Advanced Trade"],
-  Kraken: ["Kraken", "Kraken Exchange", "Kraken Listing"],
+  Binance: ["Binance"],
+  OKX: ["OKX"],
+  Bybit: ["Bybit"],
+  Coinbase: ["Coinbase"],
+  Kraken: ["Kraken"],
 };
 
 function normalizeText(s: string) {
