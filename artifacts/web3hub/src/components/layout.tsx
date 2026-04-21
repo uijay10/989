@@ -363,9 +363,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   navigate("/");
                 }}
                 className={cn(
-                  "relative px-2.5 py-0.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer shrink-0",
+                  // 与首页「My Dashboard」同款尺寸与主色药丸样式（home.tsx）
+                  "relative inline-flex items-center justify-center shrink-0 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-200 cursor-pointer",
                   activeHref === "/" && activeCategory === "全部"
-                    ? "text-white bg-blue-600 shadow-sm"
+                    ? "text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-300/50"
                     : "text-slate-800 hover:text-slate-900 hover:bg-slate-100",
                 )}
               >
