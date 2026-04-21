@@ -177,7 +177,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <img src="/logo.png" alt="Web3 Release" className="w-10 h-10 object-contain shrink-0" />
                 <span className="font-display font-bold text-2xl tracking-tight text-blue-600 truncate">Web3 Release</span>
               </a>
-              {/* 顶部「回首页」：与主按钮同色（blue-600），第二行不再重复「主页」 */}
+              {/* 顶部「回首页」：与 7*24 药丸同款蓝底白字 */}
               <button
                 type="button"
                 onClick={() => {
@@ -186,9 +186,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   setOptimisticNavHref("/");
                   navigate("/");
                 }}
-                className="shrink-0 px-2 py-1 rounded-md text-sm font-bold tracking-wide text-blue-600 hover:text-blue-700 hover:bg-blue-50/90 transition-colors"
+                className="shrink-0 px-4 py-1.5 rounded-full text-[13px] font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors"
               >
-                {lang === "en" ? "HOME" : t("navHome")}
+                {lang === "en" ? "Home" : t("navHome")}
               </button>
             </div>
 
