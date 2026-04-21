@@ -388,7 +388,7 @@ export default function Home() {
                 🚀 {t("joinNow")}
               </Link>
               {isConnected && address && me && (
-                <Link href="/post/new"
+                <Link href="/apply?role=project"
                   className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full font-bold text-sm bg-green-500 hover:bg-green-600 text-white shadow-md shadow-green-300/50 transition-all">
                   <PenSquare className="w-4 h-4" /> {t("postJobBtn")}
                 </Link>

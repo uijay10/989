@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useWeb3Auth } from "@/lib/web3";
 import { useLang } from "@/lib/i18n";
 import { useLocation } from "wouter";
@@ -114,10 +114,20 @@ function inputCls(err?: string) {
 export default function ApplySpace() {
   const { address, isConnected } = useWeb3Auth();
   const { lang } = useLang();
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const tx = T[lang as keyof typeof T] ?? T.en;
 
   const [role, setRole] = useState<Role | null>(null);
+  const presetRole = useMemo<Role | null>(() => {
+    const qs = (location.split("?")[1] ?? "").trim();
+    if (!qs) return null;
+    const sp = new URLSearchParams(qs);
+    const r = (sp.get("role") ?? "").trim().toLowerCase();
+    if (r === "project" || r === "participant") return r;
+    return null;
+  }, [location]);
+  const roleLocked = presetRole != null;
+
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [apiError, setApiError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -134,6 +144,11 @@ export default function ApplySpace() {
   const [displayName, setDisplayName] = useState("");
   const [personalTwitter, setPersonalTwitter] = useState("");
   const [bio, setBio] = useState("");
+
+  useEffect(() => {
+    if (!presetRole) return;
+    setRole(presetRole);
+  }, [presetRole]);
 
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
@@ -257,42 +272,44 @@ export default function ApplySpace() {
       </div>
 
       {/* Step 1 — Role Selection */}
-      <div className="mb-6">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">1</div>
-          <span className="text-sm font-semibold">{tx.chooseRole}</span>
-        </div>
+      {!roleLocked && (
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">1</div>
+            <span className="text-sm font-semibold">{tx.chooseRole}</span>
+          </div>
 
-        <div className="grid grid-cols-1 gap-4 w-full">
-          {/* Project Owner Card */}
-          <button
-            type="button"
-            onClick={() => setRole("project")}
-            className={`relative text-left rounded-2xl border-2 p-5 transition-all duration-200 group ${
-              role === "project"
-                ? "border-green-500 bg-green-50 dark:bg-green-950/30 shadow-md shadow-green-200/40 dark:shadow-green-900/20"
-                : "border-border hover:border-green-400/60 hover:bg-green-50/30 dark:hover:bg-green-950/10"
-            }`}
-          >
-            {role === "project" && (
-              <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
-                <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+          <div className="grid grid-cols-1 gap-4 w-full">
+            {/* Project Owner Card */}
+            <button
+              type="button"
+              onClick={() => setRole("project")}
+              className={`relative text-left rounded-2xl border-2 p-5 transition-all duration-200 group ${
+                role === "project"
+                  ? "border-green-500 bg-green-50 dark:bg-green-950/30 shadow-md shadow-green-200/40 dark:shadow-green-900/20"
+                  : "border-border hover:border-green-400/60 hover:bg-green-50/30 dark:hover:bg-green-950/10"
+              }`}
+            >
+              {role === "project" && (
+                <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                </div>
+              )}
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 transition-colors ${
+                role === "project" ? "bg-green-500" : "bg-muted group-hover:bg-green-100 dark:group-hover:bg-green-950/30"
+              }`}>
+                <Building2 className={`w-6 h-6 ${role === "project" ? "text-white" : "text-muted-foreground group-hover:text-green-600"}`} />
               </div>
-            )}
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 transition-colors ${
-              role === "project" ? "bg-green-500" : "bg-muted group-hover:bg-green-100 dark:group-hover:bg-green-950/30"
-            }`}>
-              <Building2 className={`w-6 h-6 ${role === "project" ? "text-white" : "text-muted-foreground group-hover:text-green-600"}`} />
-            </div>
-            <p className={`font-bold text-base mb-1.5 ${role === "project" ? "text-green-700 dark:text-green-400" : ""}`}>
-              {tx.roleProject}
-            </p>
-            <p className={`text-xs leading-relaxed ${role === "project" ? "text-green-600/80 dark:text-green-400/70" : "text-muted-foreground"}`}>
-              {tx.roleProjectDesc}
-            </p>
-          </button>
+              <p className={`font-bold text-base mb-1.5 ${role === "project" ? "text-green-700 dark:text-green-400" : ""}`}>
+                {tx.roleProject}
+              </p>
+              <p className={`text-xs leading-relaxed ${role === "project" ? "text-green-600/80 dark:text-green-400/70" : "text-muted-foreground"}`}>
+                {tx.roleProjectDesc}
+              </p>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Step 2 — Dynamic Form */}
       {role && (
