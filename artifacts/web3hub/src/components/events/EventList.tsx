@@ -16,6 +16,8 @@ import { getApiBase } from "@/lib/api-base";
 import { semanticDedupKey } from "@/lib/semantic-title-key";
 import { AI_FEED_PAGE_SIZE } from "@/lib/ai-feed-page-size";
 
+type DisplayEvent = Web3Event & { _sections?: string[] };
+
 const SECTION_TO_ZH: Record<string, string> = {
   testnet:   "测试网",
   "724news": "7*24快讯",
@@ -61,6 +63,13 @@ function getSectionLabel(section: string, lang: string): string {
 
 function getEventDisplayKey(e: Web3Event): string | null {
   return semanticDedupKey(e.title ?? "", e.source_url);
+}
+
+function shouldHideSourceForEvent(e: DisplayEvent): boolean {
+  const sections = (e._sections ?? []).filter(Boolean);
+  if (sections.length !== 1) return false;
+  const s = sections[0];
+  return s === "flash" || s === "724news";
 }
 
 const CAT_I18N: Record<string, string> = {
@@ -132,7 +141,7 @@ function EventRow({
   onPinRequest,
   onDeleteRequest,
 }: {
-  event: Web3Event;
+  event: DisplayEvent;
   lang: string;
   tFn: (k: string) => string;
   adminUser: boolean;
@@ -150,7 +159,9 @@ function EventRow({
     if (!el) return;
     setIsClamped(el.scrollHeight > el.clientHeight);
   }, [event.description, expanded]);
-  const cats = event.category ?? [];
+  const cats = event._sections?.length
+    ? event._sections.map((s) => getSectionLabel(s, lang))
+    : (event.category ?? []);
   const srcLabel = formatSourceLabel(event.source_url);
   const relTime = formatRelativeTime(event.crawl_time ?? event.start_time, lang);
   const impLevel = normalizeEventImportance(event.importance);
@@ -260,7 +271,7 @@ function EventRow({
             <span className="text-xs px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-900/20 text-violet-500 dark:text-violet-400 border border-violet-200 dark:border-violet-800">
               {zh ? "用户发布" : "User Post"}
             </span>
-          ) : event.source_url && event.source_url !== "#" ? (
+          ) : shouldHideSourceForEvent(event) ? null : event.source_url && event.source_url !== "#" ? (
             <a
               href={event.source_url}
               target="_blank"
@@ -502,7 +513,7 @@ export function EventList({
       setPinnedPosts(pinned);
 
       const pinnedIds = new Set(pinned.map((p: any) => p.id));
-      const events: Web3Event[] = aiPosts
+      const events: DisplayEvent[] = aiPosts
         .filter(p => !pinnedIds.has(p.id))
         .map((p) => ({
           id: p.id as number | string,
@@ -510,6 +521,7 @@ export function EventList({
           description: (p.summary as string) ?? (p.content as string),
           project_name: (p.source as string) ?? "",
           category: (p.category ? [getSectionLabel(p.category as string, lang)] : []) as string[],
+          _sections: p.category ? [String(p.category)] : [],
           source_url: (p.link as string) ?? (p.sourceUrl as string) ?? undefined,
           importance: (p.importance as string) ?? "medium",
           crawl_time: (p.time as string) ?? (p.createdAt as string),
@@ -588,12 +600,13 @@ export function EventList({
       const total = Number(data.total ?? 0);
       if (total) { setServerTotal(total); _totalCache.set(cacheKey, total); }
 
-      const newEvents: Web3Event[] = newItems.map((p: any) => ({
+      const newEvents: DisplayEvent[] = newItems.map((p: any) => ({
         id: p.id,
         title: p.title,
         description: p.summary ?? p.content,
         project_name: p.source ?? "",
         category: p.category ? [getSectionLabel(p.category, lang)] : [],
+        _sections: p.category ? [String(p.category)] : [],
         source_url: p.link ?? p.sourceUrl,
         importance: p.importance ?? "medium",
         crawl_time: p.time ?? p.createdAt,
@@ -669,13 +682,21 @@ export function EventList({
 
   // 显示层：按「标题语义指纹 + 域名」去重（相似标题、同站多篇软文、多板块重复会折叠）
   const seenDisplayKeys = new Set<string>();
-  const filtered: Web3Event[] = [];
-  for (const e of primarySorted) {
+  const filtered: DisplayEvent[] = [];
+  const byKey = new Map<string, DisplayEvent>();
+  for (const e0 of primarySorted as DisplayEvent[]) {
+    const e = e0 as DisplayEvent;
     const key = getEventDisplayKey(e);
-    if (!key || !seenDisplayKeys.has(key)) {
-      if (key) seenDisplayKeys.add(key);
+    if (!key) { filtered.push(e); continue; }
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, e);
       filtered.push(e);
+      continue;
     }
+    // Merge multi-published categories (same story synced into multiple sections).
+    const merged = new Set<string>([...(existing._sections ?? []), ...(e._sections ?? [])]);
+    existing._sections = [...merged];
   }
 
   const doAdminPin = async () => {
