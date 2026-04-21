@@ -69,9 +69,12 @@ function shouldHideSourceForEvent(e: DisplayEvent, in724View: boolean): boolean 
   // Requirement: only 7×24 section hides source; all other sections must show it.
   if (!in724View) return false;
   const sections = (e._sections ?? []).filter(Boolean);
-  if (sections.length !== 1) return false;
-  const s = sections[0];
-  return s === "flash" || s === "724news";
+  if (sections.length === 0) return false;
+
+  // Hide only when the story is published exclusively under 7×24 (flash/724news),
+  // i.e. it does NOT hit any other section.
+  const only724 = sections.every((s) => s === "flash" || s === "724news");
+  return only724;
 }
 
 const CAT_I18N: Record<string, string> = {
