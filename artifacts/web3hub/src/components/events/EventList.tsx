@@ -65,9 +65,7 @@ function getEventDisplayKey(e: Web3Event): string | null {
   return semanticDedupKey(e.title ?? "", e.source_url);
 }
 
-function shouldHideSourceForEvent(e: DisplayEvent, in724View: boolean): boolean {
-  // Requirement: only 7×24 section hides source; all other sections must show it.
-  if (!in724View) return false;
+function shouldHideSourceForEvent(e: DisplayEvent): boolean {
   const sections = (e._sections ?? []).filter(Boolean);
   if (sections.length === 0) return false;
 
@@ -145,7 +143,6 @@ function EventRow({
   currentWallet,
   onPinRequest,
   onDeleteRequest,
-  in724View,
 }: {
   event: DisplayEvent;
   lang: string;
@@ -154,7 +151,6 @@ function EventRow({
   currentWallet?: string;
   onPinRequest: (id: number | string) => void;
   onDeleteRequest: (id: number | string) => void;
-  in724View: boolean;
 }) {
   const zh = lang === "zh-CN";
   const [expanded, setExpanded] = useState(false);
@@ -278,7 +274,7 @@ function EventRow({
             <span className="text-xs px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-900/20 text-violet-500 dark:text-violet-400 border border-violet-200 dark:border-violet-800">
               {zh ? "用户发布" : "User Post"}
             </span>
-          ) : shouldHideSourceForEvent(event, in724View) ? null : event.source_url && event.source_url !== "#" ? (
+          ) : shouldHideSourceForEvent(event) ? null : event.source_url && event.source_url !== "#" ? (
             <a
               href={event.source_url}
               target="_blank"
@@ -377,7 +373,6 @@ export function EventList({
   const { activeCategory } = useEventFilter();
   const { t, lang } = useLang();
   const zh = lang === "zh-CN";
-  const in724View = sectionSlug === "flash" || sectionSlug === "724news" || (!sectionSlug && activeCategory === "快讯");
   const { address } = useWeb3Auth();
   const adminUser = isAdmin(address);
   // User requirement: no pinned area anywhere (including homepage).
@@ -880,7 +875,6 @@ export function EventList({
                   setPinMsg("");
                 }}
                 onDeleteRequest={(id) => setDeleteTargetId(id)}
-                in724View={in724View}
               />
             ))}
           </ul>
