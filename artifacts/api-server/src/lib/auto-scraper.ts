@@ -726,6 +726,40 @@ function appendToBackupFile(row: Record<string, unknown>): void {
 /** Feeds where rows are timeline headlines: AI often fills historical story dates into start_time → insert guards / startup cleanup then drop valid items. We keep event dates on secondary sections (ido, quest, …) only. */
 const NEWS_TIMELINE_SECTIONS = new Set<string>(["724news", "flash", "meme"]);
 
+// ── Strong dedup helpers (timeline sections only) ─────────────────────────────
+function normalizeTextLite(s: string): string {
+  return (s ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+/**
+ * Semantic title key: strips dates/digits/punct + common stopwords, keeps first 8 distinct tokens.
+ * Used for stronger dedup in 7×24-like timeline feeds where many outlets repost the same story
+ * with slightly different titles.
+ */
+function semanticTitleKeyLite(raw: string): string {
+  const t = normalizeTextLite(raw || "")
+    .replace(/[’'"]/g, "")
+    .replace(/[^a-z0-9\u4e00-\u9fff\s-]/g, " ")
+    .replace(/\b(19|20)\d{2}\b/g, " ")
+    .replace(/\b\d+(?:\.\d+)?\b/g, " ");
+
+  const stop = new Set([
+    "a","an","and","are","as","at","be","by","for","from","has","have","in","into","is","it","its","of","on","or","s","says","to","the","this","that","these","those","with","will","vs","via",
+    "best","top","latest","update","news","revealed","reveals","lead","leads","goes","live","launch","launched","crosses","cross","potential","deadline","act","committee","senate","us","u","u.s",
+    "今日","最新","快讯","速报","公告","消息","更新","曝光","透露","宣布",
+  ]);
+
+  const parts = t.split(/[\s-]+/g).filter(Boolean);
+  const kept: string[] = [];
+  for (const p of parts) {
+    if (p.length <= 2) continue;
+    if (stop.has(p)) continue;
+    if (!kept.includes(p)) kept.push(p);
+    if (kept.length >= 8) break;
+  }
+  return kept.join("-");
+}
+
 function processEventForSection(raw: ProcessedEvent, section: string): ProcessedEvent {
   if (!NEWS_TIMELINE_SECTIONS.has(section)) return raw;
   return { ...raw, start_time: null, end_time: null };
@@ -790,6 +824,24 @@ async function insertPost(ev: ProcessedEvent, section: string): Promise<boolean>
       );
       if ((fuzzyDup.rows as Array<unknown>).length > 0) return false;
     } catch { /* pg_trgm not available */ }
+
+    // Guard 2.5: semantic-key dedup (timeline sections, cross-outlet)
+    if (NEWS_TIMELINE_SECTIONS.has(section)) {
+      const sem = semanticTitleKeyLite(ev.title);
+      if (sem) {
+        const recent = await db.execute(
+          sql`SELECT title FROM posts
+              WHERE section = ${section}
+                AND created_at > NOW() - INTERVAL '14 days'
+              ORDER BY created_at DESC
+              LIMIT 400`
+        );
+        const titles = (recent.rows as Array<{ title?: string | null }>).map(r => String(r.title ?? ""));
+        for (const t of titles) {
+          if (semanticTitleKeyLite(t) === sem) return false;
+        }
+      }
+    }
 
     // Guard 3: same project burst (3h) — not for 724 timeline (many headlines share project tickers)
     const projectName = ev.project_name?.trim();
