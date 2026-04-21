@@ -120,10 +120,10 @@ export const DEFAULT_SOURCES = [
   { name: "Ethereum Blog", url: "https://blog.ethereum.org/feed.xml", type: "rss", priority: 1 },
   { name: "Polygon Blog", url: "https://polygon.technology/blog/feed", type: "rss", priority: 1 },
   { name: "Binance Blog", url: "https://www.binance.com/en/blog/feed", type: "rss", priority: 1 },
-  { name: "Coinbase Blog", url: "https://www.coinbase.com/blog/rss", type: "rss", priority: 1 },
+  { name: "Coinbase Blog", url: "https://www.coinbase.com/blog/feed.xml", type: "rss", priority: 1 },
   { name: "Chainlink Blog", url: "https://blog.chain.link/feed/", type: "rss", priority: 1 },
-  { name: "Optimism Blog", url: "https://optimism.io/blog/feed", type: "rss", priority: 1 },
-  { name: "Arbitrum Blog", url: "https://arbitrum.io/blog/feed", type: "rss", priority: 1 },
+  // Optimism blog does not currently expose a stable RSS endpoint; rely on Google News + other official sources.
+  { name: "Arbitrum Blog", url: "https://blog.arbitrum.io/rss/", type: "rss", priority: 1 },
   { name: "zkSync Blog", url: "https://zksync.io/blog/feed", type: "rss", priority: 1 },
   { name: "Medium Blockchain", url: "https://medium.com/feed/tag/blockchain", type: "rss", priority: 2 },
   { name: "Medium Web3", url: "https://medium.com/feed/tag/web3", type: "rss", priority: 2 },
@@ -136,13 +136,17 @@ export const DEFAULT_SOURCES = [
   { name: "Aave Blog", url: "https://aave.com/blog/feed", type: "rss", priority: 2 },
   { name: "Uniswap Blog", url: "https://uniswap.org/blog/feed", type: "rss", priority: 2 },
   { name: "Avalanche Blog", url: "https://medium.com/feed/avalancheavax", type: "rss", priority: 1 },
+  // Base official publishing is on Mirror (Atom feed).
   { name: "Base Blog", url: "https://base.mirror.xyz/feed/atom", type: "rss", priority: 1 },
   { name: "Starknet Blog", url: "https://medium.com/feed/starkware", type: "rss", priority: 1 },
   { name: "Scroll Blog", url: "https://scroll.io/blog/rss.xml", type: "rss", priority: 1 },
   { name: "Mantle Blog", url: "https://www.mantle.xyz/blog/rss.xml", type: "rss", priority: 1 },
   { name: "BNB Chain Blog", url: "https://www.bnbchain.org/en/blog/rss.xml", type: "rss", priority: 1 },
   { name: "Sui Blog", url: "https://blog.sui.io/feed/", type: "rss", priority: 1 },
-  { name: "Aptos Blog", url: "https://aptoslabs.medium.com/feed", type: "rss", priority: 1 },
+  { name: "Aptos Blog", url: "https://aptosnetwork.com/currents/category/blog/rss.xml", type: "rss", priority: 1 },
+  { name: "Kraken Blog", url: "https://blog.kraken.com/feed/", type: "rss", priority: 1 },
+  // Bybit does not provide a stable public RSS URL for announcements; use official API endpoint.
+  { name: "Bybit Announcements", url: "https://api.bybit.com/v5/announcements/index?locale=en-US&limit=50&page=1", type: "bybit-api", priority: 1 },
   { name: "Cosmos Blog", url: "https://blog.cosmos.network/feed", type: "rss", priority: 1 },
   { name: "TON Blog", url: "https://blog.ton.org/rss.xml", type: "rss", priority: 1 },
   { name: "Lido Blog", url: "https://lido.fi/blog/rss.xml", type: "rss", priority: 1 },
@@ -393,6 +397,58 @@ async function fetchRssWithRetry(url: string, retries = MAX_RETRIES): Promise<Pa
       const msg = e instanceof Error ? e.message : String(e);
       if (attempt === retries) {
         console.warn(`[unified-scrape] fetchRss failed (${retries} attempts): ${url} — ${msg}`);
+        return null;
+      }
+      await sleep(backoffMs(attempt));
+    }
+  }
+  return null;
+}
+
+async function fetchBybitAnnouncementsWithRetry(url: string, retries = MAX_RETRIES): Promise<RssArticleSlice[] | null> {
+  const UA = "Mozilla/5.0 (compatible; Web3ReleaseBot/2.0; +https://web3release.com)";
+  const backoffMs = (attempt: number) => {
+    const base = Math.min(15000, 700 * Math.pow(2, attempt - 1));
+    const jitter = Math.floor(Math.random() * 350);
+    return base + jitter;
+  };
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, {
+        headers: {
+          "User-Agent": UA,
+          "Accept": "application/json, text/plain, */*",
+        },
+        redirect: "follow",
+        signal: AbortSignal.timeout(20000),
+      });
+
+      if (!res.ok) {
+        const retryable = res.status === 429 || res.status === 408 || (res.status >= 500 && res.status <= 599);
+        const msg = `HTTP ${res.status} ${res.statusText}`;
+        if (!retryable || attempt === retries) {
+          console.warn(`[unified-scrape] fetchBybit failed (${attempt}/${retries}): ${url} — ${msg}`);
+          return null;
+        }
+        await sleep(backoffMs(attempt));
+        continue;
+      }
+
+      const json = await res.json().catch(() => null) as any;
+      const list: any[] = json?.result?.list ?? [];
+      if (!Array.isArray(list) || list.length === 0) return [];
+
+      return list.map((it) => ({
+        title: String(it?.title ?? "").replace(/<[^>]+>/g, "").trim(),
+        description: String(it?.description ?? "").replace(/<[^>]+>/g, "").slice(0, 800).trim(),
+        link: String(it?.url ?? "").trim(),
+        pubDate: it?.publishTime ? new Date(Number(it.publishTime)).toISOString() : undefined,
+      })).filter((x) => x.title && x.link);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (attempt === retries) {
+        console.warn(`[unified-scrape] fetchBybit failed (${retries} attempts): ${url} — ${msg}`);
         return null;
       }
       await sleep(backoffMs(attempt));
@@ -1133,36 +1189,51 @@ export async function runUnifiedScrape(opts: UnifiedScrapeOptions = {}): Promise
       }
 
       try {
-        const feed = await fetchRssWithRetry(source.url);
-        if (!feed || !Array.isArray(feed.items) || feed.items.length === 0) continue;
+        const candidates: RssArticleSlice[] = (() => {
+          if (source.type === "bybit-api") return [];
+          return [];
+        })();
+        // Placeholder to satisfy TS control-flow; real candidates filled below.
+        void candidates;
 
-        const candidates = feed.items
-          .slice(0, 30)
-          .filter(item => {
-            const pd = item.pubDate ?? item.isoDate;
-            if (pd) {
-              const d = new Date(pd);
-              if (!isNaN(d.getTime()) && d < cutoff) return false;
-            }
-            const text = `${item.title ?? ""} ${item.contentSnippet ?? item.summary ?? item.content ?? ""}`;
-            return passesKeywordFilter(text, combinedKws);
-          })
-          .map(item => ({
+        let rawArticles: RssArticleSlice[] = [];
+        if (source.type === "bybit-api") {
+          const items = await fetchBybitAnnouncementsWithRetry(source.url);
+          if (!items || items.length === 0) continue;
+          rawArticles = items.slice(0, 50);
+        } else {
+          const feed = await fetchRssWithRetry(source.url);
+          if (!feed || !Array.isArray(feed.items) || feed.items.length === 0) continue;
+          rawArticles = feed.items.slice(0, 30).map((item: any) => ({
             title: (item.title ?? "").replace(/<[^>]+>/g, "").trim(),
             description: (item.contentSnippet ?? item.summary ?? item.content ?? "").replace(/<[^>]+>/g, "").slice(0, 800).trim(),
             link: item.link ?? item.guid ?? source.url,
             pubDate: item.pubDate ?? item.isoDate,
-          }))
-          .filter(c => c.title && c.link && !allSeenLinks.has(c.link));
+          }));
+        }
 
-        if (candidates.length === 0) continue;
+        const filtered = rawArticles
+          .filter((a) => {
+            const pd = a.pubDate;
+            if (pd) {
+              const d = new Date(pd);
+              if (!isNaN(d.getTime()) && d < cutoff) return false;
+            }
+            const text = `${a.title ?? ""} ${a.description ?? ""}`;
+            return passesKeywordFilter(text, combinedKws);
+          })
+          .filter((a) => a.title && a.link && !allSeenLinks.has(a.link));
 
-        const existingUrls = await getExistingUrls(candidates.map(c => c.link));
-        const newArticles = candidates.filter(c => !existingUrls.has(c.link));
+        const candidates2 = filtered;
+
+        if (candidates2.length === 0) continue;
+
+        const existingUrls = await getExistingUrls(candidates2.map(c => c.link));
+        const newArticles = candidates2.filter(c => !existingUrls.has(c.link));
 
         if (newArticles.length === 0) continue;
 
-        candidates.forEach(c => allSeenLinks.add(c.link));
+        candidates2.forEach(c => allSeenLinks.add(c.link));
         totalItemsFound += newArticles.length;
         globalCount += newArticles.length;
 
