@@ -178,6 +178,17 @@ function EventRow({
     : "";
 
   const isUserPost = event.authorType && event.authorType !== "ai";
+  const hide724Only = shouldHideSourceForEvent(event, enableHideSource);
+  const desc = (event.description ?? "").trim();
+  const descLooksTruncated =
+    !!desc &&
+    /(?:\.{3,}|…{2,}|……|…\s*$|\.\.\.\s*$)$/u.test(desc);
+  const isVisuallyTruncated = (!expanded && isClamped) || (!expanded && descLooksTruncated);
+  const shouldShowSource =
+    !isUserPost &&
+    (!hide724Only || isVisuallyTruncated) &&
+    (!!srcLabel || (!!event.source_url && event.source_url !== "#"));
+
   const isOwnPost = currentWallet && event.authorWallet &&
     currentWallet.toLowerCase() === event.authorWallet.toLowerCase();
   const canControl = adminUser || isOwnPost;
@@ -277,7 +288,7 @@ function EventRow({
             <span className="text-xs px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-900/20 text-violet-500 dark:text-violet-400 border border-violet-200 dark:border-violet-800">
               {zh ? "用户发布" : "User Post"}
             </span>
-          ) : shouldHideSourceForEvent(event, enableHideSource) ? null : event.source_url && event.source_url !== "#" ? (
+          ) : shouldShowSource && event.source_url && event.source_url !== "#" ? (
             <a
               href={event.source_url}
               target="_blank"
@@ -287,7 +298,7 @@ function EventRow({
               <span>{zh ? "信息来源：" : "Source: "}{srcLabel}</span>
               <ExternalLink className="w-3 h-3" />
             </a>
-          ) : srcLabel ? (
+          ) : shouldShowSource && srcLabel ? (
             <span className="text-xs text-slate-400 dark:text-slate-500">
               {zh ? "信息来源：" : "Source: "}{srcLabel}
             </span>

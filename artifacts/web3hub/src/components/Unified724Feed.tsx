@@ -139,6 +139,20 @@ function titleInlineStyle(level: ImportanceLevel | null): React.CSSProperties | 
   return undefined;
 }
 
+function formatSourceLabel(url?: string | null): string {
+  if (!url) return "";
+  if (/twitter\.com|x\.com/i.test(url)) return "Twitter / X";
+  if (/discord\.com|discord\.gg/i.test(url)) return "Discord";
+  if (/t\.me|telegram/i.test(url)) return "Telegram";
+  if (/medium\.com/i.test(url)) return "Medium";
+  if (/github\.com/i.test(url)) return "GitHub";
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "官网";
+  }
+}
+
 const Unified724Feed: React.FC = () => {
   const { lang } = useLang();
   const SECTION_LABEL = lang === 'zh-CN' ? SECTION_LABEL_ZH : SECTION_LABEL_EN;
@@ -355,6 +369,14 @@ const Unified724Feed: React.FC = () => {
         )}
         {displayItems.map((item) => {
           const impLevel = resolveImportanceLevel(item);
+          const cats = (item._categories?.length ? item._categories : [item.category]).filter(Boolean);
+          const only724 = cats.length > 0 && cats.every((c) => c === "flash" || c === "724news");
+          const summary = (item.summary ?? "").trim();
+          const summaryLooksTruncated =
+            !!summary &&
+            /(?:\.{3,}|…{2,}|……|…\s*$|\.\.\.\s*$)$/u.test(summary);
+          const srcLabel = formatSourceLabel(item.link);
+          const shouldShowSource = (!!srcLabel || (!!item.link && item.link !== "#")) && (!only724 || summaryLooksTruncated);
           return (
           <div key={item.id} className="border border-gray-200 dark:border-zinc-700 rounded-2xl p-6 hover:shadow-md transition-shadow relative group">
             {admin && (
@@ -423,6 +445,22 @@ const Unified724Feed: React.FC = () => {
             </h3>
             {item.summary && (
               <p className="text-gray-600 dark:text-zinc-400 text-[15px] leading-relaxed">{item.summary}</p>
+            )}
+            {shouldShowSource && item.link && item.link !== "#" && (
+              <div className="mt-3 flex justify-end">
+                <a
+                  href={item.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-blue-500 transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <span>{lang === "zh-CN" ? "信息来源：" : "Source: "}{srcLabel}</span>
+                  <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14 21 3" />
+                  </svg>
+                </a>
+              </div>
             )}
           </div>
         );
