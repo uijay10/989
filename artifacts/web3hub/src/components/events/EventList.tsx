@@ -65,7 +65,8 @@ function getEventDisplayKey(e: Web3Event): string | null {
   return semanticDedupKey(e.title ?? "", e.source_url);
 }
 
-function shouldHideSourceForEvent(e: DisplayEvent): boolean {
+function shouldHideSourceForEvent(e: DisplayEvent, enableHide: boolean): boolean {
+  if (!enableHide) return false;
   const sections = (e._sections ?? []).filter(Boolean);
   if (sections.length === 0) return false;
 
@@ -143,6 +144,7 @@ function EventRow({
   currentWallet,
   onPinRequest,
   onDeleteRequest,
+  enableHideSource,
 }: {
   event: DisplayEvent;
   lang: string;
@@ -151,6 +153,7 @@ function EventRow({
   currentWallet?: string;
   onPinRequest: (id: number | string) => void;
   onDeleteRequest: (id: number | string) => void;
+  enableHideSource: boolean;
 }) {
   const zh = lang === "zh-CN";
   const [expanded, setExpanded] = useState(false);
@@ -274,7 +277,7 @@ function EventRow({
             <span className="text-xs px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-900/20 text-violet-500 dark:text-violet-400 border border-violet-200 dark:border-violet-800">
               {zh ? "用户发布" : "User Post"}
             </span>
-          ) : shouldHideSourceForEvent(event) ? null : event.source_url && event.source_url !== "#" ? (
+          ) : shouldHideSourceForEvent(event, enableHideSource) ? null : event.source_url && event.source_url !== "#" ? (
             <a
               href={event.source_url}
               target="_blank"
@@ -377,6 +380,11 @@ export function EventList({
   const adminUser = isAdmin(address);
   // User requirement: no pinned area anywhere (including homepage).
   const showPinned = false;
+  const enableHideSource =
+    // In chain / exchange views, always show source.
+    !(chain?.trim() || exchange?.trim()) &&
+    // In non-7×24 section pages, always show source.
+    !(sectionSlug && sectionSlug !== "flash" && sectionSlug !== "724news");
 
   /** Stable random seed for this browser session */
   const sessionSeed = useRef(Math.random() * 0xffffffff >>> 0);
@@ -875,6 +883,7 @@ export function EventList({
                   setPinMsg("");
                 }}
                 onDeleteRequest={(id) => setDeleteTargetId(id)}
+                enableHideSource={enableHideSource}
               />
             ))}
           </ul>
