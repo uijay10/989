@@ -408,9 +408,25 @@ export function Layout({ children }: { children: React.ReactNode }) {
           type="button"
           onClick={() => setWhitepaperOpen(true)}
           title={t("disclaimerBtn")}
-          className="w-9 h-9 rounded-lg bg-white/80 hover:bg-white flex items-center justify-center transition-all shadow-md backdrop-blur-sm border border-slate-200/70 group"
+          className="w-9 h-9 rounded-lg bg-slate-600/75 hover:bg-slate-700/90 flex items-center justify-center transition-all shadow-md backdrop-blur-sm group"
         >
-          <FileText className="w-4 h-4 text-slate-600 group-hover:text-slate-800 transition-colors" />
+          {/* Custom “disclaimer/doc” glyph to match the social icon style */}
+          <svg
+            viewBox="0 0 24 24"
+            className="w-4 h-4 stroke-white/80 group-hover:stroke-white fill-none transition-colors"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            {/* Page */}
+            <path d="M8 3.5h6.5L19 8v12a1.5 1.5 0 0 1-1.5 1.5H8A3 3 0 0 1 5 18.5v-12A3 3 0 0 1 8 3.5Z" />
+            {/* Fold */}
+            <path d="M14.5 3.5V8H19" />
+            {/* “i” mark */}
+            <path d="M12 11.2h0" />
+            <path d="M12 13v4.2" />
+          </svg>
         </button>
 
         {/* Social buttons */}

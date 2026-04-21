@@ -3,6 +3,9 @@ import { useLang } from '@/lib/i18n';
 import { getApiBase } from '@/lib/api-base';
 import { semanticDedupKey } from '@/lib/semantic-title-key';
 import { AI_FEED_PAGE_SIZE } from '@/lib/ai-feed-page-size';
+import { Pin, Trash2 } from "lucide-react";
+import { useWeb3Auth } from "@/lib/web3";
+import { isAdmin } from "@/lib/admin";
 
 interface FeedItem {
   id: string;
@@ -145,6 +148,12 @@ const Unified724Feed: React.FC = () => {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | string>('all');
+  const { address } = useWeb3Auth();
+  const admin = isAdmin(address);
+  const [pinningId, setPinningId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [adminMsg, setAdminMsg] = useState<string>("");
 
   const observerRef = useRef<HTMLDivElement>(null);
   const loadingRef  = useRef(false);
@@ -212,6 +221,56 @@ const Unified724Feed: React.FC = () => {
       setLoading(false);
     }
   }, [page, activeTab, loading, hasMore]);
+
+  const handleAdminPin = useCallback(async (id: string) => {
+    if (!address || !admin) return;
+    if (pinningId) return;
+    setAdminMsg("");
+    setPinningId(id);
+    try {
+      const res = await fetch(`${getApiBase()}/posts/${id}/pin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wallet: address, durationHours: 72 }),
+      });
+      const d = await res.json().catch(() => ({} as any));
+      if (!res.ok) {
+        setAdminMsg(d.error ? `❌ ${d.error}` : "❌ Pin failed");
+        return;
+      }
+      setAdminMsg(lang === "zh-CN" ? "✅ 已置顶（72小时）" : "✅ Pinned (72h)");
+      // Best-effort refresh so pinned state is reflected elsewhere.
+      loadFeed(true);
+    } finally {
+      setPinningId(null);
+      setTimeout(() => setAdminMsg(""), 2500);
+    }
+  }, [address, admin, pinningId, lang, loadFeed]);
+
+  const handleAdminDelete = useCallback(async (id: string) => {
+    if (!address || !admin) return;
+    if (deletingId) return;
+    setAdminMsg("");
+    setDeletingId(id);
+    try {
+      const res = await fetch(`${getApiBase()}/admin/posts/${id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminWallet: address }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({} as any));
+        setAdminMsg(d.error ? `❌ ${d.error}` : (lang === "zh-CN" ? "❌ 删除失败" : "❌ Delete failed"));
+        return;
+      }
+      setItems((prev) => prev.filter((x) => String(x.id) !== String(id)));
+      setAdminMsg(lang === "zh-CN" ? "✅ 已删除" : "✅ Deleted");
+    } finally {
+      setDeletingId(null);
+      setConfirmDeleteId(null);
+      setTimeout(() => setAdminMsg(""), 2500);
+    }
+  }, [address, admin, deletingId, lang]);
 
   // Tab 切换时重置并重新加载
   useEffect(() => {
@@ -288,13 +347,50 @@ const Unified724Feed: React.FC = () => {
 
       {/* 文章列表 */}
       <div className="space-y-6">
+        {adminMsg && (
+          <div className="text-sm text-center text-violet-500 font-medium">{adminMsg}</div>
+        )}
         {displayItems.length === 0 && !loading && (
           <div className="py-16 text-center text-gray-400">暂无内容</div>
         )}
         {displayItems.map((item) => {
           const impLevel = resolveImportanceLevel(item);
           return (
-          <div key={item.id} className="border border-gray-200 dark:border-zinc-700 rounded-2xl p-6 hover:shadow-md transition-shadow">
+          <div key={item.id} className="border border-gray-200 dark:border-zinc-700 rounded-2xl p-6 hover:shadow-md transition-shadow relative group">
+            {admin && (
+              <div className="absolute right-3 top-3 flex items-center gap-1.5">
+                <button
+                  type="button"
+                  title={lang === "zh-CN" ? "置顶" : "Pin"}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleAdminPin(String(item.id)); }}
+                  disabled={pinningId === String(item.id)}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 rounded-lg bg-slate-600/75 hover:bg-slate-700/90 flex items-center justify-center shadow-md disabled:opacity-40"
+                >
+                  <Pin className="w-4 h-4 text-white/90" />
+                </button>
+
+                {confirmDeleteId === String(item.id) ? (
+                  <button
+                    type="button"
+                    title={lang === "zh-CN" ? "确认删除" : "Confirm delete"}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleAdminDelete(String(item.id)); }}
+                    disabled={deletingId === String(item.id)}
+                    className="w-8 h-8 rounded-lg bg-red-500/90 hover:bg-red-600 flex items-center justify-center shadow-md disabled:opacity-40"
+                  >
+                    <Trash2 className="w-4 h-4 text-white" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    title={lang === "zh-CN" ? "删除" : "Delete"}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmDeleteId(String(item.id)); }}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 rounded-lg bg-slate-600/75 hover:bg-slate-700/90 flex items-center justify-center shadow-md"
+                  >
+                    <Trash2 className="w-4 h-4 text-white/90" />
+                  </button>
+                )}
+              </div>
+            )}
             <div className="flex items-center gap-3 mb-3">
               {(item._categories?.length ? item._categories : [item.category]).map((cat) => (
                 <span
