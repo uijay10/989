@@ -199,7 +199,9 @@ const Unified724Feed: React.FC = () => {
   }, [items, activeTab]);
 
   const displayTotal = useMemo(() => {
-    return activeTab === "all" ? displayItems.length : total;
+    // For 7×24, always show the server-reported total (raw rows),
+    // not just the currently loaded / deduplicated display length.
+    return total;
   }, [activeTab, displayItems.length, total]);
 
   const loadFeed = useCallback(async (reset = false) => {
@@ -360,6 +362,13 @@ const Unified724Feed: React.FC = () => {
   return (
     <div className="w-full">
       {/* Header / tabs are handled by the global navbar. Keep this feed minimal. */}
+
+      {/* Total count (server-reported) */}
+      <div className="flex items-center justify-end mb-3">
+        <span className="text-xs text-gray-400">
+          {lang === "zh-CN" ? `共 ${displayTotal} 条` : `${displayTotal} posts`}
+        </span>
+      </div>
 
       {/* 文章列表 */}
       <div className="space-y-6">
