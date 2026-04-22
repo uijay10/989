@@ -770,9 +770,24 @@ export function EventList({
   const displayTotal = useMemo(() => {
     const shown = filtered.length;
     const total = Number.isFinite(serverTotal) ? Number(serverTotal) : 0;
+
+    // If the user is applying client-side filters (search / category on home),
+    // the server total no longer represents what they're viewing.
+    const hasClientFilter =
+      Boolean(searchTerm.trim()) ||
+      (!sectionSlug && activeCategory && activeCategory !== "全部");
+    if (hasClientFilter) return shown;
+
+    // Chain / exchange boards additionally apply client-side filters:
+    // - expired events are removed
+    // - semantic dedup merges multi-published stories
+    // Therefore serverTotal (raw DB matches) will overcount what the user sees.
+    const isChainOrExchangeView = Boolean(chain?.trim()) || Boolean(exchange?.trim());
+    if (isChainOrExchangeView) return shown;
+
     if (total <= 0) return shown;
     return Math.max(total, shown);
-  }, [filtered.length, serverTotal]);
+  }, [filtered.length, serverTotal, searchTerm, sectionSlug, activeCategory, chain, exchange]);
 
   const doAdminPin = async () => {
     if (!address || !pinTargetId) return;
