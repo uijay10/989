@@ -11,6 +11,7 @@ import autoScrapeRouter from "./auto-scrape";
 import contactRouter from "./contact";
 import feedsRouter from "./feeds";
 import feedRouter from "./feed";
+import navCountsRouter from "./nav-counts";
 const router: IRouter = Router();
 
 router.use(healthRouter);
@@ -26,5 +27,6 @@ router.use("/contact", contactRouter);
 router.use("/admin/contact", contactRouter);
 router.use("/feeds", feedsRouter);
 router.use("/feed", feedRouter);
+router.use(navCountsRouter);
 
 export default router;
