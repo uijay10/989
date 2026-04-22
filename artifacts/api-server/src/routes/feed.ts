@@ -31,16 +31,7 @@ router.get("/", async (req, res) => {
     }
     const whereBase = and(...conditions);
 
-    // Prefer DB-side tag filtering when columns exist (fast + correct pagination).
-    // Fallback to in-memory filtering (legacy DB) if these columns are missing.
-    const dbTagConds: any[] = [];
-    if (chainList.length > 0) {
-      dbTagConds.push(sql`chain_tags && ARRAY[${sql.join(chainList.map((c) => sql`${c}`), sql`, `)}]::text[]`);
-    }
-    if (exchangeList.length > 0) {
-      dbTagConds.push(sql`exchange_tags && ARRAY[${sql.join(exchangeList.map((e) => sql`${e}`), sql`, `)}]::text[]`);
-    }
-    const whereWithTags = dbTagConds.length > 0 ? and(whereBase, ...dbTagConds) : whereBase;
+    const wantsTagFilter = chainList.length > 0 || exchangeList.length > 0;
 
     let countResult: Array<{ count: number }> = [];
     let rows: Array<{
@@ -54,13 +45,38 @@ router.get("/", async (req, res) => {
       importance: string | null;
     }> = [];
 
-    try {
-      [countResult, rows] = await Promise.all([
-        db
-          .select({ count: sql<number>`count(*)` })
-          .from(postsTable)
-          .where(whereWithTags),
-        db
+    // Always count the base set first (exact, fast).
+    countResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(postsTable)
+      .where(whereBase);
+
+    let total = Number(countResult[0]?.count ?? 0);
+
+    // ── Chain/exchange columns: robust in-memory filtering with scan ──────────
+    // We intentionally DO NOT rely on DB tag columns here because older rows may
+    // not have them backfilled (which would make the column “shrink” to a handful).
+    if (wantsTagFilter) {
+      const HARD_SCAN_CAP = 5000; // protect API from unbounded scans
+      const batchSize = Math.max(200, Math.min(1000, limit * 5));
+
+      const need = page * limit; // collect enough matches to serve page N
+      const matches: typeof rows = [];
+      let scanOffset = 0;
+
+      const filterHit = (r: typeof rows[number]) => {
+        const tags = classifyChainExchangeTags({ title: r.title ?? "", description: r.content ?? "" });
+        const chainHit = chainList.length > 0
+          ? tags.chainTags.some((t) => chainList.includes(String(t)))
+          : true;
+        const exHit = exchangeList.length > 0
+          ? tags.exchangeTags.some((t) => exchangeList.includes(String(t)))
+          : true;
+        return chainHit && exHit;
+      };
+
+      while (scanOffset < total && scanOffset < HARD_SCAN_CAP && matches.length < need) {
+        const batch = await db
           .select({
             id: postsTable.id,
             title: postsTable.title,
@@ -72,20 +88,24 @@ router.get("/", async (req, res) => {
             importance: postsTable.importance,
           })
           .from(postsTable)
-          .where(whereWithTags)
+          .where(whereBase)
           .orderBy(desc(postsTable.createdAt))
-          .limit(limit)
-          .offset(offset),
-      ]);
-    } catch (e) {
-      // Legacy DB compatibility: if chain_tags/exchange_tags columns don't exist, retry without DB tag filters.
-      if (dbTagConds.length > 0) {
-        [countResult, rows] = await Promise.all([
-          db
-            .select({ count: sql<number>`count(*)` })
-            .from(postsTable)
-            .where(whereBase),
-          db
+          .limit(batchSize)
+          .offset(scanOffset);
+
+        if (batch.length === 0) break;
+        for (const r of batch) {
+          if (filterHit(r)) matches.push(r);
+        }
+        scanOffset += batch.length;
+        if (batch.length < batchSize) break;
+      }
+
+      // If the base set is small, finish scanning to compute an accurate total.
+      // This makes the “共 102 条” label correct and prevents false “no more” states.
+      if (total > 0 && total <= HARD_SCAN_CAP && scanOffset < total) {
+        while (scanOffset < total && scanOffset < HARD_SCAN_CAP) {
+          const batch = await db
             .select({
               id: postsTable.id,
               title: postsTable.title,
@@ -99,35 +119,58 @@ router.get("/", async (req, res) => {
             .from(postsTable)
             .where(whereBase)
             .orderBy(desc(postsTable.createdAt))
-            .limit(limit)
-            .offset(offset),
-        ]);
-      } else {
-        throw e;
+            .limit(batchSize)
+            .offset(scanOffset);
+          if (batch.length === 0) break;
+          for (const r of batch) {
+            if (filterHit(r)) matches.push(r);
+          }
+          scanOffset += batch.length;
+          if (batch.length < batchSize) break;
+        }
       }
-    }
 
-    let total = Number(countResult[0]?.count ?? 0);
-    let filteredRows = rows;
-    // If DB-side filtering isn't available, fall back to in-memory filtering for the current page.
-    // IMPORTANT: Do NOT clamp `total` to this page's match count — that makes the UI stop at 1 page.
-    if ((chainList.length > 0 || exchangeList.length > 0) && dbTagConds.length === 0) {
-      filteredRows = rows.filter((r) => {
-        const tags = classifyChainExchangeTags({ title: r.title ?? "", description: r.content ?? "" });
-        const chainHit = chainList.length > 0
-          ? tags.chainTags.some((t) => chainList.includes(String(t)))
-          : true;
-        const exHit = exchangeList.length > 0
-          ? tags.exchangeTags.some((t) => exchangeList.includes(String(t)))
-          : true;
-        return chainHit && exHit;
+      const tagTotal = total <= HARD_SCAN_CAP ? matches.length : Math.max(matches.length, (page - 1) * limit + matches.slice((page - 1) * limit).length);
+      const paged = matches.slice(offset, offset + limit);
+      const hasMore = total <= HARD_SCAN_CAP
+        ? (offset + paged.length < tagTotal)
+        : (paged.length === limit); // best-effort when we didn't scan everything
+
+      return res.json({
+        items: paged.map((r) => ({
+          id: String(r.id),
+          title: r.title,
+          summary: r.content ? r.content.slice(0, 200) : "",
+          time: r.createdAt.toISOString(),
+          category: r.section || "other",
+          source: r.authorName,
+          link: r.sourceUrl,
+          importance: r.importance ?? null,
+        })),
+        hasMore,
+        total: tagTotal,
       });
     }
-    // When we can't count matches accurately (legacy in-memory filtering), `hasMore`
-    // should reflect whether more DB rows exist to scan.
-    const hasMore = (chainList.length > 0 || exchangeList.length > 0) && dbTagConds.length === 0
-      ? (offset + rows.length < total)
-      : (offset + filteredRows.length < total);
+
+    // ── Normal feed (no chain/exchange) ───────────────────────────────────────
+    rows = await db
+      .select({
+        id: postsTable.id,
+        title: postsTable.title,
+        content: postsTable.content,
+        createdAt: postsTable.createdAt,
+        section: postsTable.section,
+        authorName: postsTable.authorName,
+        sourceUrl: postsTable.sourceUrl,
+        importance: postsTable.importance,
+      })
+      .from(postsTable)
+      .where(whereBase)
+      .orderBy(desc(postsTable.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    const hasMore = offset + rows.length < total;
 
     // Fallback: when DB is empty/unavailable, serve from local JSONL backup (best-effort).
     // This preserves the existing DB-first mechanism while allowing legacy data to show.
@@ -180,7 +223,7 @@ router.get("/", async (req, res) => {
     }
 
     res.json({
-      items: filteredRows.map((r) => ({
+      items: rows.map((r) => ({
         id: String(r.id),
         title: r.title,
         summary: r.content ? r.content.slice(0, 200) : "",
