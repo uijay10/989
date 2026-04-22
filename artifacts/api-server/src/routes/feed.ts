@@ -20,9 +20,7 @@ router.get("/", async (req, res) => {
     const exchangeList = exchange ? exchange.split(",").map(s => s.trim()).filter(Boolean) : [];
     const offset = (page - 1) * limit;
 
-    const conditions: ReturnType<typeof eq>[] = [
-      eq(postsTable.authorType, "ai"),
-    ];
+    const conditions: any[] = [eq(postsTable.authorType, "ai")];
     if (category !== "all") {
       const cats = category.split(",").map(s => s.trim()).filter(Boolean);
       if (cats.length > 1) {
@@ -31,34 +29,89 @@ router.get("/", async (req, res) => {
         conditions.push(eq(postsTable.section, cats[0]!));
       }
     }
-    const where = and(...conditions);
+    const whereBase = and(...conditions);
 
-    const [countResult, rows] = await Promise.all([
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(postsTable)
-        .where(where),
-      db
-        .select({
-          id: postsTable.id,
-          title: postsTable.title,
-          content: postsTable.content,
-          createdAt: postsTable.createdAt,
-          section: postsTable.section,
-          authorName: postsTable.authorName,
-          sourceUrl: postsTable.sourceUrl,
-          importance: postsTable.importance,
-        })
-        .from(postsTable)
-        .where(where)
-        .orderBy(desc(postsTable.createdAt))
-        .limit(limit)
-        .offset(offset),
-    ]);
+    // Prefer DB-side tag filtering when columns exist (fast + correct pagination).
+    // Fallback to in-memory filtering (legacy DB) if these columns are missing.
+    const dbTagConds: any[] = [];
+    if (chainList.length > 0) {
+      dbTagConds.push(sql`chain_tags && ARRAY[${sql.join(chainList.map((c) => sql`${c}`), sql`, `)}]::text[]`);
+    }
+    if (exchangeList.length > 0) {
+      dbTagConds.push(sql`exchange_tags && ARRAY[${sql.join(exchangeList.map((e) => sql`${e}`), sql`, `)}]::text[]`);
+    }
+    const whereWithTags = dbTagConds.length > 0 ? and(whereBase, ...dbTagConds) : whereBase;
+
+    let countResult: Array<{ count: number }> = [];
+    let rows: Array<{
+      id: number;
+      title: string;
+      content: string | null;
+      createdAt: Date;
+      section: string | null;
+      authorName: string | null;
+      sourceUrl: string | null;
+      importance: string | null;
+    }> = [];
+
+    try {
+      [countResult, rows] = await Promise.all([
+        db
+          .select({ count: sql<number>`count(*)` })
+          .from(postsTable)
+          .where(whereWithTags),
+        db
+          .select({
+            id: postsTable.id,
+            title: postsTable.title,
+            content: postsTable.content,
+            createdAt: postsTable.createdAt,
+            section: postsTable.section,
+            authorName: postsTable.authorName,
+            sourceUrl: postsTable.sourceUrl,
+            importance: postsTable.importance,
+          })
+          .from(postsTable)
+          .where(whereWithTags)
+          .orderBy(desc(postsTable.createdAt))
+          .limit(limit)
+          .offset(offset),
+      ]);
+    } catch (e) {
+      // Legacy DB compatibility: if chain_tags/exchange_tags columns don't exist, retry without DB tag filters.
+      if (dbTagConds.length > 0) {
+        [countResult, rows] = await Promise.all([
+          db
+            .select({ count: sql<number>`count(*)` })
+            .from(postsTable)
+            .where(whereBase),
+          db
+            .select({
+              id: postsTable.id,
+              title: postsTable.title,
+              content: postsTable.content,
+              createdAt: postsTable.createdAt,
+              section: postsTable.section,
+              authorName: postsTable.authorName,
+              sourceUrl: postsTable.sourceUrl,
+              importance: postsTable.importance,
+            })
+            .from(postsTable)
+            .where(whereBase)
+            .orderBy(desc(postsTable.createdAt))
+            .limit(limit)
+            .offset(offset),
+        ]);
+      } else {
+        throw e;
+      }
+    }
 
     let total = Number(countResult[0]?.count ?? 0);
     let filteredRows = rows;
-    if (chainList.length > 0 || exchangeList.length > 0) {
+    // If DB-side filtering isn't available, fall back to in-memory filtering for the current page.
+    // IMPORTANT: Do NOT clamp `total` to this page's match count — that makes the UI stop at 1 page.
+    if ((chainList.length > 0 || exchangeList.length > 0) && dbTagConds.length === 0) {
       filteredRows = rows.filter((r) => {
         const tags = classifyChainExchangeTags({ title: r.title ?? "", description: r.content ?? "" });
         const chainHit = chainList.length > 0
@@ -69,10 +122,12 @@ router.get("/", async (req, res) => {
           : true;
         return chainHit && exHit;
       });
-      // total is best-effort when filtering without DB tag columns.
-      total = filteredRows.length + offset; // monotonic enough for UI; hasMore is derived below
     }
-    const hasMore = offset + filteredRows.length < total;
+    // When we can't count matches accurately (legacy in-memory filtering), `hasMore`
+    // should reflect whether more DB rows exist to scan.
+    const hasMore = (chainList.length > 0 || exchangeList.length > 0) && dbTagConds.length === 0
+      ? (offset + rows.length < total)
+      : (offset + filteredRows.length < total);
 
     // Fallback: when DB is empty/unavailable, serve from local JSONL backup (best-effort).
     // This preserves the existing DB-first mechanism while allowing legacy data to show.
