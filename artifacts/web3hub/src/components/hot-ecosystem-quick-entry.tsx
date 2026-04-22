@@ -1,8 +1,6 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useEventFilter } from "@/lib/event-filter-context";
-
-type CountsMap = Record<string, number> | undefined;
 
 type QuickItem = {
   label: string;
@@ -58,7 +56,7 @@ const pillCls =
   "relative px-2.5 py-0.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer " +
   "text-slate-800 hover:text-slate-900 hover:bg-slate-100";
 
-function TagLinksRow({ items, counts }: { items: QuickItem[]; counts?: CountsMap }) {
+function TagLinksRow({ items }: { items: QuickItem[] }) {
   const [location, navigate] = useLocation();
   const { clearEcosystem, setActiveCategory } = useEventFilter();
   const [optimisticHref, setOptimisticHref] = useState<string | null>(null);
@@ -91,40 +89,19 @@ function TagLinksRow({ items, counts }: { items: QuickItem[]; counts?: CountsMap
               : ""
           }`}
         >
-          <span className="flex items-center gap-1.5">
-            <span>{it.label}</span>
-            {counts && typeof counts[it.label] === "number" && (
-              <span
-                className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold leading-none ${
-                  isActiveHref(it.href)
-                    ? "bg-white/20 text-white"
-                    : "bg-slate-200/70 text-slate-600"
-                }`}
-              >
-                {counts[it.label]}
-              </span>
-            )}
-          </span>
+          {it.label}
         </button>
       ))}
     </div>
   );
 }
 
-export function HotEcosystemQuickEntry({ counts }: { counts?: { chains?: CountsMap; exchanges?: CountsMap } }) {
+export function HotEcosystemQuickEntry() {
   const all = [...CHAIN_ITEMS, ...EXCHANGE_ITEMS];
-  const mergedCounts = useMemo(() => {
-    const out: Record<string, number> = {};
-    const ch = counts?.chains ?? {};
-    const ex = counts?.exchanges ?? {};
-    for (const k of Object.keys(ch)) out[k] = Number(ch[k] ?? 0);
-    for (const k of Object.keys(ex)) out[k] = Number(ex[k] ?? 0);
-    return out;
-  }, [counts?.chains, counts?.exchanges]);
   return (
     <div className="w-full">
       <div className="flex flex-col gap-1.5">
-        <TagLinksRow items={all} counts={mergedCounts} />
+        <TagLinksRow items={all} />
       </div>
     </div>
   );

@@ -61,16 +61,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [notifList, setNotifList] = useState<any[]>([]);
   const [unread, setUnread] = useState(0);
   const apiBase = getApiBase();
-  const [navCounts, setNavCounts] = useState<any | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch(`${apiBase}/nav-counts`, { cache: "no-store", headers: { "Cache-Control": "no-cache" } })
-      .then((r) => r.ok ? r.json() : null)
-      .then((d) => { if (!cancelled && d) setNavCounts(d); })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [apiBase]);
 
   useEffect(() => {
     if (!address) return;
@@ -165,15 +155,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
         ? "text-white bg-blue-600 shadow-sm"
         : "text-slate-800 hover:text-slate-900 hover:bg-slate-100"
     );
-  };
-
-  const navCountForHref = (href: string): number | null => {
-    if (!navCounts?.sections) return null;
-    if (href === "/") return Number(navCounts.sections?.["724news"] ?? 0);
-    const m = href.match(/^\/section\/([^/?#]+)$/);
-    const slug = m?.[1] ?? "";
-    if (!slug) return null;
-    return Number(navCounts.sections?.[slug] ?? 0);
   };
 
   const handleNavClick = (e: React.MouseEvent, href: string, _navKey: string) => {
@@ -390,14 +371,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     : "text-slate-800 hover:text-slate-900 hover:bg-slate-100",
                 )}
               >
-                <span className="flex items-center gap-1.5">
-                  <span>{lang === "zh-CN" ? "7*24快讯" : "7*24 News"}</span>
-                  {typeof navCountForHref("/") === "number" && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold leading-none bg-white/20 text-white">
-                      {navCountForHref("/") ?? 0}
-                    </span>
-                  )}
-                </span>
+                {lang === "zh-CN" ? "7*24快讯" : "7*24 News"}
               </button>
               {NAV_KEYS.map(({ key, href }) => (
                 <a
@@ -406,18 +380,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   onClick={(e) => handleNavClick(e, href, key)}
                   className={navLinkClass(href, key)}
                 >
-                  <span className="relative z-10 flex items-center gap-1.5">
-                    <span>{t(key)}</span>
-                    {typeof navCountForHref(href) === "number" && (
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold leading-none ${
-                        (optimisticNavHref ?? location) === href
-                          ? "bg-white/20 text-white"
-                          : "bg-slate-200/70 text-slate-600"
-                      }`}>
-                        {navCountForHref(href) ?? 0}
-                      </span>
-                    )}
-                  </span>
+                  <span className="relative z-10">{t(key)}</span>
                 </a>
               ))}
             </div>
@@ -427,7 +390,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           {showEcosystemStrip && (
             <div className="border-t border-slate-200/60">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1.5">
-                <HotEcosystemQuickEntry counts={{ chains: navCounts?.chains, exchanges: navCounts?.exchanges }} />
+                <HotEcosystemQuickEntry />
               </div>
             </div>
           )}
