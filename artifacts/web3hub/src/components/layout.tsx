@@ -21,6 +21,7 @@ const DATE_LOCALES_LAYOUT: Record<string, Locale> = {
 const NAV_KEYS = [
   { key: "nav_ido",        href: "/section/ido" },
   { key: "nav_funding",    href: "/section/funding" },
+  { key: "nav_vc",         href: "/section/vc" },
   { key: "nav_quest",      href: "/section/quest" },
   { key: "nav_policy",     href: "/section/policy" },
   { key: "nav_testnet",    href: "/section/testnet" },

@@ -40,6 +40,7 @@ const SECTION_EVENT_MAX_AGE_DAYS: Record<string, number> = {
   "devbounty": 30,
   "grant":    60,
   "funding":  30,
+  "vc":       30,
   "industry": 21,
   "724news":  14,
   "flash":    14,
@@ -56,6 +57,17 @@ export const CATEGORY_MAP: Record<string, string> = {
   "IDO/Launchpad": "ido", "IDO": "ido", "Launchpad": "ido",
   "预售": "ido", "主网上线": "ido", "交易所上线": "ido",
   "融资公告": "funding",
+  "VC": "vc",
+  "VC Funding": "vc",
+  "VC投资": "vc",
+  "VC 投资": "vc",
+  "区块链 VC 投资": "vc",
+  "Web3 Venture Capital": "vc",
+  "Web3 VC 投资": "vc",
+  "Blockchain VC": "vc",
+  "Crypto VC": "vc",
+  "Crypto Funding": "vc",
+  "Web3 融资": "vc",
   "空投": "quest", "Airdrop": "quest", "airdrop": "quest",
   "招聘": "recruiting",
   "节点招募": "nodes",
@@ -180,6 +192,16 @@ export const DEFAULT_KEYWORDS = [
   "layer 2","rollup","bridge","lsd","lst","restaking","eigenlayer",
   "perp","perpetual","options","lending","borrowing","yield farming",
   "launchpad","incubator","accelerator","investment","seed round","series",
+  // VC / venture capital keywords (VC module)
+  "venture capital","venture funding","vc","crypto vc","blockchain vc","web3 venture capital",
+  "crypto venture capital","institutional investment","angel investment","token investment",
+  "seed round","pre-seed","series a","series b","early stage investment","funding rounds tracker",
+  "a16z crypto","paradigm","pantera capital","coinbase ventures","polychain capital",
+  "binance labs","sequoia crypto","dragonfly capital","blockchain capital","digital currency group","dcg",
+  "rwa tokenization","real world assets (rwa)","real world assets","web3 infrastructure","ai + crypto",
+  "nft & gaming vc","layer 2 solutions","stablecoin projects","depin investment",
+  "区块链vc","区块链 vc","风投","风险投资","vc投资","vc 投资","加密货币风投","加密vc","加密 vc 机构",
+  "web3 vc 投资","web3 融资","vc 投资动态","区块链初创融资","融资轮次","种子轮融资","早期投资","风险投资轮次",
   "oracle","data feed","cross-chain","interoperability","modular",
   "hiring","job","developer","engineer","ambassador","community","kol",
   "moderator","mod","discord mod","telegram mod","community manager",
@@ -287,6 +309,7 @@ Platform sections (choose 1–2 from this exact list):
 - 测试网: Testnet launch, alpha/beta test, devnet, early access, open/closed beta, testnet reward programs, testnet airdrops.
 - IDO/Launchpad: Token IDO, launchpad listing, token/NFT presale, mainnet launch, exchange listing, TGE.
 - 融资公告: ONLY confirmed VC funding with specific dollar amount AND investor names OR round type (seed, Series A/B).
+- VC: VC investment / venture capital dynamics that are clearly about investors, rounds, funds, or VC firms, but do NOT meet the strict 融资公告 rule (e.g. missing $ amount). Also includes: VC trend analysis, fund launches, investor watchlists, and multi-deal digests.
 - 空投/链上任务: Use "空投" for airdrop campaigns; use "链上任务" for on-chain quests with rewards (Galxe, Layer3, Zealy, Intract, points programs, XP systems, loyalty campaigns).
 - 招聘: Web3/crypto/DeFi job postings — any role at any crypto-native organization.
 - 节点招募: Validator node or miner node recruitment, node operator programs, guides on running a node.
@@ -299,15 +322,16 @@ Routing priority (apply in order):
 1. Testnet network content → 测试网
 2. Token IDO / presale / mainnet / exchange listing → IDO/Launchpad
 3. Confirmed funding with amount + investor → 融资公告
-4. Airdrop campaign → 空投 | On-chain quest with reward → 链上任务
-5. Node operator recruitment → 节点招募
-6. Job posting at crypto org → 招聘
-7. Bug bounty / hackathon / security audit / developer tool → 开发者漏洞奖金
-8. Grant / ecosystem fund / accelerator → 项目捐赠/赞助
-9. Regulatory / government crypto policy → 政策监管
-10. TradFi×Crypto crossover (RWA, ETF, institutional, CBDC, stablecoin regulation) → 快讯
-11. Any other clearly Web3/crypto content → 快讯 (catch-all)
-12. NOT Web3/crypto at all → return [] (reject)
+4. VC investment / VC firms / funding rounds without amount → VC
+5. Airdrop campaign → 空投 | On-chain quest with reward → 链上任务
+6. Node operator recruitment → 节点招募
+7. Job posting at crypto org → 招聘
+8. Bug bounty / hackathon / security audit / developer tool → 开发者漏洞奖金
+9. Grant / ecosystem fund / accelerator → 项目捐赠/赞助
+10. Regulatory / government crypto policy → 政策监管
+11. TradFi×Crypto crossover (RWA, ETF, institutional, CBDC, stablecoin regulation) → 快讯
+12. Any other clearly Web3/crypto content → 快讯 (catch-all)
+13. NOT Web3/crypto at all → return [] (reject)
 
 Task: For each article decide: (a) Is it Web3/crypto? (b) Which section fits best? (c) Extract dates.
 
