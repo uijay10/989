@@ -844,8 +844,8 @@ export function EventList({
             {!loading && (
               <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
                 {zh
-                  ? `已显示 ${filtered.length} / 共 ${serverTotal} 条`
-                  : `Showing ${filtered.length} / ${serverTotal}`}
+                  ? `共 ${filtered.length} 条`
+                  : `Showing ${filtered.length}`}
               </span>
             )}
           </h2>

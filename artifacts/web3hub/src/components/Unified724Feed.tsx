@@ -161,7 +161,6 @@ const Unified724Feed: React.FC = () => {
   const [items, setItems] = useState<FeedItem[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | string>('all');
   const { address } = useWeb3Auth();
@@ -198,12 +197,6 @@ const Unified724Feed: React.FC = () => {
     return out;
   }, [items, activeTab]);
 
-  const displayTotal = useMemo(() => {
-    // For 7×24, always show the server-reported total (raw rows),
-    // not just the currently loaded / deduplicated display length.
-    return total;
-  }, [activeTab, displayItems.length, total]);
-
   const loadFeed = useCallback(async (reset = false) => {
     if (loadingRef.current || (!hasMore && !reset)) return;
 
@@ -223,7 +216,6 @@ const Unified724Feed: React.FC = () => {
 
       if (reset) {
         setItems(incoming);
-        setTotal(data.total || 0);
         setPage(2);
         topIdRef.current = incoming[0]?.id ?? null;
       } else {
@@ -295,7 +287,6 @@ const Unified724Feed: React.FC = () => {
     setItems([]);
     setPage(1);
     setHasMore(true);
-    setTotal(0);
     topIdRef.current = null;
     loadFeed(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -366,7 +357,7 @@ const Unified724Feed: React.FC = () => {
       {/* Total count (server-reported) */}
       <div className="flex items-center justify-end mb-3">
         <span className="text-xs text-gray-400">
-          {lang === "zh-CN" ? `共 ${displayTotal} 条` : `${displayTotal} posts`}
+          {lang === "zh-CN" ? `共 ${displayItems.length} 条` : `${displayItems.length} posts`}
         </span>
       </div>
 
