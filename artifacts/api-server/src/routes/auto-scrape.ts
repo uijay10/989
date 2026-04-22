@@ -160,7 +160,7 @@ router.get("/status", checkScrapeAuth, async (_req, res) => {
     schedule: (() => {
       const g = Number(process.env.SCRAPE_GROQ_INTERVAL_MIN);
       const d = Number(process.env.SCRAPE_DEEPSEEK_INTERVAL_MIN);
-      const gm = Number.isFinite(g) && g > 0 ? Math.round(g) : 30;
+      const gm = Number.isFinite(g) && g > 0 ? Math.round(g) : 20;
       const dm = Number.isFinite(d) && d > 0 ? Math.round(d) : 60;
       const hourlyUsd = getDeepSeekHourlyBudgetUsd();
       return `Groq every ${gm}min wall-clock (freeOnly, Groq keys only) + DeepSeek every ${dm}min wall-clock (paidOnly, ≤$${hourlyUsd.toFixed(4)}/UTC hour, no daily cap). No cross-provider takeover. All articles → section + 7×24快讯.`;
