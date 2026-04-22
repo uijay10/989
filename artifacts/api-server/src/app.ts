@@ -53,6 +53,25 @@ async function readLastAiPostAt(): Promise<Date | null> {
   }
 }
 
+async function logStaleKickEvent(status: "skip" | "error" | "ok", message: string): Promise<void> {
+  try {
+    await db.execute(sql`
+      INSERT INTO scrape_logs (run_id, source_name, source_url, status, items_found, items_saved, error_msg)
+      VALUES (
+        ${`unified_stale_kick_${Date.now()}`},
+        ${"[stale-kick]"},
+        ${""},
+        ${status},
+        0,
+        0,
+        ${message.slice(0, 900)}
+      )
+    `);
+  } catch {
+    // non-fatal
+  }
+}
+
 async function maybeKickStaleUnifiedScrape(reason: "traffic" | "timer"): Promise<void> {
   // throttle: at most once per 15 minutes per process (all reasons share the same throttle)
   if (Date.now() - lastStaleKickMs < 15 * 60 * 1000) return;
@@ -60,8 +79,9 @@ async function maybeKickStaleUnifiedScrape(reason: "traffic" | "timer"): Promise
 
   const staleScrapeMs = Number(process.env.STALE_SCRAPE_MS ?? "");
   const staleAiMs = Number(process.env.STALE_AI_POST_MS ?? "");
-  const scrapeThreshold = Number.isFinite(staleScrapeMs) && staleScrapeMs > 60_000 ? staleScrapeMs : 2 * 60 * 60 * 1000; // 2h
-  const aiThreshold = Number.isFinite(staleAiMs) && staleAiMs > 60_000 ? staleAiMs : 2 * 60 * 60 * 1000; // 2h
+  // Default to 60min so "no new posts for ~1h" self-recovers.
+  const scrapeThreshold = Number.isFinite(staleScrapeMs) && staleScrapeMs > 60_000 ? staleScrapeMs : 60 * 60 * 1000; // 60min
+  const aiThreshold = Number.isFinite(staleAiMs) && staleAiMs > 60_000 ? staleAiMs : 60 * 60 * 1000; // 60min
 
   try {
     const lastScrapeAt = await readLastUnifiedScrapeAt();
@@ -81,8 +101,30 @@ async function maybeKickStaleUnifiedScrape(reason: "traffic" | "timer"): Promise
       await import("./lib/ai-provider");
 
     const freeExhausted = areFreeProvidersDailyExhausted();
+    const canPaid = canRunPaidUnifiedScrape();
+
+    // If the feed is stale, try paid DeepSeek recovery first when available.
+    // This covers cases where Groq isn't "daily exhausted" but still keeps saving 0 due to cooldowns,
+    // provider outages, or overly aggressive dedup/guards.
+    if (aiStale && canPaid) {
+      if (isDeepSeekScrapeRunning()) return;
+      lastStaleKickMs = Date.now();
+      console.log(
+        `[stale-kick:${reason}] AI feed stale — triggering unified DeepSeek scrape — ` +
+          `scrapeStale=${scrapeStale} aiStale=${aiStale}`
+      );
+      void runUnifiedScrape({
+        paidOnly: true,
+        maxArticlesPerRun: Math.min(40, SCRAPE_CONFIG.maxArticlesPerDeepSeekRun),
+      }).catch((e) => {
+        void logStaleKickEvent("error", `deepseek_kick_error: ${e instanceof Error ? e.message : String(e)}`);
+        console.error(`[stale-kick:${reason}] paid scrape error:`, e);
+      });
+      return;
+    }
+
     // When all Groq keys hit daily quota, freeOnly runs save 0 forever — recover with DeepSeek if possible.
-    if (freeExhausted && canRunPaidUnifiedScrape()) {
+    if (freeExhausted && canPaid) {
       if (isDeepSeekScrapeRunning()) return;
       lastStaleKickMs = Date.now();
       console.log(
@@ -95,11 +137,12 @@ async function maybeKickStaleUnifiedScrape(reason: "traffic" | "timer"): Promise
       }).catch((e) => console.error(`[stale-kick:${reason}] paid scrape error:`, e));
       return;
     }
-    if (freeExhausted && !canRunPaidUnifiedScrape()) {
+    if (freeExhausted && !canPaid) {
       const detail = explainWhyPaidDeepSeekBlocked() ?? "unknown";
       console.warn(
         `[stale-kick:${reason}] Groq daily quota exhausted; paid DeepSeek recovery skipped — ${detail}`
       );
+      void logStaleKickEvent("skip", `paid_recovery_skipped: ${detail}`);
       lastStaleKickMs = Date.now();
       return;
     }
