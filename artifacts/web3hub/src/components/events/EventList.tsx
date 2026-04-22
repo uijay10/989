@@ -440,6 +440,47 @@ export function EventList({
 
   const refetch = useCallback(() => setFetchTick(t => t + 1), []);
 
+  // Fetch an accurate server total for the current view (even if we render from cache).
+  // This makes the header count stable without requiring infinite-scroll to finish.
+  useEffect(() => {
+    let cancelled = false;
+
+    const ts = _cacheTs.get(cacheKey) ?? 0;
+    const stale = Date.now() - ts > CACHE_TTL;
+    const cachedTotal = _totalCache.get(cacheKey);
+
+    // If we have a fresh cached total, keep it (avoid extra network).
+    if (!stale && typeof cachedTotal === "number" && cachedTotal > 0) {
+      setServerTotal(cachedTotal);
+      return;
+    }
+
+    const cats = sectionSlug === "quest"
+      ? "quest,airdrop"
+      : sectionSlug === "ido"
+      ? "ido,mainnet,exchange,presale"
+      : sectionSlug
+      ? sectionSlug
+      : "all";
+
+    const extra =
+      (chain ? `&chain=${encodeURIComponent(chain)}` : "") +
+      (exchange ? `&exchange=${encodeURIComponent(exchange)}` : "");
+
+    const url = `${getApiBase()}/feed?category=${encodeURIComponent(cats)}&limit=1&page=1${extra}`;
+    feedGet(url)
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        if (cancelled || !d) return;
+        const total = Number(d.total ?? 0);
+        setServerTotal(total);
+        _totalCache.set(cacheKey, total);
+      })
+      .catch(() => {});
+
+    return () => { cancelled = true; };
+  }, [cacheKey, sectionSlug, chain, exchange]);
+
   // Auto-refresh list while user stays on the page (new AI posts from scraper).
   useEffect(() => {
     const tick = () => {
@@ -802,7 +843,7 @@ export function EventList({
             )}
             {!loading && (
               <span className="text-xs font-normal text-slate-400">
-                {zh ? `共 ${filtered.length} 条` : `${filtered.length} events`}
+                {zh ? `共 ${serverTotal} 条` : `${serverTotal} events`}
               </span>
             )}
           </h2>
