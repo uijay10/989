@@ -456,7 +456,7 @@ if (process.env.NODE_ENV !== "test" && process.env.DISABLE_SCRAPE_CRON !== "true
     return clamp(Math.round(v), lo, hi);
   };
 
-  const groqIntervalMin = parseMinEnv("SCRAPE_GROQ_INTERVAL_MIN", 30, 5, 180);
+  const groqIntervalMin = parseMinEnv("SCRAPE_GROQ_INTERVAL_MIN", 20, 5, 180);
   const dsIntervalMin   = parseMinEnv("SCRAPE_DEEPSEEK_INTERVAL_MIN", 60, 10, 360);
   const GROQ_INTERVAL_MS = groqIntervalMin * 60 * 1000;
   const DS_INTERVAL_MS   = dsIntervalMin * 60 * 1000;
