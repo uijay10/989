@@ -259,98 +259,102 @@ async function ensureTables() {
     }
 
     // ── Startup cleanup: remove stale AI-scraped articles ─────────────────────
-    // Runs on every startup (including production) to purge articles that
-    // pre-date our filtering rules or slipped through before the guards existed.
-    // All DELETEs are idempotent — safe to run repeatedly.
+    // IMPORTANT: This is destructive (DELETE FROM posts). To avoid "articles
+    // occasionally disappearing" after a restart, this cleanup is opt-in.
+    // Enable only when you explicitly intend to purge historical AI posts.
+    const enableStartupCleanup = process.env.ENABLE_STARTUP_AI_POST_CLEANUP === "true";
+    if (enableStartupCleanup) {
+      console.warn("[startup-cleanup] ENABLE_STARTUP_AI_POST_CLEANUP=true — destructive cleanup enabled");
 
-    // 1. event_end_time already passed (event is over)
-    await db.execute(sql`
-      DELETE FROM posts
-      WHERE author_type = 'ai'
-        AND title NOT LIKE '[archived]%'
-        AND event_end_time IS NOT NULL
-        AND event_end_time < NOW() - INTERVAL '1 day'
-        AND expires_at > NOW()
-    `);
+      // 1. event_end_time already passed (event is over)
+      await db.execute(sql`
+        DELETE FROM posts
+        WHERE author_type = 'ai'
+          AND title NOT LIKE '[archived]%'
+          AND event_end_time IS NOT NULL
+          AND event_end_time < NOW() - INTERVAL '1 day'
+          AND expires_at > NOW()
+      `);
 
-    // 2. event_start_time exceeds per-section limits
-    await db.execute(sql`
-      DELETE FROM posts
-      WHERE author_type = 'ai'
-        AND title NOT LIKE '[archived]%'
-        AND expires_at > NOW()
-        AND event_start_time IS NOT NULL
-        AND (
-          (section IN ('quest','airdrop') AND event_start_time < NOW() - INTERVAL '7 days') OR
-          (section IN ('ido','testnet','nodes','devbounty','funding') AND event_start_time < NOW() - INTERVAL '30 days') OR
-          (section = 'grant'    AND event_start_time < NOW() - INTERVAL '60 days') OR
-          (section IN ('industry','policy') AND event_start_time < NOW() - INTERVAL '21 days') OR
-          (section IN ('724news','flash','meme') AND event_start_time < NOW() - INTERVAL '14 days')
-        )
-    `);
-
-    // 2b. Fuzzy title duplicates — same section, within 7 days, similarity > 0.72
-    //     Keep the earliest published article (lowest id); delete later near-duplicates.
-    try {
+      // 2. event_start_time exceeds per-section limits
       await db.execute(sql`
         DELETE FROM posts
         WHERE author_type = 'ai'
           AND title NOT LIKE '[archived]%'
           AND expires_at > NOW()
-          AND id IN (
-            SELECT DISTINCT b.id
-            FROM posts a
-            JOIN posts b ON a.section = b.section
-              AND a.id < b.id
-              AND ABS(EXTRACT(EPOCH FROM (a.created_at - b.created_at))) < 604800
-              AND similarity(LOWER(a.title), LOWER(b.title)) > 0.72
-            WHERE a.expires_at > NOW()
-              AND b.expires_at > NOW()
-              AND a.title NOT LIKE '[archived]%'
-              AND b.title NOT LIKE '[archived]%'
+          AND event_start_time IS NOT NULL
+          AND (
+            (section IN ('quest','airdrop') AND event_start_time < NOW() - INTERVAL '7 days') OR
+            (section IN ('ido','testnet','nodes','devbounty','funding') AND event_start_time < NOW() - INTERVAL '30 days') OR
+            (section = 'grant'    AND event_start_time < NOW() - INTERVAL '60 days') OR
+            (section IN ('industry','policy') AND event_start_time < NOW() - INTERVAL '21 days') OR
+            (section IN ('724news','flash','meme') AND event_start_time < NOW() - INTERVAL '14 days')
           )
       `);
-    } catch {
-      // pg_trgm may not be ready yet on first boot — skip gracefully
-    }
 
-    // 3. URL contains an old year (/2024/ or earlier) for non-quest/airdrop sections
-    await db.execute(sql`
-      DELETE FROM posts
-      WHERE author_type = 'ai'
-        AND title NOT LIKE '[archived]%'
-        AND expires_at > NOW()
-        AND section NOT IN ('quest','airdrop')
-        AND (
-          source_url ~ '/201[0-9]/'
-          OR source_url ~ '/2020/'
-          OR source_url ~ '/2021/'
-          OR source_url ~ '/2022/'
-          OR source_url ~ '/2023/'
-          OR source_url ~ '/2024/'
-          OR source_url ~ '/2025/(0[1-9]|1[0-1])/'
-        )
-    `);
+      // 2b. Fuzzy title duplicates — same section, within 7 days, similarity > 0.72
+      //     Keep the earliest published article (lowest id); delete later near-duplicates.
+      try {
+        await db.execute(sql`
+          DELETE FROM posts
+          WHERE author_type = 'ai'
+            AND title NOT LIKE '[archived]%'
+            AND expires_at > NOW()
+            AND id IN (
+              SELECT DISTINCT b.id
+              FROM posts a
+              JOIN posts b ON a.section = b.section
+                AND a.id < b.id
+                AND ABS(EXTRACT(EPOCH FROM (a.created_at - b.created_at))) < 604800
+                AND similarity(LOWER(a.title), LOWER(b.title)) > 0.72
+              WHERE a.expires_at > NOW()
+                AND b.expires_at > NOW()
+                AND a.title NOT LIKE '[archived]%'
+                AND b.title NOT LIKE '[archived]%'
+            )
+        `);
+      } catch {
+        // pg_trgm may not be ready yet on first boot — skip gracefully
+      }
 
-    // 4. Ensure tombstone records exist for known permanently-stale paragraph.com URLs.
-    //    These keep the source_url guard working even after manual deletions.
-    const staleUrls = [
-      { url: "https://paragraph.com/@blurdao/season-2-rewards-loyalty", title: "[archived] Blur Season 2 Rewards" },
-      { url: "https://paragraph.com/@blurdao/season-3-rewards-loyalty", title: "[archived] Blur Season 3 Rewards" },
-      { url: "https://paragraph.com/@blurdao/season-4-rewards-loyalty", title: "[archived] Blur Season 4 Rewards" },
-    ];
-    for (const { url, title } of staleUrls) {
+      // 3. URL contains an old year (/2024/ or earlier) for non-quest/airdrop sections
       await db.execute(sql`
-        INSERT INTO posts (title, content, section, author_wallet, author_name, author_type,
-                           source_url, ai_confidence, importance, expires_at,
-                           views, likes, comments, kol_like_points, kol_comment_points,
-                           is_pinned, pin_queued)
-        SELECT ${title}, '', 'quest',
-               '0x0000000000000000000000000000000000000000', 'AI System', 'ai',
-               ${url}, 0.0, 'low', NOW() - INTERVAL '1 day',
-               0, 0, 0, 0, 0, false, false
-        WHERE NOT EXISTS (SELECT 1 FROM posts WHERE source_url = ${url})
+        DELETE FROM posts
+        WHERE author_type = 'ai'
+          AND title NOT LIKE '[archived]%'
+          AND expires_at > NOW()
+          AND section NOT IN ('quest','airdrop')
+          AND (
+            source_url ~ '/201[0-9]/'
+            OR source_url ~ '/2020/'
+            OR source_url ~ '/2021/'
+            OR source_url ~ '/2022/'
+            OR source_url ~ '/2023/'
+            OR source_url ~ '/2024/'
+            OR source_url ~ '/2025/(0[1-9]|1[0-1])/'
+          )
       `);
+
+      // 4. Ensure tombstone records exist for known permanently-stale paragraph.com URLs.
+      //    These keep the source_url guard working even after manual deletions.
+      const staleUrls = [
+        { url: "https://paragraph.com/@blurdao/season-2-rewards-loyalty", title: "[archived] Blur Season 2 Rewards" },
+        { url: "https://paragraph.com/@blurdao/season-3-rewards-loyalty", title: "[archived] Blur Season 3 Rewards" },
+        { url: "https://paragraph.com/@blurdao/season-4-rewards-loyalty", title: "[archived] Blur Season 4 Rewards" },
+      ];
+      for (const { url, title } of staleUrls) {
+        await db.execute(sql`
+          INSERT INTO posts (title, content, section, author_wallet, author_name, author_type,
+                             source_url, ai_confidence, importance, expires_at,
+                             views, likes, comments, kol_like_points, kol_comment_points,
+                             is_pinned, pin_queued)
+          SELECT ${title}, '', 'quest',
+                 '0x0000000000000000000000000000000000000000', 'AI System', 'ai',
+                 ${url}, 0.0, 'low', NOW() - INTERVAL '1 day',
+                 0, 0, 0, 0, 0, false, false
+          WHERE NOT EXISTS (SELECT 1 FROM posts WHERE source_url = ${url})
+        `);
+      }
     }
 
     console.log("[db] ensureTables: OK");
