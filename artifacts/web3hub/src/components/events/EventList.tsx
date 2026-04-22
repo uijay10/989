@@ -765,6 +765,15 @@ export function EventList({
     existing._sections = [...merged];
   }
 
+  // Prefer server historical total; fallback to rendered length.
+  // Never show a total smaller than what we already render.
+  const displayTotal = useMemo(() => {
+    const shown = filtered.length;
+    const total = Number.isFinite(serverTotal) ? Number(serverTotal) : 0;
+    if (total <= 0) return shown;
+    return Math.max(total, shown);
+  }, [filtered.length, serverTotal]);
+
   const doAdminPin = async () => {
     if (!address || !pinTargetId) return;
     const hours = Number(pinHours);
@@ -844,8 +853,8 @@ export function EventList({
             {!loading && (
               <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
                 {zh
-                  ? `共 ${filtered.length} 条`
-                  : `Showing ${filtered.length}`}
+                  ? `共 ${displayTotal} 条`
+                  : `${displayTotal} posts`}
               </span>
             )}
           </h2>

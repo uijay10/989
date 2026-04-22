@@ -161,6 +161,7 @@ const Unified724Feed: React.FC = () => {
   const [items, setItems] = useState<FeedItem[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | string>('all');
   const { address } = useWeb3Auth();
@@ -197,6 +198,14 @@ const Unified724Feed: React.FC = () => {
     return out;
   }, [items, activeTab]);
 
+  // Prefer server historical total; fallback to rendered length.
+  // Never show a total smaller than what we already render.
+  const displayTotal = useMemo(() => {
+    const shown = displayItems.length;
+    if (!Number.isFinite(total) || total <= 0) return shown;
+    return Math.max(total, shown);
+  }, [displayItems.length, total]);
+
   const loadFeed = useCallback(async (reset = false) => {
     if (loadingRef.current || (!hasMore && !reset)) return;
 
@@ -213,13 +222,18 @@ const Unified724Feed: React.FC = () => {
       const data = await res.json();
 
       const incoming: FeedItem[] = data.items || [];
+      const incomingTotal = Number(data.total ?? 0);
 
       if (reset) {
         setItems(incoming);
+        // Keep a stable historical total: ignore missing/0 totals.
+        if (incomingTotal > 0) setTotal(incomingTotal);
         setPage(2);
         topIdRef.current = incoming[0]?.id ?? null;
       } else {
         setItems((prev) => [...prev, ...incoming]);
+        // Only update when server returns a meaningful total.
+        if (incomingTotal > 0) setTotal((prev) => Math.max(prev, incomingTotal));
         setPage((prev) => prev + 1);
       }
 
@@ -287,6 +301,7 @@ const Unified724Feed: React.FC = () => {
     setItems([]);
     setPage(1);
     setHasMore(true);
+    setTotal(0);
     topIdRef.current = null;
     loadFeed(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -357,7 +372,7 @@ const Unified724Feed: React.FC = () => {
       {/* Total count (server-reported) */}
       <div className="flex items-center justify-end mb-3">
         <span className="text-xs text-gray-400">
-          {lang === "zh-CN" ? `共 ${displayItems.length} 条` : `${displayItems.length} posts`}
+          {lang === "zh-CN" ? `共 ${displayTotal} 条` : `${displayTotal} posts`}
         </span>
       </div>
 
