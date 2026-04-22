@@ -842,7 +842,7 @@ export function EventList({
               <>🔥 {zh ? "事件聚合" : "Events"}</>
             )}
             {!loading && (
-              <span className="text-xs font-normal text-slate-400">
+              <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
                 {zh ? `共 ${serverTotal} 条` : `${serverTotal} events`}
               </span>
             )}
