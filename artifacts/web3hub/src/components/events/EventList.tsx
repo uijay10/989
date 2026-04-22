@@ -802,7 +802,7 @@ export function EventList({
             )}
             {!loading && (
               <span className="text-xs font-normal text-slate-400">
-                {zh ? `共 ${serverTotal > 0 ? serverTotal : filtered.length} 条` : `${serverTotal > 0 ? serverTotal : filtered.length} events`}
+                {zh ? `共 ${filtered.length} 条` : `${filtered.length} events`}
               </span>
             )}
           </h2>
