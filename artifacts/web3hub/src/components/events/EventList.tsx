@@ -392,8 +392,8 @@ export function EventList({
   const zh = lang === "zh-CN";
   const { address } = useWeb3Auth();
   const adminUser = isAdmin(address);
-  // User requirement: no pinned area anywhere (including homepage).
-  const showPinned = false;
+  // Only admins can see/use pinned posts UI.
+  const showPinned = adminUser;
   const enableHideSource =
     // In chain / exchange views, always show source.
     !(chain?.trim() || exchange?.trim()) &&
