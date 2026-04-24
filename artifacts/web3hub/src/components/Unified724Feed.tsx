@@ -469,7 +469,7 @@ const Unified724Feed: React.FC = () => {
                   href={item.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-blue-500 transition-colors"
+                  className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <span>{lang === "zh-CN" ? "信息来源：" : "Source: "}{srcLabel}</span>

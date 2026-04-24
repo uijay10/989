@@ -296,13 +296,13 @@ function EventRow({
               href={event.source_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+              className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
             >
               <span>{zh ? "信息来源：" : "Source: "}{srcLabel}</span>
               <ExternalLink className="w-3 h-3" />
             </a>
           ) : shouldShowSource && srcLabel ? (
-            <span className="text-xs text-slate-400 dark:text-slate-500">
+            <span className="text-xs text-blue-600 dark:text-blue-400">
               {zh ? "信息来源：" : "Source: "}{srcLabel}
             </span>
           ) : null}
