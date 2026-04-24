@@ -15,7 +15,17 @@
 
 html {
   font-size: 100%;
-  zoom: 0.8;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+#root {
+  width: 125%;
+  min-height: 125vh;
+  transform: scale(0.8);
+  transform-origin: top left;
 }
 
 .scrollbar-none {
