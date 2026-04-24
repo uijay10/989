@@ -51,9 +51,9 @@ const EXCHANGE_ITEMS: QuickItem[] = EXCHANGES.map((name) => ({
   hint: `查看 ${name} 专栏 - Listing、公告与机会`,
 }));
 
-/** 与 layout 第一行主导航同字号（text-[13px] font-semibold） */
+/** 与 layout 第一行主导航同字号（text-[14px] font-semibold） */
 const pillCls =
-  "relative px-2.5 py-0.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer " +
+  "relative px-3 py-1 rounded-full text-[14px] font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer " +
   "text-slate-800 hover:text-slate-900 hover:bg-slate-100";
 
 function TagLinksRow({ items }: { items: QuickItem[] }) {

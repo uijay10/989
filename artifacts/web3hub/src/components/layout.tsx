@@ -150,7 +150,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const navLinkClass = (href: string, _navKey?: string) => {
     const isActive = activeHref === href;
     return cn(
-      "relative px-2.5 py-0.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-all duration-200 group cursor-pointer",
+      "relative px-3 py-1 rounded-full text-[14px] font-semibold whitespace-nowrap transition-all duration-200 group cursor-pointer",
       isActive
         ? "text-white bg-blue-600 shadow-sm"
         : "text-slate-800 hover:text-slate-900 hover:bg-slate-100"
@@ -170,13 +170,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-50 w-full">
         <div className="glass-panel !border-l-0 !border-r-0 !border-t-0 border-b border-border/40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-[70px]">
             {/* Logo — 1.5× bigger */}
             <div className="flex items-center gap-3 shrink-0 min-w-0">
               <a href="/" onClick={e => { e.preventDefault(); clearEcosystem(); setActiveCategory("全部"); setOptimisticNavHref("/"); navigate("/"); }}
                 className="flex items-center gap-2.5 group cursor-pointer min-w-0">
                 <img src="/logo.png" alt="Web3 Release" className="w-10 h-10 object-contain shrink-0" />
-                <span className="font-display font-bold text-2xl tracking-tight text-blue-600 truncate">Web3 Release</span>
+                <span className="font-display font-bold text-[1.65rem] tracking-tight text-blue-600 truncate">Web3 Release</span>
               </a>
               {/* 顶部「回首页」：与 7*24 药丸同款蓝底白字 */}
               <button
@@ -187,7 +187,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   setOptimisticNavHref("/");
                   navigate("/");
                 }}
-                className="shrink-0 px-4 py-1.5 rounded-full text-[13px] font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors"
+                className="shrink-0 px-4 py-1.5 rounded-full text-[14px] font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors"
               >
                 {lang === "en" ? "Home" : t("navHome")}
               </button>
@@ -199,7 +199,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <select
                   value={lang}
                   onChange={(e) => setLang(e.target.value as LangCode)}
-                  className="appearance-none bg-white dark:bg-slate-800 border border-border dark:border-slate-700 rounded-full pl-3 pr-7 py-1.5 text-sm font-semibold text-muted-foreground dark:text-slate-200 hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer transition-all"
+                  className="appearance-none bg-white dark:bg-slate-800 border border-border dark:border-slate-700 rounded-full pl-3 pr-7 py-1.5 text-[15px] font-semibold text-muted-foreground dark:text-slate-200 hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer transition-all"
                 >
                   {LANGUAGES.map((l) => (
                     <option key={l.value} value={l.value}>{l.label}</option>
@@ -304,7 +304,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               {!isConnected ? (
                 <button
                   onClick={() => setWalletModalOpen(true)}
-                  className="px-5 py-2 rounded-full text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm transition-all"
+                  className="px-5 py-2 rounded-full text-[15px] font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm transition-all"
                 >
                   {t("connect")}
                 </button>
@@ -365,7 +365,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 }}
                 className={cn(
                   // 与首页「My Dashboard」同款尺寸与主色药丸样式（home.tsx）
-                  "relative inline-flex items-center justify-center shrink-0 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-200 cursor-pointer",
+                  "relative inline-flex items-center justify-center shrink-0 px-4 py-2 rounded-full text-[15px] font-bold whitespace-nowrap transition-all duration-200 cursor-pointer",
                   activeHref === "/" && activeCategory === "全部"
                     ? "text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-300/50"
                     : "text-slate-800 hover:text-slate-900 hover:bg-slate-100",
