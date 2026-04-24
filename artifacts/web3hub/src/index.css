@@ -49,8 +49,8 @@ body {
 }
 
 @theme inline {
-  --font-sans: "MiSans", "Alibaba PuHuiTi", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
-  --font-display: "MiSans", "Alibaba PuHuiTi", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-sans: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-display: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
   /* Tailwind v4 `--color-*` tokens must be real CSS colors (not bare HSL channels),
@@ -154,10 +154,11 @@ body {
   
   body {
     @apply bg-background text-foreground antialiased font-sans;
-    font-family: "MiSans", "Alibaba PuHuiTi", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
     font-feature-settings: "kern" 1, "tnum" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-synthesis-weight: none;
     font-weight: 300;
     line-height: 1.6;
     color: hsl(220 18% 22%);
@@ -165,7 +166,7 @@ body {
   }
 
   h1, h2, h3 {
-    font-family: "MiSans", "Alibaba PuHuiTi", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
     font-feature-settings: "kern" 1;
     font-weight: 500;
     letter-spacing: -0.025em;
@@ -173,7 +174,7 @@ body {
   }
 
   h4, h5, h6 {
-    font-family: "MiSans", "Alibaba PuHuiTi", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
     font-weight: 400;
     letter-spacing: -0.015em;
   }
@@ -192,7 +193,7 @@ body {
   header nav a,
   header a,
   nav a {
-    font-family: "MiSans", "Alibaba PuHuiTi", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
     font-weight: 300;
   }
 
@@ -228,7 +229,7 @@ body {
 
   /* ── Crypto / DeFi badge style ── */
   .badge-crypto {
-    font-family: "MiSans", "Alibaba PuHuiTi", "Noto Sans SC", "PingFang SC", sans-serif;
+    font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
     font-weight: 400;
     font-size: 0.65rem;
     letter-spacing: 0.08em;
@@ -237,7 +238,7 @@ body {
 
   /* ── Section nav link style (nav bar rows) ── */
   .crypto-nav-link {
-    font-family: "MiSans", "Alibaba PuHuiTi", "Noto Sans SC", "PingFang SC", sans-serif;
+    font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
     font-weight: 300;
     font-size: 0.8125rem;
     letter-spacing: 0.02em;
