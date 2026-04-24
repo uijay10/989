@@ -14,8 +14,7 @@
 }
 
 html {
-  font-size: 90%;
-  zoom: 0.9;
+  font-size: 100%;
 }
 
 .scrollbar-none {
@@ -137,24 +136,27 @@ html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-weight: 400;
+    line-height: 1.6;
+    color: hsl(220 18% 22%);
+    text-rendering: optimizeLegibility;
   }
 
   h1, h2, h3 {
     font-family: "MiSans", "Alibaba PuHuiTi", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
     font-feature-settings: "kern" 1;
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: -0.025em;
-    line-height: 1.35;
+    line-height: 1.4;
   }
 
   h4, h5, h6 {
     font-family: "MiSans", "Alibaba PuHuiTi", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
-    font-weight: 600;
+    font-weight: 500;
     letter-spacing: -0.015em;
   }
 
   p {
-    line-height: 1.65;
+    line-height: 1.7;
     font-weight: 400;
   }
 
@@ -168,7 +170,7 @@ html {
   header a,
   nav a {
     font-family: "MiSans", "Alibaba PuHuiTi", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
-    font-weight: 500;
+    font-weight: 400;
   }
 
   /* Monospace for wallet addresses, hashes, numbers */
@@ -204,7 +206,7 @@ html {
   /* ── Crypto / DeFi badge style ── */
   .badge-crypto {
     font-family: "MiSans", "Alibaba PuHuiTi", "Noto Sans SC", "PingFang SC", sans-serif;
-    font-weight: 600;
+    font-weight: 500;
     font-size: 0.65rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -213,7 +215,7 @@ html {
   /* ── Section nav link style (nav bar rows) ── */
   .crypto-nav-link {
     font-family: "MiSans", "Alibaba PuHuiTi", "Noto Sans SC", "PingFang SC", sans-serif;
-    font-weight: 500;
+    font-weight: 400;
     font-size: 0.8125rem;
     letter-spacing: 0.02em;
     transition: color 0.15s, opacity 0.15s;
