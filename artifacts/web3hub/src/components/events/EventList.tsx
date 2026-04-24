@@ -264,7 +264,7 @@ function EventRow({
 
       {event.description && (
         <div className="mb-2.5">
-          <p ref={descRef} className={`text-base text-slate-600 dark:text-slate-400 leading-relaxed ${expanded ? "" : "line-clamp-3"}`}>
+          <p ref={descRef} className={`text-base text-slate-700 dark:text-slate-300 leading-relaxed font-normal ${expanded ? "" : "line-clamp-3"}`}>
             {event.description}
           </p>
           {(isClamped || expanded) && (
