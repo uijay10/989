@@ -18,14 +18,23 @@ html {
 }
 
 body {
+  zoom: 0.8;
   overflow-x: hidden;
 }
 
 #root {
-  width: 125%;
-  min-height: 125vh;
-  transform: scale(0.8);
-  transform-origin: top left;
+  width: 100%;
+  min-height: 100vh;
+}
+
+@supports not (zoom: 1) {
+  html {
+    font-size: 80%;
+  }
+
+  body {
+    zoom: 1;
+  }
 }
 
 .scrollbar-none {
@@ -146,7 +155,7 @@ body {
     font-feature-settings: "kern" 1, "tnum" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-weight: 400;
+    font-weight: 300;
     line-height: 1.6;
     color: hsl(220 18% 22%);
     text-rendering: optimizeLegibility;
@@ -155,20 +164,20 @@ body {
   h1, h2, h3 {
     font-family: "MiSans", "Alibaba PuHuiTi", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
     font-feature-settings: "kern" 1;
-    font-weight: 600;
+    font-weight: 500;
     letter-spacing: -0.025em;
     line-height: 1.4;
   }
 
   h4, h5, h6 {
     font-family: "MiSans", "Alibaba PuHuiTi", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
-    font-weight: 500;
+    font-weight: 400;
     letter-spacing: -0.015em;
   }
 
   p {
     line-height: 1.7;
-    font-weight: 400;
+    font-weight: 300;
   }
 
   /* Ensure ALL text elements inherit */
@@ -181,7 +190,7 @@ body {
   header a,
   nav a {
     font-family: "MiSans", "Alibaba PuHuiTi", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
-    font-weight: 400;
+    font-weight: 300;
   }
 
   /* Monospace for wallet addresses, hashes, numbers */
@@ -217,7 +226,7 @@ body {
   /* ── Crypto / DeFi badge style ── */
   .badge-crypto {
     font-family: "MiSans", "Alibaba PuHuiTi", "Noto Sans SC", "PingFang SC", sans-serif;
-    font-weight: 500;
+    font-weight: 400;
     font-size: 0.65rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -226,7 +235,7 @@ body {
   /* ── Section nav link style (nav bar rows) ── */
   .crypto-nav-link {
     font-family: "MiSans", "Alibaba PuHuiTi", "Noto Sans SC", "PingFang SC", sans-serif;
-    font-weight: 400;
+    font-weight: 300;
     font-size: 0.8125rem;
     letter-spacing: 0.02em;
     transition: color 0.15s, opacity 0.15s;
