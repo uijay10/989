@@ -11,17 +11,19 @@ export type ChainTag =
 export type ExchangeTag = "Binance" | "OKX" | "Bybit" | "Coinbase" | "Kraken";
 
 /**
- * 公链 / 交易所：导航展示名 + 常用代币符号（如 Solana + SOL）。
- * 短符号走 keywordHit 的单词边界；Base 不附带 ETH，避免 L2 文普遍误标 Ethereum。
- * 其它业务板块（测试网、IDO、融资等）与此无关。
+ * 公链 / 交易所：导航展示名 + 常用代币符号。
+ * 短符号（≤4字符）走单词边界匹配；长词走 includes。
+ * Base 不用裸词，避免普通英文词 "base" 误匹配。
+ * Optimism 不用 "OP"，避免缩写误匹配。
+ * BNB Chain 补充 BSC / Binance Smart Chain 等常见写法。
  */
 export const CHAIN_KEYWORDS: Record<ChainTag, string[]> = {
   Ethereum: ["Ethereum", "ETH"],
   Solana: ["Solana", "SOL"],
-  "BNB Chain": ["BNB Chain", "BNB"],
+  "BNB Chain": ["BNB Chain", "BNBChain", "Binance Smart Chain", "BSC", "BEP-20", "BEP20", "BNB"],
   Arbitrum: ["Arbitrum", "ARB"],
-  Base: ["Base"],
-  Optimism: ["Optimism", "OP"],
+  Base: ["Base chain", "Base network", "Base mainnet", "Base testnet", "Base blockchain", "Base L2", "base.org", "Coinbase Base", "Base ecosystem", "Base protocol"],
+  Optimism: ["Optimism"],
   Sui: ["Sui", "SUI"],
   Aptos: ["Aptos", "APT"],
 };
@@ -76,4 +78,3 @@ export function classifyChainExchangeTags(input: { title?: string; description?:
     exchangeTags: Array.from(new Set(exchangeTags)),
   };
 }
-
