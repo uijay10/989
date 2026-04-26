@@ -6,7 +6,6 @@ export const CHAINS = [
   "BNB Chain",
   "Arbitrum",
   "Base",
-  "Optimism",
   "Sui",
   "Aptos",
 ] as const;
