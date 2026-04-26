@@ -4,7 +4,6 @@ export type ChainTag =
   | "BNB Chain"
   | "Arbitrum"
   | "Base"
-  | "Optimism"
   | "Sui"
   | "Aptos";
 
@@ -23,7 +22,6 @@ export const CHAIN_KEYWORDS: Record<ChainTag, string[]> = {
   "BNB Chain": ["BNB Chain", "BNBChain", "Binance Smart Chain", "BSC", "BEP-20", "BEP20", "BNB"],
   Arbitrum: ["Arbitrum", "ARB"],
   Base: ["Base chain", "Base network", "Base mainnet", "Base testnet", "Base blockchain", "Base L2", "base.org", "Coinbase Base", "Base ecosystem", "Base protocol"],
-  Optimism: ["Optimism"],
   Sui: ["Sui", "SUI"],
   Aptos: ["Aptos", "APT"],
 };

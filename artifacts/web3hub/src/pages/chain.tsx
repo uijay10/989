@@ -46,14 +46,6 @@ const CHAINS: Record<string, { name: string; titleZh: string; titleEn: string; o
       { label: "Base", href: "https://www.base.org/" },
     ],
   },
-  "optimism": {
-    name: "Optimism",
-    titleZh: "Optimism 专栏 - 实时机会与新闻",
-    titleEn: "Optimism Column - Live Opportunities & News",
-    officialLinks: [
-      { label: "Optimism", href: "https://www.optimism.io/" },
-    ],
-  },
   "sui": {
     name: "Sui",
     titleZh: "Sui 专栏 - 实时机会与新闻",
