@@ -585,6 +585,57 @@ if (process.env.NODE_ENV !== "test") {
   console.log(`[stale-kick] timer enabled every ${Math.round(ms / 60000)}min`);
 }
 
+// ── Daily cleanup — keep Neon free tier within limits ────────────────────────
+// Strategy: delete AI posts older than CLEANUP_RETAIN_DAYS (default 45).
+// If total still exceeds CLEANUP_MAX_ROWS (default 6000), drop oldest excess.
+// Runs once at startup (after 2 min delay) then every 24 h.
+if (process.env.NODE_ENV !== "test") {
+  const RETAIN_DAYS = Math.max(7, Number(process.env.CLEANUP_RETAIN_DAYS ?? "45"));
+  const MAX_ROWS    = Math.max(1000, Number(process.env.CLEANUP_MAX_ROWS ?? "6000"));
+
+  const runDailyCleanup = async () => {
+    try {
+      // 1. Delete articles older than RETAIN_DAYS
+      const byAge = await db.execute(sql`
+        DELETE FROM posts
+        WHERE author_type = 'ai'
+          AND created_at < NOW() - (${String(RETAIN_DAYS)}::int * INTERVAL '1 day')
+      `);
+      const deletedByAge = (byAge as unknown as { rowCount?: number }).rowCount ?? 0;
+
+      // 2. If still over MAX_ROWS, delete oldest excess
+      const countRes = await db.execute(sql`SELECT COUNT(*) AS cnt FROM posts WHERE author_type = 'ai'`);
+      const total = Number((countRes.rows[0] as { cnt: string }).cnt);
+      let deletedByCount = 0;
+      if (total > MAX_ROWS) {
+        const excess = total - MAX_ROWS;
+        const byCount = await db.execute(sql`
+          DELETE FROM posts
+          WHERE id IN (
+            SELECT id FROM posts
+            WHERE author_type = 'ai'
+            ORDER BY created_at ASC
+            LIMIT ${String(excess)}
+          )
+        `);
+        deletedByCount = (byCount as unknown as { rowCount?: number }).rowCount ?? 0;
+      }
+
+      const remaining = total - deletedByCount;
+      console.log(
+        `[cleanup] done — age: -${deletedByAge}, overflow: -${deletedByCount}, ` +
+        `remaining: ~${remaining} (retain=${RETAIN_DAYS}d, cap=${MAX_ROWS})`
+      );
+    } catch (e) {
+      console.error("[cleanup] error:", e);
+    }
+  };
+
+  setTimeout(() => { void runDailyCleanup(); }, 2 * 60 * 1000);            // 2 min after boot
+  setInterval(() => { void runDailyCleanup(); }, 24 * 60 * 60 * 1000);    // then every 24 h
+  console.log(`[cleanup] scheduler ready — retain ${RETAIN_DAYS} days, cap ${MAX_ROWS} rows`);
+}
+
 // In production, serve the built frontend SPA
 if (process.env.NODE_ENV === "production") {
   const publicPath = path.resolve(process.cwd(), "artifacts/web3hub/dist/public");
