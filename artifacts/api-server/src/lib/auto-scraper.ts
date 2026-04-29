@@ -201,6 +201,103 @@ export const DEFAULT_SOURCES = [
   { name: "a16z Crypto Blog", url: "https://a16zcrypto.com/feed/", type: "rss", priority: 1 },
   { name: "Paradigm Blog", url: "https://www.paradigm.xyz/feed.xml", type: "rss", priority: 1 },
   { name: "Web3 Foundation Blog", url: "https://medium.com/feed/web3foundation", type: "rss", priority: 1 },
+
+  // ── 测试网 / Testnet ──────────────────────────────────────────────────────────
+  { name: "Monad Labs Blog", url: "https://www.monad.xyz/blog/rss.xml", type: "rss", priority: 1 },
+  { name: "Berachain Blog", url: "https://medium.com/feed/berachain", type: "rss", priority: 1 },
+  { name: "Sei Network Blog", url: "https://blog.sei.io/rss/", type: "rss", priority: 1 },
+  { name: "Initia Blog", url: "https://medium.com/feed/initia-xyz", type: "rss", priority: 1 },
+  { name: "Fuel Network Blog", url: "https://fuel.mirror.xyz/feed/atom", type: "rss", priority: 2 },
+  { name: "Espresso Systems Blog", url: "https://medium.com/feed/espresso-systems", type: "rss", priority: 2 },
+  { name: "Eclipse Blog", url: "https://medium.com/feed/eclipsefdn", type: "rss", priority: 2 },
+  { name: "Ethereum Research", url: "https://ethresear.ch/latest.rss", type: "rss", priority: 2 },
+  { name: "Hyperlane Blog", url: "https://medium.com/feed/hyperlane", type: "rss", priority: 2 },
+  { name: "Taiko Blog", url: "https://taiko.mirror.xyz/feed/atom", type: "rss", priority: 2 },
+
+  // ── IDO / Launchpad ──────────────────────────────────────────────────────────
+  { name: "CoinList Blog", url: "https://blog.coinlist.co/feed/", type: "rss", priority: 1 },
+  { name: "Seedify Blog", url: "https://medium.com/feed/seedify-fund", type: "rss", priority: 1 },
+  { name: "DAO Maker Blog", url: "https://medium.com/feed/dao-maker", type: "rss", priority: 1 },
+  { name: "Polkastarter Blog", url: "https://medium.com/feed/polkastarter", type: "rss", priority: 1 },
+  { name: "Legion Blog", url: "https://medium.com/feed/legion-xyz", type: "rss", priority: 2 },
+  { name: "PinkSale Blog", url: "https://medium.com/feed/pinksale-finance", type: "rss", priority: 2 },
+  { name: "TrustSwap Blog", url: "https://medium.com/feed/trustswap", type: "rss", priority: 2 },
+
+  // ── 融资公告 / Funding ────────────────────────────────────────────────────────
+  { name: "The Block", url: "https://www.theblock.co/rss/", type: "rss", priority: 1 },
+  { name: "TechCrunch Crypto", url: "https://techcrunch.com/category/cryptocurrency/feed/", type: "rss", priority: 1 },
+  { name: "Fortune Crypto", url: "https://fortune.com/section/crypto/feed/", type: "rss", priority: 2 },
+  { name: "Crunchbase News Web3", url: "https://news.crunchbase.com/tag/cryptocurrency/feed/", type: "rss", priority: 2 },
+  { name: "Axios Crypto", url: "https://www.axios.com/technology/crypto/rss", type: "rss", priority: 1 },
+  { name: "The Information Crypto", url: "https://www.theinformation.com/topics/crypto.rss", type: "rss", priority: 2 },
+
+  // ── VC ───────────────────────────────────────────────────────────────────────
+  { name: "Multicoin Capital Blog", url: "https://multicoin.capital/feed/", type: "rss", priority: 1 },
+  { name: "Dragonfly Research", url: "https://medium.com/feed/dragonfly-research", type: "rss", priority: 1 },
+  { name: "Pantera Capital Blog", url: "https://panteracapital.medium.com/feed", type: "rss", priority: 1 },
+  { name: "Electric Capital Blog", url: "https://medium.com/feed/electric-capital", type: "rss", priority: 1 },
+  { name: "Spartan Group Blog", url: "https://medium.com/feed/the-spartan-group", type: "rss", priority: 1 },
+  { name: "Galaxy Digital Research", url: "https://www.galaxy.com/research/rss/", type: "rss", priority: 1 },
+  { name: "Delphi Digital Blog", url: "https://members.delphidigital.io/feed", type: "rss", priority: 2 },
+  { name: "Framework Ventures Blog", url: "https://medium.com/feed/framework-ventures", type: "rss", priority: 2 },
+  { name: "Hack VC Blog", url: "https://medium.com/feed/hack-vc", type: "rss", priority: 2 },
+  { name: "Animoca Brands Blog", url: "https://medium.com/feed/animoca-brands", type: "rss", priority: 2 },
+  { name: "Sino Global Capital Blog", url: "https://medium.com/feed/sino-global-capital", type: "rss", priority: 2 },
+
+  // ── 空投 / 链上任务 (Airdrop / Quest) ───────────────────────────────────────
+  { name: "Airdrops.io", url: "https://airdrops.io/feed/", type: "rss", priority: 1 },
+  { name: "DappRadar Blog", url: "https://dappradar.com/blog/feed", type: "rss", priority: 1 },
+  { name: "Galxe Blog", url: "https://medium.com/feed/galxe", type: "rss", priority: 1 },
+  { name: "Rabbithole Blog", url: "https://medium.com/feed/rabbithole-gg", type: "rss", priority: 2 },
+  { name: "Intract Blog", url: "https://medium.com/feed/intract-xyz", type: "rss", priority: 2 },
+  { name: "Zealy Blog", url: "https://medium.com/feed/zealy", type: "rss", priority: 2 },
+  { name: "CoinMarketCap Airdrops", url: "https://coinmarketcap.com/headlines/airdrop/rss/", type: "rss", priority: 1 },
+
+  // ── 招聘 / Recruiting ────────────────────────────────────────────────────────
+  { name: "Web3 Career Blog", url: "https://web3.career/rss-feed", type: "rss", priority: 1 },
+  { name: "CryptoJobsList", url: "https://cryptojobslist.com/rss.xml", type: "rss", priority: 1 },
+  { name: "Pompcryptojobs", url: "https://cryptojobs.com/feed/", type: "rss", priority: 2 },
+  { name: "Blockchain Works Blog", url: "https://blockchainworks.co/feed/", type: "rss", priority: 2 },
+
+  // ── 节点招募 / Nodes ──────────────────────────────────────────────────────────
+  { name: "Staking Rewards News", url: "https://www.stakingrewards.com/news/feed/", type: "rss", priority: 1 },
+  { name: "Allnodes Blog", url: "https://www.allnodes.com/blog/rss", type: "rss", priority: 2 },
+  { name: "Figment Blog", url: "https://figment.io/insights/rss/", type: "rss", priority: 1 },
+  { name: "P2P Validator Blog", url: "https://p2p.org/economy/feed/", type: "rss", priority: 2 },
+  { name: "Chorus One Blog", url: "https://medium.com/feed/chorus-one", type: "rss", priority: 2 },
+
+  // ── 开发者漏洞奖金 / DevBounty ───────────────────────────────────────────────
+  { name: "Immunefi Blog", url: "https://medium.com/feed/immunefi", type: "rss", priority: 1 },
+  { name: "ETHGlobal Blog", url: "https://ethglobal.com/blog/rss.xml", type: "rss", priority: 1 },
+  { name: "Trail of Bits Blog", url: "https://blog.trailofbits.com/feed/", type: "rss", priority: 1 },
+  { name: "Halborn Blog", url: "https://halborn.com/blog/feed/", type: "rss", priority: 2 },
+  { name: "Hacken Blog", url: "https://hacken.io/discover/feed/", type: "rss", priority: 2 },
+  { name: "OpenZeppelin Blog", url: "https://blog.openzeppelin.com/feed", type: "rss", priority: 1 },
+  { name: "ConsenSys Diligence Blog", url: "https://consensys.io/diligence/blog/feed/", type: "rss", priority: 2 },
+  { name: "HackerNoon Blockchain", url: "https://hackernoon.com/tagged/blockchain/feed", type: "rss", priority: 2 },
+
+  // ── 项目捐赠/赞助 / Grant ─────────────────────────────────────────────────────
+  { name: "Gitcoin Blog", url: "https://www.gitcoin.co/blog/rss", type: "rss", priority: 1 },
+  { name: "NEAR Foundation Blog", url: "https://near.foundation/blog/rss/", type: "rss", priority: 1 },
+  { name: "Filecoin Foundation Blog", url: "https://fil.org/blog/feed/", type: "rss", priority: 1 },
+  { name: "Solana Foundation Blog", url: "https://solana.org/news/feed", type: "rss", priority: 1 },
+  { name: "Optimism Blog", url: "https://optimism.mirror.xyz/feed/atom", type: "rss", priority: 1 },
+  { name: "Uniswap Foundation", url: "https://uniswapfoundation.mirror.xyz/feed/atom", type: "rss", priority: 2 },
+  { name: "Graph Protocol Blog", url: "https://thegraph.com/blog/rss.xml", type: "rss", priority: 2 },
+  { name: "Protocol Labs Blog", url: "https://protocol.ai/blog/index.xml", type: "rss", priority: 2 },
+  { name: "Interchain Foundation Blog", url: "https://medium.com/feed/interchain-foundation", type: "rss", priority: 2 },
+
+  // ── 政策监管 / Policy ─────────────────────────────────────────────────────────
+  { name: "Coin Center", url: "https://www.coincenter.org/feed/", type: "rss", priority: 1 },
+  { name: "CoinDesk Policy", url: "https://www.coindesk.com/policy/feed/", type: "rss", priority: 1 },
+  { name: "Blockworks Policy", url: "https://blockworks.co/category/policy/feed/", type: "rss", priority: 1 },
+  { name: "Chainalysis Blog", url: "https://www.chainalysis.com/blog/feed/", type: "rss", priority: 1 },
+  { name: "Elliptic Blog", url: "https://www.elliptic.co/blog/rss.xml", type: "rss", priority: 2 },
+  { name: "Global Digital Finance", url: "https://www.gdf.io/news/feed/", type: "rss", priority: 2 },
+  { name: "Reuters Crypto", url: "https://feeds.reuters.com/reuters/cryptoNews", type: "rss", priority: 1 },
+  { name: "Financial Times Crypto", url: "https://www.ft.com/cryptocurrencies?format=rss", type: "rss", priority: 1 },
+  { name: "Bloomberg Crypto", url: "https://feeds.bloomberg.com/crypto/news.rss", type: "rss", priority: 1 },
+  { name: "WSJ Crypto", url: "https://feeds.wsj.com/wsj/xml/rss/3_7455.xml", type: "rss", priority: 2 },
 ];
 
 // ── Base keywords (for RSS filter) ────────────────────────────────────────────
