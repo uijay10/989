@@ -324,8 +324,11 @@ interface ProcessedEvent {
   ai_confidence: number;
 }
 
-// ── AI Prompt (v2.1) — strict keyword matching; 快讯 is catch-all ──
-const WEB3_BATCH_PROMPT = `You are a Web3 event extraction expert for web3release.com. VERSION: v2.1_strict_keywords
+// ── AI Prompt (v2.2) — AI classifies freely; server-side code enforces keyword guard ──
+// Keyword verification is handled in enforceKeywordSection() below, NOT in the prompt.
+// This avoids over-filtering: AI sees truncated summaries that may lack exact keywords
+// even when the article clearly belongs to a section.
+const WEB3_BATCH_PROMPT = `You are a Web3 event extraction expert for web3release.com. VERSION: v2.2
 
 CORE RULE:
 ALL content MUST belong to Web3 / blockchain / cryptocurrency / DeFi / NFT / DAO / Layer2 / crypto space.
@@ -343,46 +346,30 @@ Platform sections (choose 1–2 from this exact list):
 - 开发者漏洞奖金: Bug bounties (Immunefi, Code4rena, HackenProof), hackathons (ETHGlobal), security audits, SDK/API releases.
 - 项目捐赠/赞助: Grant programs (Gitcoin, Ethereum/Solana/Arbitrum/Optimism Foundation), ecosystem funds, accelerators.
 - 政策监管: Government/regulatory announcements — SEC, CFTC, EU MiCA, crypto tax laws, exchange licensing, ETF approvals.
-- 快讯: Any clearly Web3/crypto article that does not match the above sections — general crypto news, market updates, protocol news, ecosystem updates, TradFi×Crypto crossover (RWA, ETF, CBDC, institutional).
+- 快讯: Any clearly Web3/crypto article that does not fit a specific section — general crypto news, market updates, protocol news, ecosystem updates, TradFi×Crypto crossover (RWA, ETF, CBDC, institutional). Use as catch-all.
 
-STRICT KEYWORD MATCHING RULE (MANDATORY):
-Before assigning any section except 快讯, you MUST verify that at least one required keyword appears in the article title or description.
-If the required keyword is NOT present → assign 快讯 instead.
-
-Required keywords per section:
-- 测试网       → must contain: "testnet" OR "测试网" OR "devnet" OR "alpha test" OR "beta test" OR "early access"
-- IDO/Launchpad → must contain: "IDO" OR "Launchpad" OR "presale" OR "pre-sale" OR "TGE" OR "mainnet launch" OR "exchange listing" OR "token sale" OR "whitelist"
-- 融资公告     → must contain: "raised" OR "funding" OR "融资" OR "investment round" OR "seed round" OR "Series A" OR "Series B"
-- VC           → must contain: "VC" OR "venture capital" OR "风投" OR "investor" OR "fund" OR "portfolio"
-- 空投/链上任务 → must contain: "airdrop" OR "空投" OR "quest" OR "Galxe" OR "Layer3" OR "Zealy" OR "Intract" OR "points program" OR "XP" OR "claim"
-- 招聘         → must contain: "hiring" OR "job" OR "position" OR "career" OR "recruit" OR "招聘" OR "join our team" OR "we're looking"
-- 节点招募     → must contain: "node" OR "validator" OR "节点" OR "miner" OR "operator"
-- 开发者漏洞奖金 → must contain: "bug bounty" OR "hackathon" OR "漏洞" OR "audit" OR "Immunefi" OR "ETHGlobal" OR "Code4rena" OR "bounty" OR "HackenProof"
-- 项目捐赠/赞助 → must contain: "grant" OR "donate" OR "赞助" OR "捐赠" OR "Gitcoin" OR "ecosystem fund" OR "accelerator" OR "incubator"
-- 政策监管     → must contain: "regulation" OR "regulatory" OR "政策" OR "监管" OR "SEC" OR "CFTC" OR "MiCA" OR "law" OR "bill" OR "legislation" OR "compliance" OR "license"
-
-Routing priority (apply in order, keyword check required for steps 1–10):
-1. Contains testnet keyword → 测试网
-2. Contains IDO/presale/TGE/listing keyword → IDO/Launchpad
-3. Contains funding keyword + dollar amount + investor → 融资公告
-4. Contains VC/venture/fund keyword → VC
-5. Contains airdrop/quest/claim keyword → 空投 or 链上任务
-6. Contains node/validator keyword → 节点招募
-7. Contains hiring/job keyword → 招聘
-8. Contains bug bounty/hackathon keyword → 开发者漏洞奖金
-9. Contains grant/donate keyword → 项目捐赠/赞助
-10. Contains regulation/SEC/CFTC/监管 keyword → 政策监管
-11. Any other clearly Web3/crypto content → 快讯 (catch-all, no keyword check needed)
+Routing priority (apply in order):
+1. Testnet / devnet / alpha-beta launch → 测试网
+2. Token IDO / presale / mainnet / exchange listing / TGE → IDO/Launchpad
+3. Confirmed funding with amount + investor → 融资公告
+4. VC investment / VC firm dynamics → VC
+5. Airdrop campaign → 空投 | On-chain quest with reward → 链上任务
+6. Node operator recruitment → 节点招募
+7. Job posting at crypto org → 招聘
+8. Bug bounty / hackathon / security audit → 开发者漏洞奖金
+9. Grant / ecosystem fund / accelerator → 项目捐赠/赞助
+10. Regulatory / government crypto policy → 政策监管
+11. Any other clearly Web3/crypto content → 快讯 (catch-all)
 12. NOT Web3/crypto at all → reject (return nothing for this item)
 
-Task: For each article decide: (a) Is it Web3/crypto? (b) Which section fits best (keyword present)? (c) Extract dates.
+Task: For each article decide: (a) Is it Web3/crypto? (b) Which section best fits the content? (c) Extract dates.
 
 Output rules:
 - Return ONLY a raw JSON array at the top level. No object wrapper, no markdown, no code blocks.
-- Skip non-Web3 content silently.
+- Skip non-Web3 content silently (return nothing for that item).
 - Return [] only if ALL articles are non-Web3.
-- Every valid Web3 article MUST be included — use 快讯 if no specific section keyword is present.
-- For 快讯 and general news: set start_time and end_time to null. Do NOT copy historical dates from article body into start_time.
+- Every valid Web3 article MUST be included — use 快讯 if no specific section fits.
+- For 快讯 and general news: set start_time and end_time to null. Do NOT copy historical dates from article body.
 - Only set dates for real future/ongoing campaigns (TGE deadlines, claim windows, testnet windows).
 
 Format:
@@ -684,6 +671,42 @@ function mergeAiEventsWithSourceArticles(batch: RssArticleSlice[], rawEvents: Pr
   return out;
 }
 
+// ── Server-side keyword enforcement (runs AFTER AI classification) ────────────
+// The AI may classify an article into a section based on meaning, but if the original
+// article text doesn't contain the required keyword, we demote it to 724news.
+// This is more reliable than asking the AI to do it in the prompt, because the AI
+// only sees a 400-char truncated summary which may omit the keyword.
+
+const SECTION_KEYWORD_REQUIREMENTS: Record<string, string[]> = {
+  testnet:    ["testnet", "测试网", "devnet", "alpha test", "beta test", "early access", "alphanet"],
+  ido:        ["ido", "launchpad", "presale", "pre-sale", "tge", "mainnet launch", "exchange listing", "token sale", "whitelist", "token generation", "public sale", "private sale"],
+  funding:    ["raised", "funding", "融资", "investment round", "seed round", "series a", "series b", "pre-seed", "raises", "raises $", "million", "backed by", "closes $"],
+  vc:         ["vc", "venture capital", "风投", "investor", "fund", "portfolio", "backed by", "investment firm"],
+  quest:      ["airdrop", "空投", "quest", "galxe", "layer3", "zealy", "intract", "points program", "xp program", "claim", "rewards program", "incentive program"],
+  recruiting: ["hiring", " job ", "position", "career", "recruit", "招聘", "join our team", "open role", "we're hiring", "looking for a", "job opening"],
+  nodes:      ["node", "validator", "节点", "miner", "operator program", "run a node", "node operator"],
+  devbounty:  ["bug bounty", "hackathon", "漏洞", "audit", "immunefi", "ethglobal", "code4rena", "bounty program", "hackenproof", "security reward", "vulnerability"],
+  grant:      ["grant", "donate", "赞助", "捐赠", "gitcoin", "ecosystem fund", "accelerator", "incubator", "foundation grant", "rpgf"],
+  policy:     ["regulation", "regulatory", "政策", "监管", "sec", "cftc", "mica", " law ", "bill", "legislation", "compliance", "license", "crypto ban", "crypto tax", "etf approved", "etf rejected"],
+};
+
+function enforceKeywordSection(event: ProcessedEvent, originalText: string): ProcessedEvent {
+  const sections = mapAllCategories(event.category);
+  const primarySection = sections[0];
+  if (!primarySection) return event;
+
+  const requirements = SECTION_KEYWORD_REQUIREMENTS[primarySection];
+  if (!requirements) return event; // 724news, meme, industry — no keyword check needed
+
+  const lower = originalText.toLowerCase();
+  const passes = requirements.some(kw => lower.includes(kw.toLowerCase()));
+  if (passes) return event;
+
+  // Original text missing required keyword → demote to 724news
+  console.log(`[keyword-guard] "${primarySection}" → 724news (no keyword in text): ${event.title.slice(0, 60)}`);
+  return { ...event, category: ["快讯"] };
+}
+
 // ── AI batch processor (unified for all sections) ─────────────────────────────
 async function processBatch(
   articles: RssArticleSlice[],
@@ -714,7 +737,18 @@ async function processBatch(
           `[unified-scrape] AI row count ${coerced.length} vs batch ${articles.length} — merge / RSS fallback will run`,
         );
       }
-      return mergeAiEventsWithSourceArticles(articles, coerced);
+      const merged = mergeAiEventsWithSourceArticles(articles, coerced);
+      // Build a lookup: normalized URL → original RSS article text (title + description)
+      const originalTextByUrl = new Map<string, string>();
+      for (const a of articles) {
+        originalTextByUrl.set(normalizeSourceUrl(a.link), `${a.title} ${a.description ?? ""}`);
+      }
+      // Apply server-side keyword enforcement against the ORIGINAL article text
+      return merged.map((ev) => {
+        const origText = originalTextByUrl.get(normalizeSourceUrl(ev.source_url))
+          ?? `${ev.title} ${ev.description}`;
+        return enforceKeywordSection(ev, origText);
+      });
     }
     if (attempt < retries) await sleep(attempt * 2000);
   }
