@@ -1,0 +1,114 @@
+import requests
+import feedparser
+import json
+from datetime import datetime
+from bs4 import BeautifulSoup
+import time
+
+headers = {
+    "User-Agent": "Mozilla/5.0 (compatible; Web3ReleaseBot/1.0; +https://web3release.com)"
+}
+
+# ====================== 完整 SOURCES（官方 + 第三方聚合 + 社区 + 专业列表） ======================
+SOURCES = [
+    # === CEX 官方 ===
+    {"name": "Binance Announcements", "type": "rss", "url": "https://www.binance.com/en/support/announcement/rss"},
+    {"name": "Bybit Announcements", "type": "page", "url": "https://announcements.bybit.com/en/"},
+    {"name": "OKX Announcements", "type": "page", "url": "https://www.okx.com/help/section/announcements-latest-announcements"},
+
+    # === L1/L2 官方 Blog ===
+    {"name": "Solana News", "type": "rss", "url": "https://solana.com/news/feed"},
+    {"name": "Ethereum Blog", "type": "rss", "url": "https://blog.ethereum.org/feed.xml"},
+    {"name": "Base Blog", "type": "page", "url": "https://blog.base.org/"},
+    {"name": "Arbitrum Blog", "type": "rss", "url": "https://blog.arbitrum.io/feed/"},
+    {"name": "Aptos Currents", "type": "page", "url": "https://aptosnetwork.com/currents"},
+    {"name": "BNB Chain Blog", "type": "rss", "url": "https://www.bnbchain.org/en/blog/feed/"},
+    {"name": "Coinbase Blog", "type": "rss", "url": "https://www.coinbase.com/blog/feed"},
+    {"name": "Kraken Blog", "type": "rss", "url": "https://blog.kraken.com/feed/"},
+
+    # === Medium / 团队 ===
+    {"name": "Mysten Labs (Sui)", "type": "rss", "url": "https://medium.com/feed/mysten-labs"},
+    {"name": "Offchain Labs", "type": "rss", "url": "https://offchainlabs.medium.com/feed"},
+
+    # === 第三方聚合器 & 社区媒体（已重点加入） ===
+    {"name": "CryptoPanic", "type": "rss", "url": "https://cryptopanic.com/posts/feed"},           # 社区投票聚合
+    {"name": "Decrypt", "type": "rss", "url": "https://decrypt.co/feed"},                         # 高质量媒体
+    {"name": "CryptoSlate", "type": "rss", "url": "https://cryptoslate.com/feed/"},               # 专业媒体
+    {"name": "BlockBeats (中文)", "type": "rss", "url": "https://api.theblockbeats.news/v2/rss/all"}, # 中文优质内容
+    {"name": "CoinMarketCal Events", "type": "rss", "url": "https://coinmarketcal.com/rss"},      # 事件日历（IDO/Testnet）
+
+    # === 专业列表（空投/测试网/奖励专用） ===
+    {"name": "AirdropAlert", "type": "rss", "url": "https://airdropalert.com/feed/rssfeed"},      # 空投专业站
+    {"name": "CryptoRank Drophunting", "type": "page", "url": "https://cryptorank.io/drophunting"}, # 测试网/空投列表
+]
+
+def fetch_rss(source):
+    try:
+        feed = feedparser.parse(source["url"])
+        articles = []
+        for entry in feed.entries[:15]:
+            articles.append({
+                "title": entry.title,
+                "description": entry.get("summary") or entry.get("description", ""),
+                "link": entry.link,
+                "published": entry.get("published") or entry.get("updated"),
+                "source": source["name"],
+            })
+        print(f"✅ {source['name']} → {len(articles)} 条")
+        return articles
+    except Exception as e:
+        print(f"❌ {source['name']} RSS 失败: {e}")
+        return []
+
+def scrape_page(source):
+    try:
+        resp = requests.get(source["url"], headers=headers, timeout=20)
+        resp.raise_for_status()
+        soup = BeautifulSoup(resp.text, 'html.parser')
+        
+        articles = []
+        selectors = ['article', '.post', '.blog-post', '.announcement', '.news-item', '.entry', '.card', 'h2']
+        for sel in selectors:
+            items = soup.select(sel)[:12]
+            for item in items:
+                title_tag = item.select_one('h1, h2, h3, .title, a')
+                link_tag = item.select_one('a')
+                if title_tag and link_tag and title_tag.get_text(strip=True):
+                    link = link_tag.get('href', '')
+                    if not link.startswith('http'):
+                        link = source["url"].rstrip('/') + '/' + link.lstrip('/')
+                    articles.append({
+                        "title": title_tag.get_text(strip=True),
+                        "link": link,
+                        "description": item.get_text(strip=True)[:350],
+                        "source": source["name"],
+                        "published": datetime.now().isoformat()
+                    })
+            if articles:
+                break
+        print(f"✅ {source['name']} 页面 → {len(articles)} 条")
+        return articles
+    except Exception as e:
+        print(f"❌ {source['name']} 页面失败: {e}")
+        return []
+
+def fetch_all_sources():
+    all_articles = []
+    for source in SOURCES:
+        if source.get("type") == "rss":
+            articles = fetch_rss(source)
+        else:
+            articles = scrape_page(source)
+        all_articles.extend(articles)
+        time.sleep(1.5)
+    
+    # 去重
+    unique = {a["title"].strip().lower(): a for a in all_articles if a.get("title")}
+    print(f"\n🎉 总共抓取 {len(unique)} 条唯一内容（含第三方聚合器）")
+    return list(unique.values())
+
+if __name__ == "__main__":
+    news = fetch_all_sources()
+    with open("raw_web3_news.json", "w", encoding="utf-8") as f:
+        json.dump(news, f, ensure_ascii=False, indent=2)
+    print("💾 保存完成！可直接喂给 AI Prompt 分类")
