@@ -4,10 +4,33 @@ import { eq, and, desc, sql, inArray, or } from "drizzle-orm";
 import { readArticlesBackupFile } from "../lib/articles-backup";
 import { classifyChainExchangeTags } from "../lib/tag-classifier";
 
+// ── Server-side response cache (avoids repeated Neon round-trips on tab switches) ──
+interface CacheEntry { data: unknown; expiresAt: number }
+const feedCache = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 30_000; // 30 seconds
+
+function getCacheKey(params: Record<string, string | undefined>): string {
+  return JSON.stringify(params);
+}
+function getFromCache(key: string): unknown | null {
+  const entry = feedCache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) { feedCache.delete(key); return null; }
+  return entry.data;
+}
+function setCache(key: string, data: unknown): void {
+  feedCache.set(key, { data, expiresAt: Date.now() + CACHE_TTL_MS });
+  // Prune stale entries if cache grows large
+  if (feedCache.size > 200) {
+    const now = Date.now();
+    for (const [k, v] of feedCache) { if (now > v.expiresAt) feedCache.delete(k); }
+  }
+}
+
 const router: IRouter = Router();
 
 router.get("/", async (req, res) => {
-  // Live feed must never be cached by CDN/browser/proxy — stale JSON looks like "7×24 stopped updating".
+  // Allow short server-side caching; tell browser/CDN not to cache (they'd show stale feed).
   res.setHeader("Cache-Control", "private, no-store, no-cache, must-revalidate");
   res.setHeader("Pragma", "no-cache");
   try {
@@ -19,6 +42,14 @@ router.get("/", async (req, res) => {
     const chainList = chain ? chain.split(",").map(s => s.trim()).filter(Boolean) : [];
     const exchangeList = exchange ? exchange.split(",").map(s => s.trim()).filter(Boolean) : [];
     const offset = (page - 1) * limit;
+
+    // ── Cache check (skip cache for page > 1 or tag filters to keep freshness) ──
+    const cacheKey = getCacheKey({ category, page: String(page), limit: String(limit), chain, exchange });
+    const cached = getFromCache(cacheKey);
+    if (cached) {
+      res.setHeader("X-Feed-Cache", "HIT");
+      return res.json(cached);
+    }
 
     const conditions: any[] = [eq(postsTable.authorType, "ai")];
     if (category !== "all") {
@@ -91,16 +122,10 @@ router.get("/", async (req, res) => {
       });
     }
 
-    // ── Normal feed (no chain/exchange) ───────────────────────────────────────
-    const countResult = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(postsTable)
-      .where(whereBase);
-
-    const total = Number(countResult[0]?.count ?? 0);
-
-    const rows = await db
-      .select({
+    // ── Normal feed (no chain/exchange) — parallel count + data queries ─────
+    const [countResult, rows] = await Promise.all([
+      db.select({ count: sql<number>`count(*)` }).from(postsTable).where(whereBase),
+      db.select({
         id: postsTable.id,
         title: postsTable.title,
         content: postsTable.content,
@@ -110,12 +135,14 @@ router.get("/", async (req, res) => {
         sourceUrl: postsTable.sourceUrl,
         importance: postsTable.importance,
       })
-      .from(postsTable)
-      .where(whereBase)
-      .orderBy(desc(postsTable.createdAt))
-      .limit(limit)
-      .offset(offset);
+        .from(postsTable)
+        .where(whereBase)
+        .orderBy(desc(postsTable.createdAt))
+        .limit(limit)
+        .offset(offset),
+    ]);
 
+    const total = Number(countResult[0]?.count ?? 0);
     const hasMore = offset + rows.length < total;
 
     // Fallback: when DB is empty/unavailable, serve from local JSONL backup (best-effort).
@@ -167,7 +194,7 @@ router.get("/", async (req, res) => {
       });
     }
 
-    res.json({
+    const payload = {
       items: rows.map((r) => ({
         id: String(r.id),
         title: r.title,
@@ -180,7 +207,9 @@ router.get("/", async (req, res) => {
       })),
       hasMore,
       total,
-    });
+    };
+    setCache(cacheKey, payload);
+    res.json(payload);
   } catch (error) {
     console.error("Feed API error:", error);
     res.status(500).json({ error: "Failed to fetch feed" });
