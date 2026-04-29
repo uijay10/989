@@ -1,0 +1,85 @@
+import requests
+import feedparser
+import json
+from datetime import datetime
+from bs4 import BeautifulSoup
+import time
+
+headers = {
+    "User-Agent": "Mozilla/5.0 (compatible; Web3ReleaseBot/1.0; +https://web3release.com)"
+}
+
+# ====================== 完整 RSS / Blog 列表 ======================
+SOURCES = [
+    # === CEX 高价值 Announcements ===
+    {"name": "Binance Announcements", "type": "rss", "url": "https://www.binance.com/en/support/announcement/rss"},
+    {"name": "Bybit Announcements", "type": "rss", "url": "https://announcements.bybit.com/en/feed/"},
+    {"name": "OKX Announcements", "type": "page", "url": "https://www.okx.com/help/section/announcements-latest-announcements"},
+    
+    # === L1 / L2 官方 Blog ===
+    {"name": "Solana News", "type": "rss", "url": "https://solana.com/news/feed"},
+    {"name": "Ethereum Blog", "type": "rss", "url": "https://blog.ethereum.org/feed.xml"},
+    {"name": "Base Blog", "type": "rss", "url": "https://blog.base.org/feed/"},
+    {"name": "Arbitrum Blog", "type": "rss", "url": "https://blog.arbitrum.io/feed/"},
+    {"name": "Aptos Currents", "type": "rss", "url": "https://aptosfoundation.org/currents/feed"},
+    {"name": "BNB Chain Blog", "type": "rss", "url": "https://www.bnbchain.org/en/blog/feed/"},
+    
+    # === Medium / 团队博客 ===
+    {"name": "Mysten Labs (Sui)", "type": "rss", "url": "https://mystenlabs.medium.com/feed"},
+    {"name": "Offchain Labs (Arbitrum)", "type": "rss", "url": "https://offchainlabs.medium.com/feed"},
+    
+    # === 其他高价值 ===
+    {"name": "Coinbase Blog", "type": "rss", "url": "https://www.coinbase.com/blog/feed"},
+    {"name": "Kraken Blog", "type": "rss", "url": "https://blog.kraken.com/feed/"},
+    {"name": "AirdropAlert", "type": "rss", "url": "https://airdropalert.com/feed/rssfeed"},
+    {"name": "CryptoRank Drophunting", "type": "rss", "url": "https://cryptorank.io/drophunting/rss"},
+]
+
+def fetch_rss(source):
+    """抓取 RSS 来源"""
+    try:
+        feed = feedparser.parse(source["url"])
+        articles = []
+        for entry in feed.entries[:15]:  # 每源取前15条
+            articles.append({
+                "title": entry.title,
+                "description": entry.get("summary") or entry.get("description", ""),
+                "link": entry.link,
+                "published": entry.get("published") or entry.get("updated"),
+                "source": source["name"],
+                "raw_content": entry.get("content", [{}])[0].get("value", "") if entry.get("content") else ""
+            })
+        print(f"✅ {source['name']} RSS 抓取 {len(articles)} 条")
+        return articles
+    except Exception as e:
+        print(f"❌ {source['name']} RSS 失败: {e}")
+        return []
+
+def scrape_page(source):
+    """抓取非 RSS 页面（BeautifulSoup）"""
+    try:
+        resp = requests.get(source["url"], headers=headers, timeout=15)
+        resp.raise_for_status()
+        soup = BeautifulSoup(resp.text, 'html.parser')
+        
+        articles = []
+        # 根据不同网站调整选择器（示例，实际可微调）
+        items = soup.select('article, .announcement-item, .post, .blog-item')[:10]
+        for item in items:
+            title_tag = item.select_one('h1, h2, h3, .title, a')
+            link_tag = item.select_one('a')
+            if title_tag and link_tag:
+                articles.append({
+                    "title": title_tag.get_text(strip=True),
+                    "link": link_tag['href'] if link_tag['href'].startswith('http') else "https://www.okx.com" + link_tag['href'],
+                    "description": item.get_text(strip=True)[:300],
+                    "source": source["name"],
+                    "published": datetime.now().isoformat()
+                })
+        print(f"✅ {source['name']} 页面抓取 {len(articles)} 条")
+        return articles
+    except Exception as e:
+        print(f"❌ {source['name']} 页面失败: {e}")
+        return []
+
+def fetch_all_sources

@@ -129,6 +129,7 @@ export const DEFAULT_SOURCES = [
   { name: "Unchained", url: "https://unchainedcrypto.com/feed/", type: "rss", priority: 2 },
   { name: "Bankless", url: "https://www.bankless.com/feed", type: "rss", priority: 1 },
   { name: "Solana Blog", url: "https://solana.com/blog/rss.xml", type: "rss", priority: 1 },
+  { name: "Solana News", url: "https://solana.com/news/feed", type: "rss", priority: 1 },
   { name: "Ethereum Blog", url: "https://blog.ethereum.org/feed.xml", type: "rss", priority: 1 },
   { name: "Polygon Blog", url: "https://polygon.technology/blog/feed", type: "rss", priority: 1 },
   { name: "Binance Blog", url: "https://www.binance.com/en/blog/feed", type: "rss", priority: 1 },
@@ -188,6 +189,8 @@ export const DEFAULT_SOURCES = [
   { name: "EigenLayer Blog", url: "https://www.blog.eigenlayer.xyz/rss/", type: "rss", priority: 1 },
   { name: "Messari Research", url: "https://messari.io/rss/news.xml", type: "rss", priority: 1 },
   { name: "DeFiLlama Blog", url: "https://defillama.com/blog/rss.xml", type: "rss", priority: 1 },
+  // AirdropAlert: dedicated airdrop tracking site — boosts 空投/链上任务 section
+  { name: "AirdropAlert", url: "https://airdropalert.com/feed/rssfeed", type: "rss", priority: 1 },
   { name: "Alchemy Blog", url: "https://www.alchemy.com/blog/rss.xml", type: "rss", priority: 2 },
   { name: "Foresight News", url: "https://foresightnews.pro/rss", type: "rss", priority: 1 },
   { name: "Panews", url: "https://www.panewslab.com/rss", type: "rss", priority: 1 },
