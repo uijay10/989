@@ -1,13 +1,13 @@
 import { Router, type IRouter } from "express";
 import { db, postsTable } from "@workspace/db";
-import { eq, and, desc, sql, inArray } from "drizzle-orm";
+import { eq, and, desc, sql, inArray, or } from "drizzle-orm";
 import { readArticlesBackupFile } from "../lib/articles-backup";
 import { classifyChainExchangeTags } from "../lib/tag-classifier";
 
 const router: IRouter = Router();
 
 router.get("/", async (req, res) => {
-  // Live feed must never be cached by CDN/browser/proxy — stale JSON looks like “7×24 stopped updating”.
+  // Live feed must never be cached by CDN/browser/proxy — stale JSON looks like "7×24 stopped updating".
   res.setHeader("Cache-Control", "private, no-store, no-cache, must-revalidate");
   res.setHeader("Pragma", "no-cache");
   try {
@@ -33,111 +33,50 @@ router.get("/", async (req, res) => {
 
     const wantsTagFilter = chainList.length > 0 || exchangeList.length > 0;
 
-    let countResult: Array<{ count: number }> = [];
-    let rows: Array<{
-      id: number;
-      title: string;
-      content: string | null;
-      createdAt: Date;
-      section: string | null;
-      authorName: string | null;
-      sourceUrl: string | null;
-      importance: string | null;
-    }> = [];
-
-    // Always count the base set first (exact, fast).
-    countResult = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(postsTable)
-      .where(whereBase);
-
-    let total = Number(countResult[0]?.count ?? 0);
-
-    // ── Chain/exchange columns: robust in-memory filtering with scan ──────────
-    // We intentionally DO NOT rely on DB tag columns here because older rows may
-    // not have them backfilled (which would make the column “shrink” to a handful).
+    // ── Chain/exchange filter: SQL array-contains on stored tag columns ──────
+    // chain_tags / exchange_tags are set by the AI scraper at insert time.
+    // Using the DB columns avoids full-table scans and returns results instantly.
     if (wantsTagFilter) {
-      const HARD_SCAN_CAP = 5000; // protect API from unbounded scans
-      const batchSize = Math.max(200, Math.min(1000, limit * 5));
+      const tagConditions: any[] = [...conditions];
 
-      const need = page * limit; // collect enough matches to serve page N
-      const matches: typeof rows = [];
-      let scanOffset = 0;
+      if (chainList.length > 0) {
+        const chainClauses = chainList.map(c =>
+          sql`${postsTable.chainTags} @> ARRAY[${c}]::text[]`
+        );
+        tagConditions.push(chainClauses.length === 1 ? chainClauses[0] : or(...chainClauses));
+      }
+      if (exchangeList.length > 0) {
+        const exClauses = exchangeList.map(e =>
+          sql`${postsTable.exchangeTags} @> ARRAY[${e}]::text[]`
+        );
+        tagConditions.push(exClauses.length === 1 ? exClauses[0] : or(...exClauses));
+      }
+      const whereTagged = and(...tagConditions);
 
-      const filterHit = (r: typeof rows[number]) => {
-        const tags = classifyChainExchangeTags({ title: r.title ?? "", description: r.content ?? "" });
-        const chainHit = chainList.length > 0
-          ? tags.chainTags.some((t) => chainList.includes(String(t)))
-          : true;
-        const exHit = exchangeList.length > 0
-          ? tags.exchangeTags.some((t) => exchangeList.includes(String(t)))
-          : true;
-        return chainHit && exHit;
-      };
-
-      while (scanOffset < total && scanOffset < HARD_SCAN_CAP && matches.length < need) {
-        const batch = await db
-          .select({
-            id: postsTable.id,
-            title: postsTable.title,
-            content: postsTable.content,
-            createdAt: postsTable.createdAt,
-            section: postsTable.section,
-            authorName: postsTable.authorName,
-            sourceUrl: postsTable.sourceUrl,
-            importance: postsTable.importance,
-          })
+      const [countRes, taggedRows] = await Promise.all([
+        db.select({ count: sql<number>`count(*)` }).from(postsTable).where(whereTagged),
+        db.select({
+          id: postsTable.id,
+          title: postsTable.title,
+          content: postsTable.content,
+          createdAt: postsTable.createdAt,
+          section: postsTable.section,
+          authorName: postsTable.authorName,
+          sourceUrl: postsTable.sourceUrl,
+          importance: postsTable.importance,
+        })
           .from(postsTable)
-          .where(whereBase)
+          .where(whereTagged)
           .orderBy(desc(postsTable.createdAt))
-          .limit(batchSize)
-          .offset(scanOffset);
+          .limit(limit)
+          .offset(offset),
+      ]);
 
-        if (batch.length === 0) break;
-        for (const r of batch) {
-          if (filterHit(r)) matches.push(r);
-        }
-        scanOffset += batch.length;
-        if (batch.length < batchSize) break;
-      }
-
-      // If the base set is small, finish scanning to compute an accurate total.
-      // This makes the “共 102 条” label correct and prevents false “no more” states.
-      if (total > 0 && total <= HARD_SCAN_CAP && scanOffset < total) {
-        while (scanOffset < total && scanOffset < HARD_SCAN_CAP) {
-          const batch = await db
-            .select({
-              id: postsTable.id,
-              title: postsTable.title,
-              content: postsTable.content,
-              createdAt: postsTable.createdAt,
-              section: postsTable.section,
-              authorName: postsTable.authorName,
-              sourceUrl: postsTable.sourceUrl,
-              importance: postsTable.importance,
-            })
-            .from(postsTable)
-            .where(whereBase)
-            .orderBy(desc(postsTable.createdAt))
-            .limit(batchSize)
-            .offset(scanOffset);
-          if (batch.length === 0) break;
-          for (const r of batch) {
-            if (filterHit(r)) matches.push(r);
-          }
-          scanOffset += batch.length;
-          if (batch.length < batchSize) break;
-        }
-      }
-
-      const tagTotal = total <= HARD_SCAN_CAP ? matches.length : Math.max(matches.length, (page - 1) * limit + matches.slice((page - 1) * limit).length);
-      const paged = matches.slice(offset, offset + limit);
-      const hasMore = total <= HARD_SCAN_CAP
-        ? (offset + paged.length < tagTotal)
-        : (paged.length === limit); // best-effort when we didn't scan everything
+      const tagTotal = Number(countRes[0]?.count ?? 0);
+      const hasMore = offset + taggedRows.length < tagTotal;
 
       return res.json({
-        items: paged.map((r) => ({
+        items: taggedRows.map((r) => ({
           id: String(r.id),
           title: r.title,
           summary: r.content ? r.content.slice(0, 200) : "",
@@ -153,7 +92,14 @@ router.get("/", async (req, res) => {
     }
 
     // ── Normal feed (no chain/exchange) ───────────────────────────────────────
-    rows = await db
+    const countResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(postsTable)
+      .where(whereBase);
+
+    const total = Number(countResult[0]?.count ?? 0);
+
+    const rows = await db
       .select({
         id: postsTable.id,
         title: postsTable.title,
@@ -173,7 +119,6 @@ router.get("/", async (req, res) => {
     const hasMore = offset + rows.length < total;
 
     // Fallback: when DB is empty/unavailable, serve from local JSONL backup (best-effort).
-    // This preserves the existing DB-first mechanism while allowing legacy data to show.
     if (total === 0 && rows.length === 0) {
       const backup = readArticlesBackupFile()
         .filter((a) => (a.author_type ?? "ai") === "ai")
@@ -215,7 +160,7 @@ router.get("/", async (req, res) => {
           category: r.section || "other",
           source: r.author_name ?? undefined,
           link: r.source_url ?? undefined,
-          importance: (r as any).importance ?? null, // ✅ 新增：fallback 也返回 importance
+          importance: (r as any).importance ?? null,
         })),
         hasMore: backupHasMore,
         total: backupTotal,
