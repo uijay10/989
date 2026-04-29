@@ -132,10 +132,10 @@ export const DEFAULT_SOURCES = [
   { name: "Ethereum Blog", url: "https://blog.ethereum.org/feed.xml", type: "rss", priority: 1 },
   { name: "Polygon Blog", url: "https://polygon.technology/blog/feed", type: "rss", priority: 1 },
   { name: "Binance Blog", url: "https://www.binance.com/en/blog/feed", type: "rss", priority: 1 },
-  { name: "Coinbase Blog", url: "https://www.coinbase.com/blog/feed.xml", type: "rss", priority: 1 },
+  // coinbase.com/blog/feed.xml is 403; working URL added in CEX section below
   { name: "Chainlink Blog", url: "https://blog.chain.link/feed/", type: "rss", priority: 1 },
   // Optimism blog does not currently expose a stable RSS endpoint; rely on Google News + other official sources.
-  { name: "Arbitrum Blog", url: "https://blog.arbitrum.io/rss/", type: "rss", priority: 1 },
+  // Arbitrum Blog added in chain section below (deduplicated)
   { name: "zkSync Blog", url: "https://zksync.io/blog/feed", type: "rss", priority: 1 },
   { name: "Medium Blockchain", url: "https://medium.com/feed/tag/blockchain", type: "rss", priority: 2 },
   { name: "Medium Web3", url: "https://medium.com/feed/tag/web3", type: "rss", priority: 2 },
@@ -148,24 +148,46 @@ export const DEFAULT_SOURCES = [
   { name: "Aave Blog", url: "https://aave.com/blog/feed", type: "rss", priority: 2 },
   { name: "Uniswap Blog", url: "https://uniswap.org/blog/feed", type: "rss", priority: 2 },
   { name: "Avalanche Blog", url: "https://medium.com/feed/avalancheavax", type: "rss", priority: 1 },
-  // Base official publishing is on Mirror (Atom feed).
-  { name: "Base Blog", url: "https://base.mirror.xyz/feed/atom", type: "rss", priority: 1 },
+  // Base: Mirror feed blocked (403); use paragraph.xyz official channel
+  { name: "Base Blog", url: "https://paragraph.xyz/@base.eth/feed", type: "rss", priority: 1 },
   { name: "Starknet Blog", url: "https://medium.com/feed/starkware", type: "rss", priority: 1 },
   { name: "Scroll Blog", url: "https://scroll.io/blog/rss.xml", type: "rss", priority: 1 },
   { name: "Mantle Blog", url: "https://www.mantle.xyz/blog/rss.xml", type: "rss", priority: 1 },
+  // ── BNB Chain ────────────────────────────────────────────────────────────────
   { name: "BNB Chain Blog", url: "https://www.bnbchain.org/en/blog/rss.xml", type: "rss", priority: 1 },
-  { name: "Sui Blog", url: "https://blog.sui.io/feed/", type: "rss", priority: 1 },
-  { name: "Aptos Blog", url: "https://aptosnetwork.com/currents/category/blog/rss.xml", type: "rss", priority: 1 },
+  { name: "BNB Chain Medium", url: "https://medium.com/feed/bnbchain", type: "rss", priority: 1 },
+  // ── Sui ──────────────────────────────────────────────────────────────────────
+  { name: "Sui Blog", url: "https://blog.sui.io/rss/", type: "rss", priority: 1 },
+  { name: "Sui Mysten Labs Medium", url: "https://medium.com/feed/mysten-labs", type: "rss", priority: 1 },
+  // ── Aptos ────────────────────────────────────────────────────────────────────
+  // aptosnetwork.com URL is 404; use the working Medium feeds
+  { name: "Aptos Labs Medium", url: "https://medium.com/feed/aptoslabs", type: "rss", priority: 1 },
+  { name: "Aptos Foundation", url: "https://aptosfoundation.org/currents/rss.xml", type: "rss", priority: 1 },
+  // ── Arbitrum ─────────────────────────────────────────────────────────────────
+  { name: "Arbitrum Blog", url: "https://blog.arbitrum.io/rss/", type: "rss", priority: 1 },
+  { name: "Offchain Labs Medium", url: "https://medium.com/feed/offchainlabs", type: "rss", priority: 1 },
+  // ── Kraken ───────────────────────────────────────────────────────────────────
   { name: "Kraken Blog", url: "https://blog.kraken.com/feed/", type: "rss", priority: 1 },
-  // Bybit does not provide a stable public RSS URL for announcements; use official API endpoint.
+  // ── Binance ──────────────────────────────────────────────────────────────────
+  // Binance Announcements: new listings, Launchpool, HODLer Airdrops, etc.
+  { name: "Binance Announcements", url: "https://www.binance.com/en/support/announcement/rss", type: "rss", priority: 1 },
+  { name: "Binance Square", url: "https://www.binance.com/en/square/rss", type: "rss", priority: 1 },
+  // ── OKX ──────────────────────────────────────────────────────────────────────
+  // OKX Blog RSS is 404; Academy uses redirect (RSS parser follows 302)
+  { name: "OKX Academy", url: "https://www.okx.com/academy/rss", type: "rss", priority: 1 },
+  // ── Coinbase ─────────────────────────────────────────────────────────────────
+  // coinbase.com/blog/feed.xml is 403; use blog.coinbase.com (301 → working)
+  { name: "Coinbase Blog", url: "https://blog.coinbase.com/feed", type: "rss", priority: 1 },
+  // ── Bybit ────────────────────────────────────────────────────────────────────
+  // Bybit does not provide a stable public RSS URL; use official API endpoint.
   { name: "Bybit Announcements", url: "https://api.bybit.com/v5/announcements/index?locale=en-US&limit=50&page=1", type: "bybit-api", priority: 1 },
+  // ── Other chains / DeFi ──────────────────────────────────────────────────────
   { name: "Cosmos Blog", url: "https://blog.cosmos.network/feed", type: "rss", priority: 1 },
   { name: "TON Blog", url: "https://blog.ton.org/rss.xml", type: "rss", priority: 1 },
   { name: "Lido Blog", url: "https://lido.fi/blog/rss.xml", type: "rss", priority: 1 },
   { name: "EigenLayer Blog", url: "https://www.blog.eigenlayer.xyz/rss/", type: "rss", priority: 1 },
   { name: "Messari Research", url: "https://messari.io/rss/news.xml", type: "rss", priority: 1 },
   { name: "DeFiLlama Blog", url: "https://defillama.com/blog/rss.xml", type: "rss", priority: 1 },
-  { name: "OKX Blog", url: "https://www.okx.com/learn/category/news/feed", type: "rss", priority: 1 },
   { name: "Alchemy Blog", url: "https://www.alchemy.com/blog/rss.xml", type: "rss", priority: 2 },
   { name: "Foresight News", url: "https://foresightnews.pro/rss", type: "rss", priority: 1 },
   { name: "Panews", url: "https://www.panewslab.com/rss", type: "rss", priority: 1 },
