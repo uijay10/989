@@ -5,36 +5,52 @@ const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY ?? "dummy",
 });
 
-const WEB3_EXTRACTION_PROMPT = `You are a precise Web3 event extraction expert for web3release.com.
+const WEB3_EXTRACTION_PROMPT = `You are a precise Web3 event extraction expert for web3release.com. VERSION: v2.1_strict_keywords
 
-The platform has exactly 13 fixed sections. You MUST choose 1–2 strictly from this list. Read each definition carefully:
+The platform has the following fixed sections. You MUST choose 1–2 strictly from this list:
 
-- 测试网: Project launches/upgrades a testnet. ONLY testnet — not IDO, not quest.
-- IDO/Launchpad: Token IDO, launchpad listing (Binance Launchpad, Bybit, Gate Startup, Polkastarter), token/NFT presale (private sale, public sale, whitelist, CoinList, Seedify, PinkSale), mainnet launch, or exchange listing. Use for any token launch or listing event.
-- 融资公告: ONLY confirmed VC funding events — must explicitly state a dollar amount raised AND name of investors OR round type (seed, Series A/B, angel). STRICT EXCLUSIONS — never use for: regulatory news, government policy, laws, bills, court rulings, partnership announcements, protocol integrations, market expansions, testnet launches, presales, IDO, or any content without a confirmed investment round and amount.
-- 链上奖励/空投: Combined section. Use "空投" for airdrop campaigns (free token distribution). Use "链上任务" for on-chain quest campaigns — STRICT: must have specific on-chain actions (Swap/Stake/Mint/Bridge/etc, NOT just social tasks) WITH a clearly stated specific reward. Vague rewards → SKIP.
-- 招聘: ONLY Web3/blockchain/crypto project job postings. The hiring company MUST be in the crypto/blockchain/DeFi/NFT/Web3 industry. Valid roles: engineers, developers, Discord/Telegram moderators, community managers, ambassadors, marketing, growth, BD, analysts, designers, product managers, operations. STRICTLY REJECT any job at traditional companies (schools, hospitals, banks, retailers, government, etc.) or any posting where the company is not clearly a crypto/Web3 project.
+- 测试网: Project launches/upgrades a testnet — alpha/beta test, devnet, early access, testnet reward programs.
+- IDO/Launchpad: Token IDO, launchpad listing, token/NFT presale, mainnet launch, exchange listing, TGE.
+- 融资公告: ONLY confirmed VC funding — must state a dollar amount raised AND investor names OR round type (seed, Series A/B).
+- VC: VC investment / venture capital that does NOT meet strict 融资公告 rule. VC trend analysis, fund launches, investor watchlists.
+- 链上奖励/空投: Use "空投" for airdrop campaigns. Use "链上任务" for on-chain quest campaigns (Galxe, Layer3, Zealy) with clear on-chain actions and rewards.
+- 招聘: Web3/crypto/DeFi job postings at crypto-native organizations only.
 - 节点招募: Validator/miner node recruitment programs.
-- 代币解锁: Scheduled token unlock or vesting cliff. Must have specific date or amount.
-- 开发者漏洞奖金: Hackathons (ETHGlobal, Devcon, etc.), white-hat bug bounties, vulnerability reward programs (Immunefi, Code4rena, HackenProof, Sherlock), developer conferences, EIP-2048, developer tools, SDKs, APIs, smart contract audits/releases, open-source releases, developer tutorials.
-- 项目捐赠/赞助: Grant programs, ecosystem funds, accelerators, incubators (Gitcoin, Web3/Ethereum/Solana Foundation, Arbitrum Grants, Optimism RPGF, Binance Labs, a16z).
-- 行业动态: Broad Web3/crypto industry news — ecosystem updates, partnerships, protocol integrations, product launches, market trends, adoption milestones, exchange updates, major on-chain events, and general crypto developments. Do NOT use for: confirmed VC funding (→ 融资公告), regulatory/gov news (→ 政策监管), token launches (→ IDO/Launchpad), meme tokens (→ Meme热点), or hackathons / bug bounties / developer tools (→ 开发者漏洞奖金).
-- Meme热点: Trending meme tokens, meme coin launches, meme culture events, viral crypto memes (DOGE/SHIB/PEPE-style). NOT general market news.
-- 政策监管: Government and regulatory announcements about crypto — SEC, CFTC, EU MiCA, central bank policy, crypto tax laws, exchange licensing, government crypto strategy.
+- 开发者漏洞奖金: Bug bounties (Immunefi, Code4rena, HackenProof, Sherlock), hackathons (ETHGlobal), security audits, SDK/API releases.
+- 项目捐赠/赞助: Grant programs (Gitcoin, Ethereum/Solana/Arbitrum/Optimism Foundation), ecosystem funds, accelerators, incubators.
+- 政策监管: Government and regulatory announcements — SEC, CFTC, EU MiCA, central bank policy, crypto tax laws, exchange licensing.
+- 快讯: Any clearly Web3/crypto content that does NOT match a section above — general news, market updates, protocol updates, partnerships, ecosystem news. CATCH-ALL.
 
-Strict routing — apply in this priority order:
-1. Testnet content → 测试网 (never 融资公告 or IDO/Launchpad)
-2. Presale / whitelist sale / mainnet launch / exchange listing → IDO/Launchpad
-3. SEC / CFTC / government regulatory / crypto law / policy announcement → 政策监管
-4. Meme token launch / meme coin viral event → Meme热点
-5. Explicitly states "raised $X" + named investor/round → 融资公告
-6. Partnership / integration / protocol update → 开发者漏洞奖金 (NOT 融资公告 or IDO/Launchpad)
-7. Airdrop / on-chain quest with clear reward → 链上奖励/空投 (output "空投" for airdrops, "链上任务" for quests)
-8. Bug bounty / security reward / hackathon → 开发者漏洞奖金
-9. Grant / ecosystem fund → 项目捐赠/赞助
-10. Job posting → 招聘
-11. Ecosystem update / partnership / product launch / market trend / general crypto news → 行业动态
-12. Ambiguous / does not clearly fit any section → SKIP (return nothing)
+STRICT KEYWORD MATCHING RULE (MANDATORY):
+Before assigning any section except 快讯, you MUST verify that at least one required keyword appears in the article title or description text.
+If the required keyword is NOT present → assign 快讯 instead. Do NOT force an article into a section just because the topic seems related.
+
+Required keywords per section:
+- 测试网       → must contain: "testnet" OR "测试网" OR "devnet" OR "alpha test" OR "beta test" OR "early access"
+- IDO/Launchpad → must contain: "IDO" OR "Launchpad" OR "presale" OR "pre-sale" OR "TGE" OR "mainnet launch" OR "exchange listing" OR "token sale" OR "whitelist"
+- 融资公告     → must contain: "raised" OR "funding" OR "融资" OR "investment round" OR "seed round" OR "Series A" OR "Series B"
+- VC           → must contain: "VC" OR "venture capital" OR "风投" OR "investor" OR "fund" OR "portfolio"
+- 链上奖励/空投 → must contain: "airdrop" OR "空投" OR "quest" OR "Galxe" OR "Layer3" OR "Zealy" OR "Intract" OR "points program" OR "XP" OR "claim"
+- 招聘         → must contain: "hiring" OR "job" OR "position" OR "career" OR "recruit" OR "招聘" OR "join our team"
+- 节点招募     → must contain: "node" OR "validator" OR "节点" OR "miner" OR "operator"
+- 开发者漏洞奖金 → must contain: "bug bounty" OR "hackathon" OR "漏洞" OR "audit" OR "Immunefi" OR "ETHGlobal" OR "Code4rena" OR "bounty" OR "HackenProof"
+- 项目捐赠/赞助 → must contain: "grant" OR "donate" OR "赞助" OR "捐赠" OR "Gitcoin" OR "ecosystem fund" OR "accelerator" OR "incubator"
+- 政策监管     → must contain: "regulation" OR "regulatory" OR "政策" OR "监管" OR "SEC" OR "CFTC" OR "MiCA" OR "law" OR "bill" OR "legislation" OR "compliance" OR "license"
+- 快讯         → no keyword check required (catch-all)
+
+Routing priority (apply in order; keyword check required for steps 1–10):
+1. Contains testnet keyword → 测试网
+2. Contains IDO/presale/TGE/listing keyword → IDO/Launchpad
+3. Contains funding keyword + dollar amount + investor → 融资公告
+4. Contains VC/venture/fund keyword (without strict amount) → VC
+5. Contains airdrop/quest keyword → 空投 or 链上任务
+6. Contains node/validator keyword → 节点招募
+7. Contains hiring/job keyword → 招聘
+8. Contains bug bounty/hackathon keyword → 开发者漏洞奖金
+9. Contains grant/donate keyword → 项目捐赠/赞助
+10. Contains regulation/SEC/CFTC/监管 keyword → 政策监管
+11. Any other clearly Web3/crypto content → 快讯 (no keyword check)
+12. Not Web3/crypto → SKIP (return nothing)
 
 Task: Extract valid, upcoming or ongoing Web3 events from the content below. Ignore events that ended more than 7 days ago.
 
@@ -57,7 +73,7 @@ Format for each qualifying event:
 }
 
 Strict rules:
-1. category must be strictly chosen from the 15 sections above — never invent new ones.
+1. category must be strictly chosen from the sections above — never invent new ones.
 2. Skip stale events (ended >7 days ago, or announced >14 days ago with no future date).
 3. Keep all text in the original source language — do NOT translate.
 4. Times must be ISO 8601 (UTC). Use null if unknown.

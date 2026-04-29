@@ -297,8 +297,8 @@ interface ProcessedEvent {
   ai_confidence: number;
 }
 
-// ── AI Prompt (v2.0) — 快讯 is catch-all for web3 content without specific section ──
-const WEB3_BATCH_PROMPT = `You are a Web3 event extraction expert for web3release.com. VERSION: v2.0_migrated_2026
+// ── AI Prompt (v2.1) — strict keyword matching; 快讯 is catch-all ──
+const WEB3_BATCH_PROMPT = `You are a Web3 event extraction expert for web3release.com. VERSION: v2.1_strict_keywords
 
 CORE RULE:
 ALL content MUST belong to Web3 / blockchain / cryptocurrency / DeFi / NFT / DAO / Layer2 / crypto space.
@@ -306,41 +306,57 @@ Reject non-crypto content entirely.
 
 Platform sections (choose 1–2 from this exact list):
 
-- 测试网: Testnet launch, alpha/beta test, devnet, early access, open/closed beta, testnet reward programs, testnet airdrops.
+- 测试网: Testnet launch, alpha/beta test, devnet, early access, testnet reward programs.
 - IDO/Launchpad: Token IDO, launchpad listing, token/NFT presale, mainnet launch, exchange listing, TGE.
 - 融资公告: ONLY confirmed VC funding with specific dollar amount AND investor names OR round type (seed, Series A/B).
-- VC: VC investment / venture capital dynamics that are clearly about investors, rounds, funds, or VC firms, but do NOT meet the strict 融资公告 rule (e.g. missing $ amount). Also includes: VC trend analysis, fund launches, investor watchlists, and multi-deal digests.
-- 空投/链上任务: Use "空投" for airdrop campaigns; use "链上任务" for on-chain quests with rewards (Galxe, Layer3, Zealy, Intract, points programs, XP systems, loyalty campaigns).
-- 招聘: Web3/crypto/DeFi job postings — any role at any crypto-native organization.
-- 节点招募: Validator node or miner node recruitment, node operator programs, guides on running a node.
-- 开发者漏洞奖金: Bug bounties (Immunefi, Code4rena, HackenProof), hackathons (ETHGlobal), security audits, developer grants, SDK/API releases.
-- 项目捐赠/赞助: Grant programs (Gitcoin, Ethereum/Solana/Arbitrum/Optimism Foundation), ecosystem funds, accelerators, incubators.
+- VC: VC investment / venture capital dynamics — investor rounds, fund launches, VC trend analysis, multi-deal digests.
+- 空投/链上任务: Use "空投" for airdrop campaigns; use "链上任务" for on-chain quests with specific rewards (Galxe, Layer3, Zealy, Intract, points/XP programs).
+- 招聘: Web3/crypto/DeFi job postings — any role at a crypto-native organization.
+- 节点招募: Validator node or miner node recruitment, node operator programs.
+- 开发者漏洞奖金: Bug bounties (Immunefi, Code4rena, HackenProof), hackathons (ETHGlobal), security audits, SDK/API releases.
+- 项目捐赠/赞助: Grant programs (Gitcoin, Ethereum/Solana/Arbitrum/Optimism Foundation), ecosystem funds, accelerators.
 - 政策监管: Government/regulatory announcements — SEC, CFTC, EU MiCA, crypto tax laws, exchange licensing, ETF approvals.
-- 快讯: (A) TradFi × Crypto crossover: RWA tokenization, institutional adoption, ETFs, stablecoin regulation, CBDC, tokenized securities. (B) Any clearly Web3/crypto article that does not fit the above sections — use 快讯 as the catch-all for general crypto news, market updates, protocol news, ecosystem updates, or any other crypto content.
+- 快讯: Any clearly Web3/crypto article that does not match the above sections — general crypto news, market updates, protocol news, ecosystem updates, TradFi×Crypto crossover (RWA, ETF, CBDC, institutional).
 
-Routing priority (apply in order):
-1. Testnet network content → 测试网
-2. Token IDO / presale / mainnet / exchange listing → IDO/Launchpad
-3. Confirmed funding with amount + investor → 融资公告
-4. VC investment / VC firms / funding rounds without amount → VC
-5. Airdrop campaign → 空投 | On-chain quest with reward → 链上任务
-6. Node operator recruitment → 节点招募
-7. Job posting at crypto org → 招聘
-8. Bug bounty / hackathon / security audit / developer tool → 开发者漏洞奖金
-9. Grant / ecosystem fund / accelerator → 项目捐赠/赞助
-10. Regulatory / government crypto policy → 政策监管
-11. TradFi×Crypto crossover (RWA, ETF, institutional, CBDC, stablecoin regulation) → 快讯
-12. Any other clearly Web3/crypto content → 快讯 (catch-all)
-13. NOT Web3/crypto at all → return [] (reject)
+STRICT KEYWORD MATCHING RULE (MANDATORY):
+Before assigning any section except 快讯, you MUST verify that at least one required keyword appears in the article title or description.
+If the required keyword is NOT present → assign 快讯 instead.
 
-Task: For each article decide: (a) Is it Web3/crypto? (b) Which section fits best? (c) Extract dates.
+Required keywords per section:
+- 测试网       → must contain: "testnet" OR "测试网" OR "devnet" OR "alpha test" OR "beta test" OR "early access"
+- IDO/Launchpad → must contain: "IDO" OR "Launchpad" OR "presale" OR "pre-sale" OR "TGE" OR "mainnet launch" OR "exchange listing" OR "token sale" OR "whitelist"
+- 融资公告     → must contain: "raised" OR "funding" OR "融资" OR "investment round" OR "seed round" OR "Series A" OR "Series B"
+- VC           → must contain: "VC" OR "venture capital" OR "风投" OR "investor" OR "fund" OR "portfolio"
+- 空投/链上任务 → must contain: "airdrop" OR "空投" OR "quest" OR "Galxe" OR "Layer3" OR "Zealy" OR "Intract" OR "points program" OR "XP" OR "claim"
+- 招聘         → must contain: "hiring" OR "job" OR "position" OR "career" OR "recruit" OR "招聘" OR "join our team" OR "we're looking"
+- 节点招募     → must contain: "node" OR "validator" OR "节点" OR "miner" OR "operator"
+- 开发者漏洞奖金 → must contain: "bug bounty" OR "hackathon" OR "漏洞" OR "audit" OR "Immunefi" OR "ETHGlobal" OR "Code4rena" OR "bounty" OR "HackenProof"
+- 项目捐赠/赞助 → must contain: "grant" OR "donate" OR "赞助" OR "捐赠" OR "Gitcoin" OR "ecosystem fund" OR "accelerator" OR "incubator"
+- 政策监管     → must contain: "regulation" OR "regulatory" OR "政策" OR "监管" OR "SEC" OR "CFTC" OR "MiCA" OR "law" OR "bill" OR "legislation" OR "compliance" OR "license"
+
+Routing priority (apply in order, keyword check required for steps 1–10):
+1. Contains testnet keyword → 测试网
+2. Contains IDO/presale/TGE/listing keyword → IDO/Launchpad
+3. Contains funding keyword + dollar amount + investor → 融资公告
+4. Contains VC/venture/fund keyword → VC
+5. Contains airdrop/quest/claim keyword → 空投 or 链上任务
+6. Contains node/validator keyword → 节点招募
+7. Contains hiring/job keyword → 招聘
+8. Contains bug bounty/hackathon keyword → 开发者漏洞奖金
+9. Contains grant/donate keyword → 项目捐赠/赞助
+10. Contains regulation/SEC/CFTC/监管 keyword → 政策监管
+11. Any other clearly Web3/crypto content → 快讯 (catch-all, no keyword check needed)
+12. NOT Web3/crypto at all → reject (return nothing for this item)
+
+Task: For each article decide: (a) Is it Web3/crypto? (b) Which section fits best (keyword present)? (c) Extract dates.
 
 Output rules:
-- Return ONLY a raw JSON array at the top level. Do not wrap the array in an object (no "articles" / "data" wrapper) — no markdown, no code blocks
-- Skip non-Web3 content silently (return nothing for that item)
-- Return [] only if ALL articles are non-Web3
-- Web3 articles MUST always be included — use 快讯 if no specific section fits
-- For 快讯 (and other general market/protocol news): set start_time and end_time to null. Do NOT copy historical dates mentioned inside the article (e.g. \"ETF approved in 2024\") into start_time — those are narrative context, not this post's event window. Only set dates for real future/ongoing campaigns (TGE deadlines, claim windows, testnet windows).
+- Return ONLY a raw JSON array at the top level. No object wrapper, no markdown, no code blocks.
+- Skip non-Web3 content silently.
+- Return [] only if ALL articles are non-Web3.
+- Every valid Web3 article MUST be included — use 快讯 if no specific section keyword is present.
+- For 快讯 and general news: set start_time and end_time to null. Do NOT copy historical dates from article body into start_time.
+- Only set dates for real future/ongoing campaigns (TGE deadlines, claim windows, testnet windows).
 
 Format:
 {
