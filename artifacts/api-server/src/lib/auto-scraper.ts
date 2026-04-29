@@ -191,6 +191,8 @@ export const DEFAULT_SOURCES = [
   { name: "DeFiLlama Blog", url: "https://defillama.com/blog/rss.xml", type: "rss", priority: 1 },
   // AirdropAlert: dedicated airdrop tracking site — boosts 空投/链上任务 section
   { name: "AirdropAlert", url: "https://airdropalert.com/feed/rssfeed", type: "rss", priority: 1 },
+  // Web3 Is Going Great: curated Web3 event tracker — good for 政策监管 and 行业动态
+  { name: "Web3 Is Going Great", url: "https://www.web3isgoinggreat.com/feed", type: "rss", priority: 2 },
   { name: "Alchemy Blog", url: "https://www.alchemy.com/blog/rss.xml", type: "rss", priority: 2 },
   { name: "Foresight News", url: "https://foresightnews.pro/rss", type: "rss", priority: 1 },
   { name: "Panews", url: "https://www.panewslab.com/rss", type: "rss", priority: 1 },
