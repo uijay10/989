@@ -587,11 +587,11 @@ if (process.env.NODE_ENV !== "test") {
 
 // ── Daily cleanup — keep Neon free tier within limits ────────────────────────
 // Strategy: delete AI posts older than CLEANUP_RETAIN_DAYS (default 45).
-// If total still exceeds CLEANUP_MAX_ROWS (default 6000), drop oldest excess.
+// If total still exceeds CLEANUP_MAX_ROWS (default 80000), drop oldest excess.
 // Runs once at startup (after 2 min delay) then every 24 h.
 if (process.env.NODE_ENV !== "test") {
   const RETAIN_DAYS = Math.max(7, Number(process.env.CLEANUP_RETAIN_DAYS ?? "45"));
-  const MAX_ROWS    = Math.max(1000, Number(process.env.CLEANUP_MAX_ROWS ?? "6000"));
+  const MAX_ROWS    = Math.max(1000, Number(process.env.CLEANUP_MAX_ROWS ?? "80000"));
 
   const runDailyCleanup = async () => {
     try {
