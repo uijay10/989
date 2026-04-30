@@ -48,6 +48,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const showEcosystemStrip = true;
   const [walletModalOpen, setWalletModalOpen] = useState(false);
   const [whitepaperOpen, setWhitepaperOpen] = useState(false);
+  const [teamOpen, setTeamOpen] = useState(false);
   const { t, lang, setLang } = useLang();
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -404,6 +405,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {/* ── Floating Right Panel: Social + Scroll ─── */}
       <div className="fixed right-4 bottom-8 z-50 flex flex-col gap-1.5">
+        {/* Team */}
+        <button
+          type="button"
+          onClick={() => setTeamOpen(true)}
+          title="Team"
+          className="w-9 h-9 rounded-lg bg-slate-600/75 hover:bg-slate-700/90 flex items-center justify-center transition-all shadow-md backdrop-blur-sm group"
+        >
+          <svg viewBox="0 0 24 24" className="w-4 h-4 stroke-white/80 group-hover:stroke-white fill-none transition-colors" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="9" cy="7" r="3" />
+            <path d="M3 20c0-3.314 2.686-6 6-6s6 2.686 6 6" />
+            <circle cx="17" cy="8" r="2" />
+            <path d="M21 20c0-2.209-1.791-4-4-4" />
+          </svg>
+        </button>
+
         {/* Disclaimer */}
         <button
           type="button"
@@ -475,6 +491,61 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </svg>
         </button>
       </div>
+
+      {/* ── Team Modal ── */}
+      {teamOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setTeamOpen(false)}>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg border border-border/50 dark:border-slate-800" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 stroke-blue-600 dark:stroke-blue-400 fill-none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="9" cy="7" r="3" /><path d="M3 20c0-3.314 2.686-6 6-6s6 2.686 6 6" /><circle cx="17" cy="8" r="2" /><path d="M21 20c0-2.209-1.791-4-4-4" />
+                  </svg>
+                </div>
+                <p className="font-semibold text-sm text-foreground">Team</p>
+              </div>
+              <button onClick={() => setTeamOpen(false)} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-muted dark:hover:bg-slate-800 transition-colors text-muted-foreground hover:text-foreground">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {/* Team member card */}
+            <div className="px-6 py-5">
+              <div className="flex items-start gap-4">
+                {/* Avatar placeholder */}
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0 shadow-md">
+                  <span className="text-white font-bold text-xl">J</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-base text-foreground leading-tight">Jove</h3>
+                  <span className="inline-block mt-0.5 mb-3 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-full">
+                    Founder &amp; CEO
+                  </span>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    From China. 5 years of experience in journalism (3 of which were professional writing), 2 years of programming experience, and 8 years of in-depth experience in the cryptocurrency field.
+                  </p>
+                  <p className="text-sm text-muted-foreground leading-relaxed mt-2">
+                    Has participated in the development of over 100 Web3 projects and personally oversaw the entire project development process — product design, technology development, content aggregation, operation and promotion.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-5 grid grid-cols-3 gap-3 text-center">
+                {[
+                  { value: "8yr", label: "Crypto Experience" },
+                  { value: "100+", label: "Web3 Projects" },
+                  { value: "5yr", label: "Journalism" },
+                ].map(stat => (
+                  <div key={stat.label} className="bg-muted/50 dark:bg-slate-800/50 rounded-xl py-3 px-2">
+                    <p className="font-bold text-base text-foreground">{stat.value}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 leading-tight">{stat.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Disclaimer Modal ── */}
       {whitepaperOpen && (
