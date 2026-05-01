@@ -393,7 +393,7 @@ const Unified724Feed: React.FC = () => {
             !!summary &&
             /(?:\.{3,}|…{2,}|……|…\s*$|\.\.\.\s*$)$/u.test(summary);
           const srcLabel = formatSourceLabel(item.link);
-          const shouldShowSource = (!!srcLabel || (!!item.link && item.link !== "#")) && (!only724 || summaryLooksTruncated);
+          const shouldShowSource = impLevel === "high" && (!!srcLabel || (!!item.link && item.link !== "#")) && (!only724 || summaryLooksTruncated);
           return (
           <div key={item.id} className="border border-gray-200 dark:border-zinc-700 rounded-2xl p-6 hover:shadow-md transition-shadow relative group">
             {admin && (

@@ -189,6 +189,7 @@ function EventRow({
   const isVisuallyTruncated = (!expanded && isClamped) || (!expanded && descLooksTruncated);
   const shouldShowSource =
     !isUserPost &&
+    impLevel === "high" &&
     (!hide724Only || isVisuallyTruncated) &&
     (!!srcLabel || (!!event.source_url && event.source_url !== "#"));
 
