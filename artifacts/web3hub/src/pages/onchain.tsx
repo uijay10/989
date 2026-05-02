@@ -705,129 +705,281 @@ function SmartSection({ zh }: { zh: boolean }) {
   );
 }
 
-// ── Section: Halving Countdown ───────────────────────────────────────────────
+// ── Section: Halving Countdown (multi-coin) ───────────────────────────────────
 
-const HALVINGS = [
-  { date: "2009-01-03", block: 0,         reward: 50,   btcPrice: 0,       label: "创世区块" },
-  { date: "2012-11-28", block: 210_000,   reward: 25,   btcPrice: 12.5,    label: "第一次减半" },
-  { date: "2016-07-09", block: 420_000,   reward: 12.5, btcPrice: 650,     label: "第二次减半" },
-  { date: "2020-05-11", block: 630_000,   reward: 6.25, btcPrice: 8_600,   label: "第三次减半" },
-  { date: "2024-04-19", block: 840_000,   reward: 3.125,btcPrice: 64_000,  label: "第四次减半 ✓" },
-  { date: "2028-04-20", block: 1_050_000, reward: 1.5625, btcPrice: null,  label: "第五次减半 (预估)" },
+interface HalvingEvent { date: string; block: number; reward: number; price: number | null; label: string; }
+interface HalvingCoin {
+  symbol: string; name: string; color: string; emoji: string;
+  nextDate: string; epochStart: string;
+  currentReward: number; nextReward: number; reductionPct: number;
+  epochBlocks: number; blockTimeSec: number; inflationNote: string;
+  history: HalvingEvent[];
+}
+
+const HALVING_COINS: HalvingCoin[] = [
+  {
+    symbol: "BTC", name: "Bitcoin", color: "#F7931A", emoji: "₿",
+    nextDate: "2028-04-20", epochStart: "2024-04-19",
+    currentReward: 3.125, nextReward: 1.5625, reductionPct: 50,
+    epochBlocks: 210_000, blockTimeSec: 600, inflationNote: "~0.85%/yr",
+    history: [
+      { date: "2012-11-28", block: 210_000,   reward: 25,    price: 12.5,   label: "第1次减半" },
+      { date: "2016-07-09", block: 420_000,   reward: 12.5,  price: 650,    label: "第2次减半" },
+      { date: "2020-05-11", block: 630_000,   reward: 6.25,  price: 8_600,  label: "第3次减半" },
+      { date: "2024-04-19", block: 840_000,   reward: 3.125, price: 64_000, label: "第4次减半 ✓" },
+      { date: "2028-04-20", block: 1_050_000, reward: 1.5625,price: null,   label: "第5次减半 (预估)" },
+    ],
+  },
+  {
+    symbol: "LTC", name: "Litecoin", color: "#B8B8B8", emoji: "Ł",
+    nextDate: "2027-08-01", epochStart: "2023-08-02",
+    currentReward: 6.25, nextReward: 3.125, reductionPct: 50,
+    epochBlocks: 840_000, blockTimeSec: 150, inflationNote: "~1.2%/yr",
+    history: [
+      { date: "2015-08-25", block: 840_000,   reward: 25,   price: 3.2,  label: "第1次减半" },
+      { date: "2019-08-05", block: 1_680_000, reward: 12.5, price: 100,  label: "第2次减半" },
+      { date: "2023-08-02", block: 2_520_000, reward: 6.25, price: 93,   label: "第3次减半 ✓" },
+      { date: "2027-08-01", block: 3_360_000, reward: 3.125,price: null, label: "第4次减半 (预估)" },
+    ],
+  },
+  {
+    symbol: "BCH", name: "Bitcoin Cash", color: "#8DC351", emoji: "₿",
+    nextDate: "2028-04-20", epochStart: "2024-04-03",
+    currentReward: 3.125, nextReward: 1.5625, reductionPct: 50,
+    epochBlocks: 210_000, blockTimeSec: 600, inflationNote: "~0.85%/yr",
+    history: [
+      { date: "2020-04-08", block: 630_000,   reward: 6.25,  price: 247,    label: "第3次减半" },
+      { date: "2024-04-03", block: 840_000,   reward: 3.125, price: 594,    label: "第4次减半 ✓" },
+      { date: "2028-04-20", block: 1_050_000, reward: 1.5625,price: null,   label: "第5次减半 (预估)" },
+    ],
+  },
+  {
+    symbol: "ZEC", name: "Zcash", color: "#F4B728", emoji: "ⓩ",
+    nextDate: "2026-11-18", epochStart: "2024-11-18",
+    currentReward: 3.125, nextReward: 1.5625, reductionPct: 50,
+    epochBlocks: 840_000, blockTimeSec: 75, inflationNote: "~1.5%/yr",
+    history: [
+      { date: "2020-11-18", block: 1_046_400, reward: 6.25,  price: 58,   label: "第1次减半" },
+      { date: "2022-11-18", block: 1_886_400, reward: 3.125, price: 44,   label: "第2次减半" },
+      { date: "2024-11-18", block: 2_726_400, reward: 1.5625,price: 34,   label: "第3次减半 ✓" },
+      { date: "2026-11-18", block: 3_566_400, reward: 0.78125,price: null,label: "第4次减半 (预估)" },
+    ],
+  },
+  {
+    symbol: "ETC", name: "Ethereum Classic", color: "#699272", emoji: "⟠",
+    nextDate: "2026-11-01", epochStart: "2024-07-15",
+    currentReward: 2.048, nextReward: 1.6384, reductionPct: 20,
+    epochBlocks: 5_000_000, blockTimeSec: 13, inflationNote: "~2.0%/yr",
+    history: [
+      { date: "2017-12-11", block: 5_000_000,  reward: 4,     price: 28,   label: "Era 2 (−20%)" },
+      { date: "2020-03-17", block: 10_000_000, reward: 3.2,   price: 6.7,  label: "Era 3 (−20%)" },
+      { date: "2022-04-25", block: 15_000_000, reward: 2.56,  price: 38,   label: "Era 4 (−20%)" },
+      { date: "2024-07-15", block: 20_000_000, reward: 2.048, price: 26,   label: "Era 5 (−20%) ✓" },
+      { date: "2026-11-01", block: 25_000_000, reward: 1.6384,price: null, label: "Era 6 (−20%) 预估" },
+    ],
+  },
+  {
+    symbol: "DASH", name: "Dash", color: "#008CE7", emoji: "Đ",
+    nextDate: "2026-06-15", epochStart: "2025-06-20",
+    currentReward: 1.817, nextReward: 1.682, reductionPct: 7.14,
+    epochBlocks: 210_240, blockTimeSec: 157, inflationNote: "~4.5%/yr",
+    history: [
+      { date: "2023-06-10", block: 1_681_920, reward: 2.119, price: 56,   label: "−7.14%" },
+      { date: "2024-06-15", block: 1_892_160, reward: 1.965, price: 29,   label: "−7.14%" },
+      { date: "2025-06-20", block: 2_102_400, reward: 1.817, price: 38,   label: "−7.14% ✓" },
+      { date: "2026-06-15", block: 2_312_640, reward: 1.682, price: null, label: "−7.14% 预估" },
+    ],
+  },
 ];
 
-const NEXT_HALVING = new Date("2028-04-20T00:00:00Z");
-const EPOCH_START  = new Date("2024-04-19T00:00:00Z");
-const EPOCH_BLOCKS = 210_000;
-const BLOCKS_PER_DAY = 144;
-
-function useHalvingCountdown() {
+function useCoinCountdown(coin: HalvingCoin) {
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
-  const diff = NEXT_HALVING.getTime() - now;
-  const days  = Math.floor(diff / 86_400_000);
-  const hours = Math.floor((diff % 86_400_000) / 3_600_000);
-  const mins  = Math.floor((diff % 3_600_000)  / 60_000);
-  const secs  = Math.floor((diff % 60_000)     / 1_000);
-  const elapsed = now - EPOCH_START.getTime();
-  const elapsedDays = elapsed / 86_400_000;
-  const minedBlocks = Math.floor(elapsedDays * BLOCKS_PER_DAY);
-  const remaining = EPOCH_BLOCKS - minedBlocks;
-  const pct = Math.min(100, (minedBlocks / EPOCH_BLOCKS) * 100);
-  return { days, hours, mins, secs, minedBlocks, remaining: Math.max(0, remaining), pct };
+  const target  = new Date(coin.nextDate + "T00:00:00Z").getTime();
+  const start   = new Date(coin.epochStart + "T00:00:00Z").getTime();
+  const diff    = target - now;
+  const elapsed = now - start;
+  const blocksPerDay = 86_400 / coin.blockTimeSec;
+  const minedBlocks  = Math.floor((elapsed / 86_400_000) * blocksPerDay);
+  const remaining    = Math.max(0, coin.epochBlocks - minedBlocks);
+  const pct          = Math.min(100, (minedBlocks / coin.epochBlocks) * 100);
+  const days  = Math.max(0, Math.floor(diff / 86_400_000));
+  const hours = Math.max(0, Math.floor((diff % 86_400_000) / 3_600_000));
+  const mins  = Math.max(0, Math.floor((diff % 3_600_000)  / 60_000));
+  const secs  = Math.max(0, Math.floor((diff % 60_000)     / 1_000));
+  return { days, hours, mins, secs, minedBlocks, remaining, pct };
 }
 
 function HalvingSection({ zh }: { zh: boolean }) {
-  const { days, hours, mins, secs, minedBlocks, remaining, pct } = useHalvingCountdown();
+  const [selected, setSelected] = useState("BTC");
+  const coin = HALVING_COINS.find(c => c.symbol === selected)!;
+  const { days, hours, mins, secs, minedBlocks, remaining, pct } = useCoinCountdown(coin);
   const pad = (n: number) => String(n).padStart(2, "0");
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
+      {/* Coin selector */}
+      <div className="flex flex-wrap gap-2">
+        {HALVING_COINS.map(c => (
+          <button key={c.symbol} onClick={() => setSelected(c.symbol)}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-bold border-2 transition-all ${
+              selected === c.symbol ? "text-white border-transparent shadow-md" : "bg-white text-muted-foreground border-border hover:border-current"
+            }`}
+            style={selected === c.symbol ? { background: c.color, borderColor: c.color } : { color: c.color }}>
+            <span>{c.emoji}</span> {c.symbol}
+          </button>
+        ))}
+      </div>
+
       {/* Hero countdown */}
-      <div className="rounded-2xl p-6 text-center"
-        style={{ background: "linear-gradient(135deg, #fff7ed 0%, #fff 50%, #fef3c7 100%)", border: "2px solid #f59e0b33" }}>
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <span className="text-2xl">₿</span>
-          <h3 className="text-lg font-extrabold text-amber-700">{zh ? "下次 BTC 减半倒计时" : "Next BTC Halving Countdown"}</h3>
-        </div>
-        <p className="text-xs text-amber-600 mb-4">{zh ? "预计 2028-04-20 · 区块高度 1,050,000" : "Est. 2028-04-20 · Block 1,050,000"}</p>
+      <div className="rounded-2xl p-5 sm:p-6 text-center relative overflow-hidden"
+        style={{ background: `linear-gradient(135deg, ${coin.color}10 0%, #fff 50%, ${coin.color}18 100%)`, border: `2px solid ${coin.color}44` }}>
+        <div className="relative">
+          <div className="flex items-center justify-center gap-2 mb-1">
+            <span className="text-xl font-extrabold" style={{ color: coin.color }}>{coin.emoji}</span>
+            <h3 className="text-base font-extrabold" style={{ color: coin.color }}>
+              {zh ? `${coin.name} 下次减半倒计时` : `${coin.name} Next Halving`}
+            </h3>
+          </div>
+          <p className="text-xs text-muted-foreground mb-4">
+            {zh ? `预计 ${coin.nextDate}` : `Est. ${coin.nextDate}`}
+            {coin.reductionPct !== 50 && <span className="ml-2 font-semibold" style={{ color: coin.color }}>({coin.reductionPct}% {zh?"减少":"reduction"})</span>}
+          </p>
 
-        {/* Big timer */}
-        <div className="flex items-center justify-center gap-3 mb-5">
-          {[
-            { v: days,  label: zh ? "天" : "Days"  },
-            { v: hours, label: zh ? "时" : "Hrs"   },
-            { v: mins,  label: zh ? "分" : "Min"   },
-            { v: secs,  label: zh ? "秒" : "Sec"   },
-          ].map((u, i) => (
-            <div key={i} className="flex flex-col items-center">
-              <div className="w-16 sm:w-20 h-16 sm:h-20 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-2xl sm:text-3xl font-extrabold tabular-nums shadow-lg shadow-amber-200">
-                {pad(u.v)}
+          {/* Timer */}
+          <div className="flex items-center justify-center gap-2 sm:gap-3 mb-5">
+            {[
+              { v: days,  label: zh ? "天" : "Days" },
+              { v: hours, label: zh ? "时" : "Hrs"  },
+              { v: mins,  label: zh ? "分" : "Min"  },
+              { v: secs,  label: zh ? "秒" : "Sec"  },
+            ].map((u, i) => (
+              <div key={i} className="flex flex-col items-center">
+                <div className="w-14 sm:w-18 h-14 sm:h-18 rounded-2xl text-white flex items-center justify-center text-xl sm:text-2xl font-extrabold tabular-nums shadow-lg px-3 py-3"
+                  style={{ background: coin.color, boxShadow: `0 4px 20px ${coin.color}44` }}>
+                  {pad(u.v)}
+                </div>
+                <span className="text-[11px] font-semibold mt-1" style={{ color: coin.color }}>{u.label}</span>
               </div>
-              <span className="text-xs font-semibold text-amber-600 mt-1">{u.label}</span>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        {/* Epoch progress */}
-        <div className="max-w-md mx-auto">
-          <div className="flex justify-between text-xs text-muted-foreground mb-1">
-            <span>{zh ? `已挖 ~${minedBlocks.toLocaleString()} 块` : `~${minedBlocks.toLocaleString()} blocks mined`}</span>
-            <span>{zh ? `剩余 ~${remaining.toLocaleString()} 块` : `~${remaining.toLocaleString()} blocks left`}</span>
+          {/* Progress bar */}
+          <div className="max-w-md mx-auto">
+            <div className="flex justify-between text-xs text-muted-foreground mb-1">
+              <span>{zh ? `已挖 ~${minedBlocks.toLocaleString()} 块` : `~${minedBlocks.toLocaleString()} mined`}</span>
+              <span>{zh ? `剩余 ~${remaining.toLocaleString()} 块` : `~${remaining.toLocaleString()} left`}</span>
+            </div>
+            <div className="h-3 rounded-full overflow-hidden" style={{ background: coin.color + "22" }}>
+              <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${pct}%`, background: coin.color }} />
+            </div>
+            <p className="text-xs mt-1 font-semibold" style={{ color: coin.color }}>{pct.toFixed(2)}% {zh ? "本轮完成" : "complete"}</p>
           </div>
-          <div className="h-3 bg-amber-100 rounded-full overflow-hidden">
-            <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-500 transition-all duration-1000"
-              style={{ width: `${pct}%` }} />
-          </div>
-          <p className="text-xs text-amber-600 mt-1 font-semibold">{pct.toFixed(2)}% {zh ? "本轮完成" : "of epoch complete"}</p>
         </div>
       </div>
 
-      {/* Reward info */}
+      {/* Reward cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: zh ? "当前区块奖励" : "Current Reward", value: "3.125 BTC", color: "#10b981" },
-          { label: zh ? "下次奖励"     : "Next Reward",    value: "1.5625 BTC", color: "#f59e0b" },
-          { label: zh ? "减幅"         : "Reduction",      value: "50%",        color: "#ef4444" },
-          { label: zh ? "年通胀率"     : "Annual Inflation",value: "~0.85%",    color: "#8b5cf6" },
+          { label: zh ? "当前区块奖励" : "Current Reward",    value: `${coin.currentReward} ${coin.symbol}`, color: "#10b981" },
+          { label: zh ? "减半后奖励"   : "Post-Halving",      value: `${coin.nextReward} ${coin.symbol}`,    color: coin.color },
+          { label: zh ? "减少幅度"     : "Reduction",         value: `${coin.reductionPct}%`,                color: "#ef4444"  },
+          { label: zh ? "通胀率参考"   : "Est. Inflation",    value: coin.inflationNote,                     color: "#8b5cf6"  },
         ].map((c, i) => (
           <div key={i} className="bg-white border border-border/60 rounded-2xl p-4 text-center">
             <div className="text-xs text-muted-foreground mb-1">{c.label}</div>
-            <div className="text-lg font-extrabold" style={{ color: c.color }}>{c.value}</div>
+            <div className="text-base font-extrabold tabular-nums" style={{ color: c.color }}>{c.value}</div>
           </div>
         ))}
       </div>
 
-      {/* Historical halvings table */}
+      {/* History table */}
       <div className="overflow-x-auto rounded-2xl border border-border/60 bg-white">
+        <div className="px-4 py-2.5 border-b border-border/30 bg-slate-50/50">
+          <span className="text-sm font-bold text-foreground">{coin.name} {zh ? "减半历史" : "Halving History"}</span>
+        </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border/40 bg-slate-50/50">
-              {[zh?"事件":"Event", zh?"日期":"Date", zh?"区块高度":"Block", zh?"区块奖励":"Reward", zh?"当时BTC价":"BTC Price"].map((h, i) => (
+            <tr className="border-b border-border/30 bg-slate-50/30">
+              {[zh?"事件":"Event", zh?"日期":"Date", zh?"区块":"Block", zh?"区块奖励":"Reward", zh?"当时价格":"Price"].map((h, i) => (
                 <th key={i} className={`px-4 py-2 text-xs font-semibold text-muted-foreground ${i === 0 ? "text-left" : "text-right"}`}>{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-border/30">
-            {HALVINGS.map((h, i) => (
-              <tr key={i} className={`transition-colors ${h.btcPrice === null ? "bg-amber-50/60 font-semibold" : "hover:bg-slate-50/60"}`}>
-                <td className="px-4 py-2.5 font-semibold text-foreground text-sm">{h.label}</td>
+          <tbody className="divide-y divide-border/20">
+            {coin.history.map((h, i) => (
+              <tr key={i} className={h.price === null ? "font-semibold" : "hover:bg-slate-50/60 transition-colors"}>
+                <td className="px-4 py-2.5 font-semibold text-sm" style={{ color: h.price === null ? coin.color : undefined }}>{h.label}</td>
                 <td className="px-4 py-2.5 text-right font-mono text-xs text-muted-foreground">{h.date}</td>
                 <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{h.block.toLocaleString()}</td>
-                <td className="px-4 py-2.5 text-right font-bold text-amber-600">{h.reward} BTC</td>
+                <td className="px-4 py-2.5 text-right font-bold" style={{ color: coin.color }}>{h.reward} {coin.symbol}</td>
                 <td className="px-4 py-2.5 text-right tabular-nums">
-                  {h.btcPrice === null
-                    ? <span className="text-muted-foreground">—</span>
-                    : h.btcPrice === 0
-                    ? <span className="text-muted-foreground">$0</span>
-                    : <span className="font-semibold text-foreground">${h.btcPrice.toLocaleString()}</span>
-                  }
+                  {h.price === null
+                    ? <span className="text-muted-foreground italic text-xs">{zh ? "待定" : "TBD"}</span>
+                    : <span className="font-semibold">${h.price.toLocaleString()}</span>}
                 </td>
               </tr>
             ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* All coins summary */}
+      <div className="overflow-x-auto rounded-2xl border border-border/60 bg-white">
+        <div className="px-4 py-2.5 border-b border-border/30 bg-slate-50/50">
+          <span className="text-sm font-bold text-foreground">{zh ? "主流币减半总览" : "Major Coin Halving Overview"}</span>
+        </div>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border/30 bg-slate-50/30">
+              {[zh?"币种":"Coin", zh?"下次减半":"Next Halving", zh?"剩余天数":"Days Left", zh?"当前奖励":"Reward", zh?"减少幅度":"Cut", zh?"轮次进度":"Progress"].map((h, i) => (
+                <th key={i} className={`px-3 py-2 text-xs font-semibold text-muted-foreground ${i === 0 ? "text-left" : "text-right"}`}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border/20">
+            {HALVING_COINS.map(c => {
+              const msLeft = new Date(c.nextDate + "T00:00:00Z").getTime() - Date.now();
+              const dLeft  = Math.max(0, Math.floor(msLeft / 86_400_000));
+              const elapsedMs = Date.now() - new Date(c.epochStart + "T00:00:00Z").getTime();
+              const ep = Math.min(100, (elapsedMs / (new Date(c.nextDate + "T00:00:00Z").getTime() - new Date(c.epochStart + "T00:00:00Z").getTime())) * 100);
+              return (
+                <tr key={c.symbol}
+                  className={`hover:bg-slate-50/60 transition-colors cursor-pointer ${selected === c.symbol ? "bg-blue-50/30" : ""}`}
+                  onClick={() => setSelected(c.symbol)}>
+                  <td className="px-3 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-extrabold text-white shrink-0"
+                        style={{ background: c.color }}>{c.emoji}</div>
+                      <div>
+                        <div className="font-bold text-foreground text-xs">{c.symbol}</div>
+                        <div className="text-[10px] text-muted-foreground">{c.name}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-3 py-2.5 text-right font-mono text-xs text-muted-foreground">{c.nextDate}</td>
+                  <td className="px-3 py-2.5 text-right">
+                    <span className={`font-extrabold tabular-nums text-sm ${dLeft < 180 ? "text-red-500" : dLeft < 365 ? "text-amber-500" : "text-foreground"}`}>
+                      {dLeft}
+                    </span>
+                    <span className="text-xs text-muted-foreground ml-0.5">{zh ? "天" : "d"}</span>
+                  </td>
+                  <td className="px-3 py-2.5 text-right font-semibold tabular-nums" style={{ color: c.color }}>{c.currentReward} {c.symbol}</td>
+                  <td className="px-3 py-2.5 text-right font-semibold text-red-500">−{c.reductionPct}%</td>
+                  <td className="px-3 py-2.5 text-right">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <div className="w-16 h-1.5 rounded-full overflow-hidden bg-slate-100">
+                        <div className="h-full rounded-full" style={{ width: `${ep}%`, background: c.color }} />
+                      </div>
+                      <span className="text-[10px] text-muted-foreground tabular-nums">{ep.toFixed(0)}%</span>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
