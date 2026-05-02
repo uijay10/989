@@ -2,14 +2,13 @@ import { useState, useEffect } from "react";
 import { useGetPosts, useGetMe } from "@workspace/api-client-react";
 import { useQuery } from "@tanstack/react-query";
 import { useWeb3Auth } from "@/lib/web3";
-import { PenSquare, CheckCircle2, Eye } from "lucide-react";
+import { PenSquare, CheckCircle2, Eye, BarChart2, Activity, Layers, Briefcase, Building2, Lock, Brain } from "lucide-react";
 import { EventList } from "@/components/events/EventList";
 import { Link, useLocation } from "wouter";
 import { useLang } from "@/lib/i18n";
 import { generateGradient } from "@/lib/utils";
 import { TagBadge } from "@/components/post-card";
 import { RoleBadge } from "@/components/role-badge";
-import { PriceTicker } from "@/components/PriceTicker";
 import { FEATURES } from "@/lib/feature-flags";
 import { formatDistanceToNow } from "date-fns";
 import { enUS, zhCN } from "date-fns/locale";
@@ -347,31 +346,19 @@ export default function Home() {
   return (
     <div className="space-y-6 pb-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-        {/* Left: On-chain Data Hub entry */}
-        <button
-          type="button"
-          onClick={() => setLocation("/onchain")}
-          className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border-2 border-blue-400 bg-white hover:bg-blue-50 text-blue-600 shadow-sm transition-all whitespace-nowrap"
-        >
-          {lang === "zh-CN" ? "链上数据中心" : "On-chain Hub"}
-        </button>
-
-        {/* Right: daily lucky + dashboard */}
-        <div className="flex items-center gap-2">
-          {FEATURES.dailyLucky && (
-            <DailyLuckyBtn lastSlotPull={me?.lastSlotPull ?? null} label={t("dailyLucky")} />
-          )}
-          {isConnected && address && (
-            <button
-              type="button"
-              onClick={() => { setLocation("/profile"); }}
-              className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-300/50 transition-all whitespace-nowrap"
-            >
-              {t("dashboard")}
-            </button>
-          )}
-        </div>
+      <div className="flex items-center justify-end gap-2 pt-2">
+        {FEATURES.dailyLucky && (
+          <DailyLuckyBtn lastSlotPull={me?.lastSlotPull ?? null} label={t("dailyLucky")} />
+        )}
+        {isConnected && address && (
+          <button
+            type="button"
+            onClick={() => { setLocation("/profile"); }}
+            className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-300/50 transition-all whitespace-nowrap"
+          >
+            {t("dashboard")}
+          </button>
+        )}
       </div>
 
       {/* Encouragement + CTA */}
@@ -411,9 +398,27 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Real-time Crypto Price Ticker — homepage only */}
-      <div className="rounded-xl px-4 py-2.5 border border-slate-200/70 dark:border-slate-700/50 bg-white/60 dark:bg-slate-900/40 backdrop-blur-sm relative overflow-visible">
-        <PriceTicker />
+      {/* On-chain Data Center quick nav */}
+      <div className="flex flex-wrap gap-2">
+        {([
+          { key: "crypto",  zhLabel: "加密货币", enLabel: "Crypto",   icon: <BarChart2 className="w-3.5 h-3.5" />, color: "#3b82f6" },
+          { key: "index",   zhLabel: "指数",     enLabel: "Indices",  icon: <Activity  className="w-3.5 h-3.5" />, color: "#8b5cf6" },
+          { key: "tvl",     zhLabel: "TVL",      enLabel: "TVL",      icon: <Layers    className="w-3.5 h-3.5" />, color: "#10b981" },
+          { key: "etf",     zhLabel: "ETF",      enLabel: "ETF",      icon: <Briefcase className="w-3.5 h-3.5" />, color: "#f59e0b" },
+          { key: "stocks",  zhLabel: "币股",     enLabel: "Stocks",   icon: <Building2 className="w-3.5 h-3.5" />, color: "#64748b" },
+          { key: "unlocks", zhLabel: "解锁",     enLabel: "Unlocks",  icon: <Lock      className="w-3.5 h-3.5" />, color: "#f97316" },
+          { key: "smart",   zhLabel: "聪明钱",   enLabel: "Smart $",  icon: <Brain     className="w-3.5 h-3.5" />, color: "#ec4899" },
+        ] as const).map(item => (
+          <Link
+            key={item.key}
+            href={`/onchain?tab=${item.key}`}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-semibold bg-white border border-border/70 hover:border-current hover:shadow-sm transition-all whitespace-nowrap"
+            style={{ color: item.color }}
+          >
+            {item.icon}
+            {lang === "zh-CN" ? item.zhLabel : item.enLabel}
+          </Link>
+        ))}
       </div>
 
       {/* Two-column: main feed + 重要动态 */}

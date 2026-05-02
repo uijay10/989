@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useLang } from "@/lib/i18n";
+import { useSearch } from "wouter";
 import {
   TrendingUp, TrendingDown, RefreshCw, ExternalLink, Star, Search,
   BarChart2, Layers, Briefcase, Building2, Lock, Brain, Activity,
@@ -705,7 +706,9 @@ function SmartSection({ zh }: { zh: boolean }) {
 export default function OnchainPage() {
   const { lang } = useLang();
   const zh = lang === "zh-CN";
-  const [active, setActive] = useState<NavKey>("crypto");
+  const search = useSearch();
+  const initialTab = (new URLSearchParams(search).get("tab") as NavKey | null) ?? "crypto";
+  const [active, setActive] = useState<NavKey>(initialTab);
 
   const current = NAV.find(n => n.key === active)!;
 
