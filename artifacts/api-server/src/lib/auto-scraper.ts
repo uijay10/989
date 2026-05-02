@@ -305,6 +305,76 @@ export const DEFAULT_SOURCES = [
   { name: "Financial Times Crypto", url: "https://www.ft.com/cryptocurrencies?format=rss", type: "rss", priority: 1 },
   { name: "Bloomberg Crypto", url: "https://feeds.bloomberg.com/crypto/news.rss", type: "rss", priority: 1 },
   { name: "WSJ Crypto", url: "https://feeds.wsj.com/wsj/xml/rss/3_7455.xml", type: "rss", priority: 2 },
+
+  // ── 中文加密媒体 / Chinese Crypto Media ──────────────────────────────────────
+  { name: "WuBlockchain", url: "https://www.wu-blockchain.com/rss", type: "rss", priority: 1 },
+  { name: "律动BlockBeats", url: "https://www.theblockbeats.info/rss", type: "rss", priority: 1 },
+  { name: "Odaily星球日报", url: "https://www.odaily.news/rss", type: "rss", priority: 1 },
+  { name: "ChainCatcher", url: "https://www.chaincatcher.com/rss", type: "rss", priority: 1 },
+  { name: "金色财经", url: "https://www.jinse.com/rss", type: "rss", priority: 1 },
+  { name: "深潮TechFlow", url: "https://www.techflowpost.com/rss", type: "rss", priority: 1 },
+
+  // ── 更多公链 / More L1 Chains ─────────────────────────────────────────────────
+  { name: "Polkadot Blog", url: "https://polkadot.network/blog/feed", type: "rss", priority: 1 },
+  { name: "Polkadot Medium", url: "https://medium.com/feed/polkadot-network", type: "rss", priority: 1 },
+  { name: "Cardano IOHK Blog", url: "https://iohk.io/en/blog/rss.xml", type: "rss", priority: 1 },
+  { name: "NEAR Blog", url: "https://near.org/blog/rss.xml", type: "rss", priority: 1 },
+  { name: "TRON DAO Blog", url: "https://trondao.org/blog/feed", type: "rss", priority: 1 },
+  { name: "Hedera Blog", url: "https://hedera.com/blog/rss", type: "rss", priority: 1 },
+  { name: "Internet Computer (DFINITY)", url: "https://medium.com/feed/dfinity", type: "rss", priority: 1 },
+  { name: "Flow Blockchain Blog", url: "https://flow.com/blog/feed", type: "rss", priority: 1 },
+  { name: "Algorand Foundation", url: "https://algorand.foundation/news/feed", type: "rss", priority: 1 },
+  { name: "Fantom Blog", url: "https://fantom.foundation/blog/rss/", type: "rss", priority: 1 },
+
+  // ── 更多 CEX 交易所 / More Exchanges ─────────────────────────────────────────
+  { name: "HTX Blog", url: "https://www.htx.com/en-us/blog/rss/", type: "rss", priority: 1 },
+  { name: "GNews HTX", url: "https://news.google.com/rss/search?q=HTX+Huobi+crypto+exchange&hl=en-US&gl=US&ceid=US:en", type: "rss", priority: 1 },
+  { name: "Gate.io Blog", url: "https://www.gate.io/en/blog/feed", type: "rss", priority: 1 },
+  { name: "GNews Gate.io", url: "https://news.google.com/rss/search?q=Gate.io+crypto+exchange&hl=en-US&gl=US&ceid=US:en", type: "rss", priority: 1 },
+  { name: "KuCoin Blog", url: "https://www.kucoin.com/blog/feed", type: "rss", priority: 1 },
+  { name: "GNews KuCoin", url: "https://news.google.com/rss/search?q=KuCoin+crypto+exchange&hl=en-US&gl=US&ceid=US:en", type: "rss", priority: 1 },
+  { name: "Bitget Blog", url: "https://www.bitget.com/en/blog/feed", type: "rss", priority: 1 },
+  { name: "GNews Bitget", url: "https://news.google.com/rss/search?q=Bitget+crypto+exchange&hl=en-US&gl=US&ceid=US:en", type: "rss", priority: 1 },
+  { name: "Crypto.com Blog", url: "https://crypto.com/product-news/rss", type: "rss", priority: 1 },
+  { name: "MEXC Blog", url: "https://www.mexc.com/en-US/blog/feed", type: "rss", priority: 2 },
+
+  // ── DeFi 协议 / More DeFi Protocols ──────────────────────────────────────────
+  { name: "dYdX Blog", url: "https://dydx.exchange/blog/rss.xml", type: "rss", priority: 1 },
+  { name: "GMX Blog", url: "https://medium.com/feed/gmx-io", type: "rss", priority: 1 },
+  { name: "Curve Finance Blog", url: "https://medium.com/feed/curve-finance", type: "rss", priority: 1 },
+  { name: "Pendle Finance Blog", url: "https://medium.com/feed/pendle-finance", type: "rss", priority: 1 },
+  { name: "Jupiter Exchange Blog", url: "https://station.jup.ag/blog/rss.xml", type: "rss", priority: 1 },
+  { name: "Compound Blog", url: "https://medium.com/feed/compound-finance", type: "rss", priority: 2 },
+  { name: "Balancer Blog", url: "https://medium.com/feed/balancer-protocol", type: "rss", priority: 2 },
+  { name: "Synthetix Blog", url: "https://blog.synthetix.io/rss/", type: "rss", priority: 2 },
+  { name: "Hyperliquid Blog", url: "https://medium.com/feed/hyperliquid-dex", type: "rss", priority: 1 },
+
+  // ── NFT / GameFi ──────────────────────────────────────────────────────────────
+  { name: "OpenSea Blog", url: "https://opensea.io/blog/rss/", type: "rss", priority: 1 },
+  { name: "Magic Eden Blog", url: "https://blog.magiceden.io/rss/", type: "rss", priority: 1 },
+  { name: "Immutable Blog", url: "https://www.immutable.com/blog/rss", type: "rss", priority: 1 },
+  { name: "Blur Blog", url: "https://mirror.xyz/blur.eth/feed/atom", type: "rss", priority: 1 },
+  { name: "Axie Infinity Blog", url: "https://axie.substack.com/feed", type: "rss", priority: 2 },
+  { name: "The Sandbox Blog", url: "https://medium.com/feed/sandbox-game", type: "rss", priority: 2 },
+
+  // ── 跨链 / 基础设施 / Cross-chain Infrastructure ──────────────────────────────
+  { name: "Wormhole Blog", url: "https://wormhole.com/blog/rss.xml", type: "rss", priority: 1 },
+  { name: "LayerZero Blog", url: "https://layerzero.network/blog/rss.xml", type: "rss", priority: 1 },
+  { name: "Axelar Blog", url: "https://axelar.network/blog/rss.xml", type: "rss", priority: 1 },
+  { name: "Celestia Blog", url: "https://blog.celestia.org/rss/", type: "rss", priority: 1 },
+  { name: "Zetachain Blog", url: "https://medium.com/feed/zetachain", type: "rss", priority: 2 },
+  { name: "Across Protocol Blog", url: "https://medium.com/feed/across-protocol", type: "rss", priority: 2 },
+
+  // ── 稳定币 / Stablecoins ──────────────────────────────────────────────────────
+  { name: "Circle Blog", url: "https://www.circle.com/blog/rss.xml", type: "rss", priority: 1 },
+  { name: "Tether Blog", url: "https://tether.to/en/blog/feed/", type: "rss", priority: 1 },
+  { name: "Frax Finance Blog", url: "https://medium.com/feed/frax-finance", type: "rss", priority: 2 },
+
+  // ── 数据分析 / On-chain Analytics ────────────────────────────────────────────
+  { name: "Nansen Blog", url: "https://www.nansen.ai/post/rss.xml", type: "rss", priority: 1 },
+  { name: "Glassnode Blog", url: "https://insights.glassnode.com/rss/", type: "rss", priority: 1 },
+  { name: "IntoTheBlock Blog", url: "https://medium.com/feed/intotheblock", type: "rss", priority: 2 },
+  { name: "Token Terminal Blog", url: "https://medium.com/feed/token-terminal", type: "rss", priority: 2 },
 ];
 
 // ── Base keywords (for RSS filter) ────────────────────────────────────────────
