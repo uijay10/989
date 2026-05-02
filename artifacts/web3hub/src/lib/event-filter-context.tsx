@@ -13,6 +13,7 @@ export const NAV_KEY_TO_CATEGORY: Record<string, string> = {
   nav_analytics: "数据分析",
   nav_nft:       "NFT/GameFi",
   nav_research:  "研报精选",
+  nav_js:        "教师对调",
 };
 
 interface EventFilterCtx {

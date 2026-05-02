@@ -32,6 +32,7 @@ const NAV_KEYS = [
   { key: "nav_nodes",      href: "/section/nodes" },
   { key: "nav_devbounty",  href: "/section/devbounty" },
   { key: "nav_grant",      href: "/section/grant" },
+  { key: "nav_js",         href: "/section/js", adminOnly: true },
 ];
 
 const LANGUAGES: { value: LangCode; label: string }[] = [
@@ -377,7 +378,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               >
                 {lang === "zh-CN" ? "7*24快讯" : "7*24 News"}
               </button>
-              {NAV_KEYS.map(({ key, href }) => (
+              {NAV_KEYS.filter(({ adminOnly }) => !adminOnly || admin).map(({ key, href }) => (
                 <a
                   key={key}
                   href={href}

@@ -50,6 +50,7 @@ const SECTION_EVENT_MAX_AGE_DAYS: Record<string, number> = {
   "analytics": 21,
   "nft":       14,
   "research":  30,
+  "js":        60,
 };
 const DEFAULT_EVENT_MAX_AGE_DAYS = 21;
 const DEFAULT_ARTICLE_MAX_AGE_DAYS = 7;
@@ -85,6 +86,9 @@ export const CATEGORY_MAP: Record<string, string> = {
   "Research Report": "research", "Crypto Research": "research", "Market Report": "research",
   "Weekly Report": "research", "Monthly Report": "research", "Quarterly Report": "research",
   "行业研究": "research", "投研": "research", "机构研报": "research",
+  "教师对调": "js", "教师轮岗": "js", "教师交流": "js", "教师调动": "js",
+  "永州教育": "js", "永州市教育局": "js", "湖南教育厅": "js",
+  "教师招聘永州": "js", "永州教师": "js",
   "链上任务": "quest",
   "开发者专区": "devbounty", "开发者漏洞奖金": "devbounty",
   "项目捐赠/赞助": "grant", "捐赠/赞助": "grant",
@@ -222,6 +226,15 @@ export const DEFAULT_SOURCES = [
   { name: "a16z Crypto Blog", url: "https://a16zcrypto.com/feed/", type: "rss", priority: 1 },
   { name: "Paradigm Blog", url: "https://www.paradigm.xyz/feed.xml", type: "rss", priority: 1 },
   { name: "Web3 Foundation Blog", url: "https://medium.com/feed/web3foundation", type: "rss", priority: 1 },
+
+  // ── JS / 永州教师对调 ─────────────────────────────────────────────────────────
+  { name: "中国教育新闻网", url: "https://www.jyb.cn/rss/rmtjyb.xml", type: "rss", priority: 1 },
+  { name: "红网教育频道", url: "https://edu.rednet.cn/rss.xml", type: "rss", priority: 1 },
+  { name: "GNews 永州教师对调", url: "https://news.google.com/rss/search?q=永州+教师+对调+轮岗&hl=zh-CN&gl=CN&ceid=CN:zh-Hans", type: "rss", priority: 1 },
+  { name: "GNews 永州市教育局", url: "https://news.google.com/rss/search?q=永州市教育局+教师+公告&hl=zh-CN&gl=CN&ceid=CN:zh-Hans", type: "rss", priority: 1 },
+  { name: "GNews 湖南教师调动", url: "https://news.google.com/rss/search?q=湖南+永州+教师+调动+交流&hl=zh-CN&gl=CN&ceid=CN:zh-Hans", type: "rss", priority: 1 },
+  { name: "GNews 湖南省教育厅", url: "https://news.google.com/rss/search?q=湖南省教育厅+教师+政策&hl=zh-CN&gl=CN&ceid=CN:zh-Hans", type: "rss", priority: 2 },
+  { name: "GNews 永州教育", url: "https://news.google.com/rss/search?q=永州+教育+教师+招聘+通知&hl=zh-CN&gl=CN&ceid=CN:zh-Hans", type: "rss", priority: 2 },
 
   // ── NFT / GameFi ─────────────────────────────────────────────────────────────
   { name: "NFT Now", url: "https://nftnow.com/feed/", type: "rss", priority: 1 },
@@ -535,6 +548,14 @@ export const DEFAULT_KEYWORDS = [
   "developer report","ecosystem report","funding report","vc report",
   "研究报告","深度研报","加密研报","机构研报","链上分析","行业研究","投研报告",
   "周报","月报","季报","年度报告","深度分析","宏观分析","赛道研究","投资逻辑",
+  // JS / 永州教师对调 keywords
+  "永州","永州市","湖南永州","永州教育","永州市教育局","永州教育局",
+  "教师对调","教师轮岗","教师交流","教师调动","教师交流轮岗","教师调配",
+  "湖南省教育厅","湖南教育厅","湖南教育","湖南省教育",
+  "零陵区","冷水滩区","祁阳市","东安县","道县","宁远县","蓝山县","新田县","双牌县","江永县","江华县",
+  "永州教师招聘","教师招聘永州","教师编制","教育事业单位","中小学教师",
+  "义务教育阶段","教育局通知","教育局公告","教师岗位","公办学校","学校教师",
+  "湖南中小学","湖南教师","教育系统调动","城乡教师","骨干教师","支教","援教",
 ];
 
 // v2.0_migrated_2026 requirement: use ONLY the system keyword list.

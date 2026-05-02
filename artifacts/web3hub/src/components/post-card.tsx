@@ -28,7 +28,7 @@ const SECTION_KEY_MAP: Record<string, string> = {
   integration: "sIntegrationLabel", airdrop: "sAirdropLabel", events: "sEventsLabel",
   funding: "sFundingLabel", jobs: "sJobsLabel", nodes: "sNodesLabel",
   defi: "sDefiLabel", analytics: "sAnalyticsLabel",
-  nft: "sNftLabel", research: "sResearchLabel",
+  nft: "sNftLabel", research: "sResearchLabel", js: "sJsLabel",
   showcase: "sShowcaseLabel", ecosystem: "sEcosystemLabel", partners: "sPartnersLabel",
   hackathon: "sHackathonLabel", ama: "sAmaLabel", bugbounty: "sBugbountyLabel",
   community: "nav_community", kol: "nav_kol", developer: "nav_developer",
