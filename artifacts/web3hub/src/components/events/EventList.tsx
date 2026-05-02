@@ -393,8 +393,8 @@ export function EventList({
   const zh = lang === "zh-CN";
   const { address } = useWeb3Auth();
   const adminUser = isAdmin(address);
-  // Only admins can see/use pinned posts UI.
-  const showPinned = adminUser;
+  // Only admins can see pinned posts, and only on the main feed (not section pages).
+  const showPinned = adminUser && !sectionSlug;
   const enableHideSource =
     // In chain / exchange views, always show source.
     !(chain?.trim() || exchange?.trim()) &&
