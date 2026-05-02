@@ -5,11 +5,12 @@ export const NAV_KEY_TO_CATEGORY: Record<string, string> = {
   nav_ido:       "IDO/Launchpad",
   nav_funding:   "融资公告",
   nav_policy:    "政策监管",
-  nav_recruiting:"招聘",
   nav_nodes:     "节点招募",
   nav_quest:     "链上奖励/空投",
   nav_devbounty: "开发者漏洞奖金",
   nav_grant:     "项目捐赠/赞助",
+  nav_defi:      "DeFi",
+  nav_analytics: "数据分析",
 };
 
 interface EventFilterCtx {

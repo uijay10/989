@@ -12,7 +12,7 @@ import { CHAINS, EXCHANGES, makeEcosystemSectionId, parseEcosystemSectionId, get
 
 const NAV_SECTIONS = [
   "ido", "funding", "quest", "policy",
-  "testnet", "nodes", "recruiting", "devbounty", "grant",
+  "testnet", "nodes", "devbounty", "grant", "defi", "analytics",
 ] as const;
 
 type NavSection = typeof NAV_SECTIONS[number];
@@ -20,21 +20,21 @@ type NavSection = typeof NAV_SECTIONS[number];
 const PROJECT_SECTIONS: NavSection[] = [...NAV_SECTIONS];
 
 const KOL_SECTIONS: NavSection[] = [
-  "ido", "quest", "testnet", "nodes", "devbounty", "recruiting", "grant",
+  "ido", "quest", "testnet", "nodes", "devbounty", "grant", "defi", "analytics",
 ];
 
 const DEV_SECTIONS: NavSection[] = [
-  "devbounty", "testnet", "quest", "recruiting", "grant",
+  "devbounty", "testnet", "quest", "grant", "defi",
 ];
 
-const NORMAL_SECTIONS: NavSection[] = ["recruiting"];
+const NORMAL_SECTIONS: NavSection[] = [];
 
 const SECTION_LABEL_KEYS: Record<string, string> = {
   ido: "nav_ido",
   funding: "nav_funding", quest: "nav_quest", policy: "nav_policy",
   testnet: "nav_testnet", nodes: "nav_nodes",
-  recruiting: "nav_recruiting", devbounty: "nav_devbounty",
-  grant: "nav_grant",
+  devbounty: "nav_devbounty", grant: "nav_grant",
+  defi: "nav_defi", analytics: "nav_analytics",
 };
 
 function sectionLabel(sectionId: string, lang: string, t: (k: string) => string) {

@@ -20,7 +20,6 @@ const SECTION_ICONS: Record<string, string> = {
   airdrop: "🎁",
   meme: "🐸",
   policy: "⚖️",
-  recruiting: "💼",
   nodes: "⚙️",
   unlock: "🔓",
   quest: "🎁",
@@ -38,6 +37,8 @@ const SECTION_ICONS: Record<string, string> = {
   bugbounty: "🐛",
   showcase: "✨",
   industry: "📰",
+  defi: "🏛️",
+  analytics: "📊",
 };
 
 const SECTION_COLORS: Record<string, string> = {
@@ -49,8 +50,9 @@ const SECTION_COLORS: Record<string, string> = {
   airdrop:     "from-green-50 to-teal-50 border-green-100 dark:from-green-950/30 dark:to-teal-950/30 dark:border-teal-900/50",
   meme:        "from-yellow-50 to-lime-50 border-yellow-100 dark:from-yellow-950/30 dark:to-lime-950/30 dark:border-yellow-900/50",
   policy:      "from-stone-50 to-zinc-50 border-stone-100 dark:from-stone-900/30 dark:to-zinc-900/30 dark:border-stone-800",
-  recruiting:  "from-sky-50 to-blue-50 border-sky-100 dark:from-sky-950/30 dark:to-blue-950/30 dark:border-sky-900/50",
   nodes:       "from-slate-50 to-gray-50 border-slate-100 dark:from-slate-900/30 dark:to-gray-900/30 dark:border-slate-800",
+  defi:        "from-violet-50 to-purple-50 border-violet-100 dark:from-violet-950/30 dark:to-purple-950/30 dark:border-violet-900/50",
+  analytics:   "from-cyan-50 to-blue-50 border-cyan-100 dark:from-cyan-950/30 dark:to-blue-950/30 dark:border-cyan-900/50",
   unlock:      "from-amber-50 to-orange-50 border-amber-100 dark:from-amber-950/30 dark:to-orange-950/30 dark:border-amber-900/50",
   quest:       "from-cyan-50 to-teal-50 border-cyan-100 dark:from-cyan-950/30 dark:to-teal-950/30 dark:border-cyan-900/50",
   developer:   "from-indigo-50 to-violet-50 border-indigo-100 dark:from-indigo-950/30 dark:to-violet-950/30 dark:border-indigo-900/50",
@@ -78,8 +80,9 @@ const SECTION_I18N_KEYS: Record<string, { label: string; desc: string }> = {
   airdrop:     { label: "sAirdropLabel",     desc: "sAirdropDesc" },
   meme:        { label: "sMemeLabel",        desc: "sMemeDesc" },
   policy:      { label: "sPolicyLabel",      desc: "sPolicyDesc" },
-  recruiting:  { label: "sRecruitingLabel",  desc: "sRecruitingDesc" },
   nodes:       { label: "sNodesLabel",       desc: "sNodesDesc" },
+  defi:        { label: "sDefiLabel",        desc: "sDefiDesc" },
+  analytics:   { label: "sAnalyticsLabel",  desc: "sAnalyticsDesc" },
   unlock:      { label: "sUnlockLabel",      desc: "sUnlockDesc" },
   quest:       { label: "sQuestLabel",       desc: "sQuestDesc" },
   industry:    { label: "sIndustryLabel",    desc: "sIndustryDesc" },

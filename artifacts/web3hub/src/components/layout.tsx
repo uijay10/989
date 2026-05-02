@@ -23,10 +23,11 @@ const NAV_KEYS = [
   { key: "nav_funding",    href: "/section/funding" },
   { key: "nav_vc",         href: "/section/vc" },
   { key: "nav_quest",      href: "/section/quest" },
+  { key: "nav_defi",       href: "/section/defi" },
+  { key: "nav_analytics",  href: "/section/analytics" },
   { key: "nav_policy",     href: "/section/policy" },
   { key: "nav_testnet",    href: "/section/testnet" },
   { key: "nav_nodes",      href: "/section/nodes" },
-  { key: "nav_recruiting", href: "/section/recruiting" },
   { key: "nav_devbounty",  href: "/section/devbounty" },
   { key: "nav_grant",      href: "/section/grant" },
 ];

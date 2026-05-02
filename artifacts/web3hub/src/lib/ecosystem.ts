@@ -16,6 +16,10 @@ export const EXCHANGES = [
   "Bybit",
   "Coinbase",
   "Kraken",
+  "HTX",
+  "Gate.io",
+  "KuCoin",
+  "Bitget",
 ] as const;
 
 export function slugify(name: string) {

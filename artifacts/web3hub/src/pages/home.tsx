@@ -121,10 +121,11 @@ function AuthorAvatar({ wallet, name, avatar, size = "sm" }: {
 
 const SECTION_LABELS: Record<string, string> = {
   testnet: "测试网", ido: "IDO", security: "安全", integration: "集成",
-  airdrop: "链上奖励/空投", quest: "链上奖励/空投", events: "活动", funding: "融资", jobs: "求职/招聘",
+  airdrop: "链上奖励/空投", quest: "链上奖励/空投", events: "活动", funding: "融资",
   nodes: "节点", showcase: "展示", ecosystem: "生态", partners: "合作",
   hackathon: "黑客松", ama: "AMA", bugbounty: "漏洞赏金", community: "社区",
   developer: "开发者", devbounty: "开发者漏洞奖金", kol: "KOL",
+  defi: "DeFi", analytics: "数据分析",
 };
 
 // ── Pinned card: structured layout ───────────────────────

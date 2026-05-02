@@ -600,51 +600,6 @@ export function PolicyFeed() {
   );
 }
 
-// ==================== 招聘 ====================
-export function RecruitingFeed() {
-  const { items, loading } = useJsonFeedItems<{ title?: string; company?: string; link?: string; pubDate?: string; salary?: string }>(
-    "/api/feeds/recruiting",
-  );
-
-  return (
-    <div className="rounded-2xl border border-border/50 bg-card/50 p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-bold text-foreground">💼 Web3 招聘</span>
-        <a href="https://cryptojobslist.com" target="_blank" rel="noopener noreferrer"
-          className="text-[10px] text-muted-foreground/70 bg-muted px-2 py-0.5 rounded-full hover:text-foreground transition">CryptoJobsList →</a>
-      </div>
-      {loading ? (
-        <LoadingCards count={4} cols={2} />
-      ) : items.length === 0 ? (
-        <p className="text-sm text-center text-muted-foreground py-6">暂无最新职位，稍后再试</p>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {items.map((job, i) => (
-            <a key={i}
-              href={job.link || "https://cryptojobslist.com"}
-              target="_blank" rel="noopener noreferrer"
-              className="border border-border/40 rounded-2xl p-5 bg-card hover:border-emerald-400/50 hover:shadow-sm transition group block">
-              <h3 className="font-semibold text-sm text-foreground line-clamp-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors mb-1">
-                {job.title || '职位'}
-              </h3>
-              <p className="text-xs text-muted-foreground mb-3">{job.company || '未知团队'}</p>
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{job.salary || '—'}</span>
-                <span className="text-[10px] text-muted-foreground/60">
-                  {job.pubDate ? new Date(job.pubDate).toLocaleDateString("zh-CN") : ''}
-                </span>
-              </div>
-            </a>
-          ))}
-        </div>
-      )}
-      <p className="text-[10px] text-muted-foreground/50 pt-1 border-t border-border/30">
-        数据来源：CryptoJobsList RSS · 15分钟缓存
-      </p>
-    </div>
-  );
-}
-
 // ==================== 投融资 ====================
 export function FundingFeed() {
   const { items, loading } = useJsonFeedItems<{ id?: number; title?: string; content?: string; sourceUrl?: string; createdAt?: string }>(

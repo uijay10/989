@@ -26,7 +26,8 @@ import { getApiBase } from "@/lib/api-base";
 const SECTION_KEY_MAP: Record<string, string> = {
   testnet: "sTestnetLabel", ido: "sIdoLabel", security: "sSecurityLabel",
   integration: "sIntegrationLabel", airdrop: "sAirdropLabel", events: "sEventsLabel",
-  funding: "sFundingLabel", jobs: "sJobsLabel", recruiting: "sRecruitingLabel", nodes: "sNodesLabel",
+  funding: "sFundingLabel", jobs: "sJobsLabel", nodes: "sNodesLabel",
+  defi: "sDefiLabel", analytics: "sAnalyticsLabel",
   showcase: "sShowcaseLabel", ecosystem: "sEcosystemLabel", partners: "sPartnersLabel",
   hackathon: "sHackathonLabel", ama: "sAmaLabel", bugbounty: "sBugbountyLabel",
   community: "nav_community", kol: "nav_kol", developer: "nav_developer",

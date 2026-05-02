@@ -34,6 +34,10 @@ const EXCHANGES = [
   "Bybit",
   "Coinbase",
   "Kraken",
+  "HTX",
+  "Gate.io",
+  "KuCoin",
+  "Bitget",
 ] as const;
 
 const CHAIN_ITEMS: QuickItem[] = CHAINS.map((name) => ({
