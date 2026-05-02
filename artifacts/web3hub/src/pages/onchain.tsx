@@ -172,7 +172,7 @@ export default function OnchainPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
         <div>
           <h1 className="text-2xl font-extrabold text-foreground tracking-tight">
-            🌐 {zh ? "链上数据中心" : "On-chain Data Hub"}
+            {zh ? "链上数据中心" : "On-chain Data Hub"}
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             {zh ? "实时更新 · 数据来源：DefiLlama" : "Live · Powered by DefiLlama"}

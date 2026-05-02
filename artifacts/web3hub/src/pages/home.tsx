@@ -354,7 +354,7 @@ export default function Home() {
           onClick={() => setLocation("/onchain")}
           className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border-2 border-blue-400 bg-white hover:bg-blue-50 text-blue-600 shadow-sm transition-all whitespace-nowrap"
         >
-          🌐 {lang === "zh-CN" ? "链上数据中心" : "On-chain Hub"}
+          {lang === "zh-CN" ? "链上数据中心" : "On-chain Hub"}
         </button>
 
         {/* Right: daily lucky + dashboard */}
