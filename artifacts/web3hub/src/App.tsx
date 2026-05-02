@@ -23,6 +23,7 @@ import AboutPage from "@/pages/about";
 import NotFound from "@/pages/not-found";
 import ChainColumnPage from "@/pages/chain";
 import ExchangeColumnPage from "@/pages/exchange";
+import OnchainPage from "@/pages/onchain";
 
 function Router() {
   return (
@@ -44,6 +45,7 @@ function Router() {
       <Route path="/about" component={AboutPage} />
       <Route path="/chains/:slug" component={ChainColumnPage} />
       <Route path="/exchanges/:slug" component={ExchangeColumnPage} />
+      <Route path="/onchain" component={OnchainPage} />
       <Route component={NotFound} />
     </Switch>
   );

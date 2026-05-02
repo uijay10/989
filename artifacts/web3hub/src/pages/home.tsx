@@ -347,19 +347,31 @@ export default function Home() {
   return (
     <div className="space-y-6 pb-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-end gap-3 pt-2">
-        {FEATURES.dailyLucky && (
-          <DailyLuckyBtn lastSlotPull={me?.lastSlotPull ?? null} label={t("dailyLucky")} />
-        )}
-        {isConnected && address && (
-          <button
-            type="button"
-            onClick={() => { setLocation("/profile"); }}
-            className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-300/50 transition-all whitespace-nowrap"
-          >
-            {t("dashboard")}
-          </button>
-        )}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+        {/* Left: On-chain Data Hub entry */}
+        <button
+          type="button"
+          onClick={() => setLocation("/onchain")}
+          className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border-2 border-blue-400 bg-white hover:bg-blue-50 text-blue-600 shadow-sm transition-all whitespace-nowrap"
+        >
+          🌐 {lang === "zh-CN" ? "链上数据中心" : "On-chain Hub"}
+        </button>
+
+        {/* Right: daily lucky + dashboard */}
+        <div className="flex items-center gap-2">
+          {FEATURES.dailyLucky && (
+            <DailyLuckyBtn lastSlotPull={me?.lastSlotPull ?? null} label={t("dailyLucky")} />
+          )}
+          {isConnected && address && (
+            <button
+              type="button"
+              onClick={() => { setLocation("/profile"); }}
+              className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-300/50 transition-all whitespace-nowrap"
+            >
+              {t("dashboard")}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Encouragement + CTA */}
