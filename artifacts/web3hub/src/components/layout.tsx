@@ -19,6 +19,7 @@ const DATE_LOCALES_LAYOUT: Record<string, Locale> = {
 };
 
 const NAV_KEYS = [
+  { key: "nav_js",         href: "/section/js", adminOnly: true },
   { key: "nav_ido",        href: "/section/ido" },
   { key: "nav_funding",    href: "/section/funding" },
   { key: "nav_vc",         href: "/section/vc" },
@@ -32,7 +33,6 @@ const NAV_KEYS = [
   { key: "nav_nodes",      href: "/section/nodes" },
   { key: "nav_devbounty",  href: "/section/devbounty" },
   { key: "nav_grant",      href: "/section/grant" },
-  { key: "nav_js",         href: "/section/js", adminOnly: true },
 ];
 
 const LANGUAGES: { value: LangCode; label: string }[] = [
