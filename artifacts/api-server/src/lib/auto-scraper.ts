@@ -157,16 +157,19 @@ export const DEFAULT_SOURCES = [
   // ── BNB Chain ────────────────────────────────────────────────────────────────
   { name: "BNB Chain Blog", url: "https://www.bnbchain.org/en/blog/rss.xml", type: "rss", priority: 1 },
   { name: "BNB Chain Medium", url: "https://medium.com/feed/bnbchain", type: "rss", priority: 1 },
+  { name: "GNews BNB Chain", url: "https://news.google.com/rss/search?q=BNB+Chain+BSC+crypto&hl=en-US&gl=US&ceid=US:en", type: "rss", priority: 1 },
   // ── Sui ──────────────────────────────────────────────────────────────────────
   { name: "Sui Blog", url: "https://blog.sui.io/rss/", type: "rss", priority: 1 },
   { name: "Sui Mysten Labs Medium", url: "https://medium.com/feed/mysten-labs", type: "rss", priority: 1 },
+  { name: "GNews Sui", url: "https://news.google.com/rss/search?q=Sui+blockchain+network&hl=en-US&gl=US&ceid=US:en", type: "rss", priority: 1 },
   // ── Aptos ────────────────────────────────────────────────────────────────────
-  // aptosnetwork.com URL is 404; use the working Medium feeds
   { name: "Aptos Labs Medium", url: "https://medium.com/feed/aptoslabs", type: "rss", priority: 1 },
   { name: "Aptos Foundation", url: "https://aptosfoundation.org/currents/rss.xml", type: "rss", priority: 1 },
+  { name: "GNews Aptos", url: "https://news.google.com/rss/search?q=Aptos+blockchain+APT&hl=en-US&gl=US&ceid=US:en", type: "rss", priority: 1 },
   // ── Arbitrum ─────────────────────────────────────────────────────────────────
   { name: "Arbitrum Blog", url: "https://blog.arbitrum.io/rss/", type: "rss", priority: 1 },
   { name: "Offchain Labs Medium", url: "https://medium.com/feed/offchainlabs", type: "rss", priority: 1 },
+  { name: "GNews Arbitrum", url: "https://news.google.com/rss/search?q=Arbitrum+ARB+blockchain&hl=en-US&gl=US&ceid=US:en", type: "rss", priority: 1 },
   // ── Kraken ───────────────────────────────────────────────────────────────────
   { name: "Kraken Blog", url: "https://blog.kraken.com/feed/", type: "rss", priority: 1 },
   // ── Binance ──────────────────────────────────────────────────────────────────
@@ -176,12 +179,16 @@ export const DEFAULT_SOURCES = [
   // ── OKX ──────────────────────────────────────────────────────────────────────
   // OKX Blog RSS is 404; Academy uses redirect (RSS parser follows 302)
   { name: "OKX Academy", url: "https://www.okx.com/academy/rss", type: "rss", priority: 1 },
+  { name: "OKX Web3 Blog", url: "https://web3.okx.com/blog/feed", type: "rss", priority: 1 },
+  { name: "GNews OKX", url: "https://news.google.com/rss/search?q=OKX+crypto+exchange&hl=en-US&gl=US&ceid=US:en", type: "rss", priority: 1 },
   // ── Coinbase ─────────────────────────────────────────────────────────────────
   // coinbase.com/blog/feed.xml is 403; use blog.coinbase.com (301 → working)
   { name: "Coinbase Blog", url: "https://blog.coinbase.com/feed", type: "rss", priority: 1 },
   // ── Bybit ────────────────────────────────────────────────────────────────────
   // Bybit does not provide a stable public RSS URL; use official API endpoint.
   { name: "Bybit Announcements", url: "https://api.bybit.com/v5/announcements/index?locale=en-US&limit=50&page=1", type: "bybit-api", priority: 1 },
+  { name: "Bybit Blog", url: "https://blog.bybit.com/en-US/rss/", type: "rss", priority: 1 },
+  { name: "GNews Bybit", url: "https://news.google.com/rss/search?q=Bybit+crypto+exchange&hl=en-US&gl=US&ceid=US:en", type: "rss", priority: 1 },
   // ── Other chains / DeFi ──────────────────────────────────────────────────────
   { name: "Cosmos Blog", url: "https://blog.cosmos.network/feed", type: "rss", priority: 1 },
   { name: "TON Blog", url: "https://blog.ton.org/rss.xml", type: "rss", priority: 1 },
