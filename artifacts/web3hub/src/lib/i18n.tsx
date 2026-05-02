@@ -189,6 +189,7 @@ const TRANSLATIONS: Record<LangCode, Dict> = {
     spaceNo: "No", spaceYes: "Yes ✓", spacePending: "Pending", spaceRejected: "Rejected", rejectReasonLabel: "Rejection reason:",
     spaceBanned: "Banned", applySpace: "Join Now →",
     donate: "Free to use", contact: "Partnership & Support",
+    floatTeam: "Team", floatContact: "Contact Us", floatScrollTop: "Scroll to top", floatScrollBottom: "Scroll to bottom",
     invited: "Invited", people: "users", tagline: "One-stop Web3 project demand & matching platform",
     register: "Join Guild", joinNow: "Complete My Profile", noLatest: "No updates",
     promoBannerMain: "🎁 Limited time: Get 1000 Energy upon application!",
