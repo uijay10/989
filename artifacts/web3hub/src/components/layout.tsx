@@ -19,7 +19,6 @@ const DATE_LOCALES_LAYOUT: Record<string, Locale> = {
 };
 
 const NAV_KEYS = [
-  { key: "nav_js",         href: "/section/js", adminOnly: true },
   { key: "nav_ido",        href: "/section/ido" },
   { key: "nav_funding",    href: "/section/funding" },
   { key: "nav_vc",         href: "/section/vc" },
@@ -199,6 +198,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
 
             <div className="flex items-center gap-2 ml-auto">
+              {/* Admin-only JS entry ── only visible to admin wallets */}
+              {admin && (
+                <a
+                  href="/section/js"
+                  onClick={(e) => { e.preventDefault(); clearEcosystem(); setOptimisticNavHref("/section/js"); navigate("/section/js"); }}
+                  className="hidden sm:flex items-center justify-center w-9 h-9 rounded-full border border-red-300 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-sm transition-colors shrink-0"
+                  title="JS — 永州教师对调（管理员）"
+                >
+                  JS
+                </a>
+              )}
               {/* Language selector */}
               <div className="relative hidden sm:block">
                 <select
