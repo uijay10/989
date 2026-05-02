@@ -4,7 +4,8 @@ import { useSearch } from "wouter";
 import {
   TrendingUp, TrendingDown, RefreshCw, ExternalLink, Star, Search,
   BarChart2, Layers, Briefcase, Building2, Lock, Brain, Activity,
-  ChevronUp, ChevronDown, Globe, Zap
+  ChevronUp, ChevronDown, Globe, Zap, Timer, ArrowLeftRight, AlertTriangle,
+  ShieldAlert, Flame, CircleDot
 } from "lucide-react";
 
 // ── number formatters ────────────────────────────────────────────────────────
@@ -136,7 +137,10 @@ const NAV = [
   { key: "etf",      zhLabel: "ETF",      enLabel: "ETF",      icon: <Briefcase className="w-4 h-4" /> },
   { key: "stocks",   zhLabel: "币股",     enLabel: "Stocks",   icon: <Building2 className="w-4 h-4" /> },
   { key: "unlocks",  zhLabel: "解锁",     enLabel: "Unlocks",  icon: <Lock      className="w-4 h-4" /> },
-  { key: "smart",    zhLabel: "聪明钱",   enLabel: "Smart $",  icon: <Brain     className="w-4 h-4" /> },
+  { key: "smart",    zhLabel: "聪明钱",   enLabel: "Smart $",  icon: <Brain          className="w-4 h-4" /> },
+  { key: "halving",  zhLabel: "减半倒计时", enLabel: "Halving",icon: <Timer          className="w-4 h-4" /> },
+  { key: "transfers",zhLabel: "大额转账",  enLabel: "Transfers",icon: <ArrowLeftRight className="w-4 h-4" /> },
+  { key: "alerts",   zhLabel: "风险预警",  enLabel: "Alerts",  icon: <AlertTriangle  className="w-4 h-4" /> },
 ] as const;
 
 type NavKey = typeof NAV[number]["key"];
@@ -701,6 +705,369 @@ function SmartSection({ zh }: { zh: boolean }) {
   );
 }
 
+// ── Section: Halving Countdown ───────────────────────────────────────────────
+
+const HALVINGS = [
+  { date: "2009-01-03", block: 0,         reward: 50,   btcPrice: 0,       label: "创世区块" },
+  { date: "2012-11-28", block: 210_000,   reward: 25,   btcPrice: 12.5,    label: "第一次减半" },
+  { date: "2016-07-09", block: 420_000,   reward: 12.5, btcPrice: 650,     label: "第二次减半" },
+  { date: "2020-05-11", block: 630_000,   reward: 6.25, btcPrice: 8_600,   label: "第三次减半" },
+  { date: "2024-04-19", block: 840_000,   reward: 3.125,btcPrice: 64_000,  label: "第四次减半 ✓" },
+  { date: "2028-04-20", block: 1_050_000, reward: 1.5625, btcPrice: null,  label: "第五次减半 (预估)" },
+];
+
+const NEXT_HALVING = new Date("2028-04-20T00:00:00Z");
+const EPOCH_START  = new Date("2024-04-19T00:00:00Z");
+const EPOCH_BLOCKS = 210_000;
+const BLOCKS_PER_DAY = 144;
+
+function useHalvingCountdown() {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const diff = NEXT_HALVING.getTime() - now;
+  const days  = Math.floor(diff / 86_400_000);
+  const hours = Math.floor((diff % 86_400_000) / 3_600_000);
+  const mins  = Math.floor((diff % 3_600_000)  / 60_000);
+  const secs  = Math.floor((diff % 60_000)     / 1_000);
+  const elapsed = now - EPOCH_START.getTime();
+  const elapsedDays = elapsed / 86_400_000;
+  const minedBlocks = Math.floor(elapsedDays * BLOCKS_PER_DAY);
+  const remaining = EPOCH_BLOCKS - minedBlocks;
+  const pct = Math.min(100, (minedBlocks / EPOCH_BLOCKS) * 100);
+  return { days, hours, mins, secs, minedBlocks, remaining: Math.max(0, remaining), pct };
+}
+
+function HalvingSection({ zh }: { zh: boolean }) {
+  const { days, hours, mins, secs, minedBlocks, remaining, pct } = useHalvingCountdown();
+  const pad = (n: number) => String(n).padStart(2, "0");
+
+  return (
+    <div className="space-y-5">
+      {/* Hero countdown */}
+      <div className="rounded-2xl p-6 text-center"
+        style={{ background: "linear-gradient(135deg, #fff7ed 0%, #fff 50%, #fef3c7 100%)", border: "2px solid #f59e0b33" }}>
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <span className="text-2xl">₿</span>
+          <h3 className="text-lg font-extrabold text-amber-700">{zh ? "下次 BTC 减半倒计时" : "Next BTC Halving Countdown"}</h3>
+        </div>
+        <p className="text-xs text-amber-600 mb-4">{zh ? "预计 2028-04-20 · 区块高度 1,050,000" : "Est. 2028-04-20 · Block 1,050,000"}</p>
+
+        {/* Big timer */}
+        <div className="flex items-center justify-center gap-3 mb-5">
+          {[
+            { v: days,  label: zh ? "天" : "Days"  },
+            { v: hours, label: zh ? "时" : "Hrs"   },
+            { v: mins,  label: zh ? "分" : "Min"   },
+            { v: secs,  label: zh ? "秒" : "Sec"   },
+          ].map((u, i) => (
+            <div key={i} className="flex flex-col items-center">
+              <div className="w-16 sm:w-20 h-16 sm:h-20 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-2xl sm:text-3xl font-extrabold tabular-nums shadow-lg shadow-amber-200">
+                {pad(u.v)}
+              </div>
+              <span className="text-xs font-semibold text-amber-600 mt-1">{u.label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Epoch progress */}
+        <div className="max-w-md mx-auto">
+          <div className="flex justify-between text-xs text-muted-foreground mb-1">
+            <span>{zh ? `已挖 ~${minedBlocks.toLocaleString()} 块` : `~${minedBlocks.toLocaleString()} blocks mined`}</span>
+            <span>{zh ? `剩余 ~${remaining.toLocaleString()} 块` : `~${remaining.toLocaleString()} blocks left`}</span>
+          </div>
+          <div className="h-3 bg-amber-100 rounded-full overflow-hidden">
+            <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-500 transition-all duration-1000"
+              style={{ width: `${pct}%` }} />
+          </div>
+          <p className="text-xs text-amber-600 mt-1 font-semibold">{pct.toFixed(2)}% {zh ? "本轮完成" : "of epoch complete"}</p>
+        </div>
+      </div>
+
+      {/* Reward info */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: zh ? "当前区块奖励" : "Current Reward", value: "3.125 BTC", color: "#10b981" },
+          { label: zh ? "下次奖励"     : "Next Reward",    value: "1.5625 BTC", color: "#f59e0b" },
+          { label: zh ? "减幅"         : "Reduction",      value: "50%",        color: "#ef4444" },
+          { label: zh ? "年通胀率"     : "Annual Inflation",value: "~0.85%",    color: "#8b5cf6" },
+        ].map((c, i) => (
+          <div key={i} className="bg-white border border-border/60 rounded-2xl p-4 text-center">
+            <div className="text-xs text-muted-foreground mb-1">{c.label}</div>
+            <div className="text-lg font-extrabold" style={{ color: c.color }}>{c.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Historical halvings table */}
+      <div className="overflow-x-auto rounded-2xl border border-border/60 bg-white">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border/40 bg-slate-50/50">
+              {[zh?"事件":"Event", zh?"日期":"Date", zh?"区块高度":"Block", zh?"区块奖励":"Reward", zh?"当时BTC价":"BTC Price"].map((h, i) => (
+                <th key={i} className={`px-4 py-2 text-xs font-semibold text-muted-foreground ${i === 0 ? "text-left" : "text-right"}`}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border/30">
+            {HALVINGS.map((h, i) => (
+              <tr key={i} className={`transition-colors ${h.btcPrice === null ? "bg-amber-50/60 font-semibold" : "hover:bg-slate-50/60"}`}>
+                <td className="px-4 py-2.5 font-semibold text-foreground text-sm">{h.label}</td>
+                <td className="px-4 py-2.5 text-right font-mono text-xs text-muted-foreground">{h.date}</td>
+                <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{h.block.toLocaleString()}</td>
+                <td className="px-4 py-2.5 text-right font-bold text-amber-600">{h.reward} BTC</td>
+                <td className="px-4 py-2.5 text-right tabular-nums">
+                  {h.btcPrice === null
+                    ? <span className="text-muted-foreground">—</span>
+                    : h.btcPrice === 0
+                    ? <span className="text-muted-foreground">$0</span>
+                    : <span className="font-semibold text-foreground">${h.btcPrice.toLocaleString()}</span>
+                  }
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ── Section: Large Transfers ──────────────────────────────────────────────────
+
+const TRANSFER_DATA = [
+  { time: "2m ago",  from: "0x28C6c06298d514Db089934071355E5743bf21d60", fromLabel: "Binance 14",    to: "0x742d35Cc6634C0532925a3b8D4C9b4e5b0e7c1B5", toLabel: null,          amount: 18_420, token: "ETH",  usd: 42_600_000,  chain: "Ethereum", type: "withdraw" },
+  { time: "5m ago",  from: "Unknown",                                       fromLabel: null,          to: "0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE",   toLabel: "Binance 14",  amount: 9_800,  token: "ETH",  usd: 22_700_000,  chain: "Ethereum", type: "deposit"  },
+  { time: "11m ago", from: "Tron Foundation",                               fromLabel: "Tron Found.", to: "Unknown",                                         toLabel: null,          amount: 450_000_000, token: "TRX", usd: 148_000_000, chain: "Tron", type: "unknown" },
+  { time: "18m ago", from: "0xBE0eB53F46cd790Cd13851d5EFf43D12404d33E8",   fromLabel: "Binance 7",  to: "0xF977814e90dA44bFA03b6295A0616a897441aceE",   toLabel: "Binance 6",   amount: 62_400, token: "BNB",  usd: 38_500_000,  chain: "BSC",      type: "internal" },
+  { time: "24m ago", from: "Unknown",                                       fromLabel: null,          to: "0x8894E0a0c962CB723c1976a4421c95949bE2D4E3",   toLabel: "Binance 8",   amount: 2_100,  token: "BTC",  usd: 164_000_000, chain: "Bitcoin",  type: "deposit"  },
+  { time: "31m ago", from: "0xf89d7b9c864f589bbF53a82105107622B35EaA4",    fromLabel: "Kraken",      to: "Unknown",                                         toLabel: null,          amount: 85_000, token: "SOL",  usd: 7_200_000,   chain: "Solana",   type: "withdraw" },
+  { time: "44m ago", from: "Unknown",                                       fromLabel: null,          to: "Unknown",                                         toLabel: null,          amount: 320_000_000, token: "USDT",usd: 320_000_000, chain: "Tron", type: "stable"  },
+  { time: "58m ago", from: "Jump Trading",                                  fromLabel: "Jump",        to: "Uniswap V3",                                      toLabel: "Uniswap",     amount: 4_200,  token: "ETH",  usd: 9_700_000,   chain: "Ethereum", type: "defi"     },
+];
+
+function fmtAddrShort(s: string) { if (s.length < 10) return s; return s.slice(0, 6) + "…" + s.slice(-4); }
+
+function TransfersSection({ zh }: { zh: boolean }) {
+  const [filter, setFilter] = useState<"all"|"exchange"|"whale"|"stable">("all");
+
+  const filtered = TRANSFER_DATA.filter(t => {
+    if (filter === "exchange") return t.type === "deposit" || t.type === "withdraw" || t.type === "internal";
+    if (filter === "whale")    return t.usd >= 50_000_000;
+    if (filter === "stable")   return t.type === "stable";
+    return true;
+  });
+
+  const typeInfo = (type: string) => {
+    switch (type) {
+      case "deposit":  return { label: zh?"交易所入金":"Deposit",  cls: "bg-red-50 text-red-600"   };
+      case "withdraw": return { label: zh?"交易所出金":"Withdraw", cls: "bg-emerald-50 text-emerald-600" };
+      case "internal": return { label: zh?"内部转账":"Internal",   cls: "bg-blue-50 text-blue-600" };
+      case "stable":   return { label: zh?"稳定币":"Stablecoin",   cls: "bg-slate-100 text-slate-600" };
+      case "defi":     return { label: "DeFi",                     cls: "bg-purple-50 text-purple-600" };
+      default:         return { label: zh?"未知":"Unknown",        cls: "bg-amber-50 text-amber-600" };
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 flex-wrap">
+        {([
+          { key: "all",      label: zh ? "全部" : "All"           },
+          { key: "exchange", label: zh ? "交易所" : "Exchange"    },
+          { key: "whale",    label: zh ? "巨鲸(>$50M)" : "Whale ($50M+)" },
+          { key: "stable",   label: zh ? "稳定币" : "Stablecoin" },
+        ] as const).map(f => (
+          <button key={f.key} onClick={() => setFilter(f.key)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${filter === f.key ? "bg-indigo-600 text-white border-indigo-600" : "border-border bg-white text-muted-foreground hover:border-slate-400"}`}>
+            {f.label}
+          </button>
+        ))}
+        <span className="ml-auto text-[11px] text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+          {zh ? "⚠️ 模拟数据" : "⚠️ Demo data"}
+        </span>
+      </div>
+
+      <div className="overflow-x-auto rounded-2xl border border-border/60 bg-white">
+        <table className="w-full min-w-[640px] text-sm">
+          <thead>
+            <tr className="border-b border-border/40 bg-slate-50/50">
+              {[zh?"时间":"Time", zh?"类型":"Type", zh?"来源":"From", zh?"去向":"To", zh?"金额":"Amount", zh?"等值USD":"USD Value", zh?"链":"Chain"].map((h, i) => (
+                <th key={i} className={`px-3 py-2 text-xs font-semibold text-muted-foreground ${i < 2 ? "text-left" : "text-right"}`}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border/30">
+            {filtered.map((t, i) => {
+              const ti = typeInfo(t.type);
+              return (
+                <tr key={i} className="hover:bg-blue-50/20 transition-colors">
+                  <td className="px-3 py-2.5 text-xs text-muted-foreground font-mono whitespace-nowrap">{t.time}</td>
+                  <td className="px-3 py-2.5">
+                    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${ti.cls}`}>{ti.label}</span>
+                  </td>
+                  <td className="px-3 py-2.5 text-right font-mono text-xs">
+                    <span className="text-foreground font-semibold">{t.fromLabel ?? fmtAddrShort(t.from)}</span>
+                  </td>
+                  <td className="px-3 py-2.5 text-right font-mono text-xs">
+                    <span className="text-foreground font-semibold">{t.toLabel ?? fmtAddrShort(t.to)}</span>
+                  </td>
+                  <td className="px-3 py-2.5 text-right font-bold tabular-nums">
+                    {t.amount.toLocaleString()} <span className="font-normal text-muted-foreground">{t.token}</span>
+                  </td>
+                  <td className="px-3 py-2.5 text-right font-bold tabular-nums text-foreground">{fmtLarge(t.usd)}</td>
+                  <td className="px-3 py-2.5 text-right">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium">{t.chain}</span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-[11px] text-muted-foreground px-1">
+        {zh ? "真实数据接入需对接 Arkham Intelligence / Nansen / Whale Alert API。" : "Real data requires Arkham / Nansen / Whale Alert API integration."}
+      </p>
+    </div>
+  );
+}
+
+// ── Section: Risk Alerts ──────────────────────────────────────────────────────
+
+const ALERTS_DATA = [
+  {
+    level: "critical", icon: "🚨",
+    title: { zh: "Binance ETH 大规模出金 — 2h 累计 $4.2 亿", en: "Binance ETH Mass Outflow — $420M in 2h" },
+    desc:  { zh: "过去 2 小时 Binance ETH 热钱包累计出金超 18 万枚 ETH，历史上此类大规模流出往往先于大行情发生。", en: "Over 180,000 ETH outflowed from Binance hot wallet in 2h. Historically precedes major price moves." },
+    tags: ["ETH", "Binance"],
+    time: "12m ago",
+    category: { zh: "流动性", en: "Liquidity" },
+  },
+  {
+    level: "critical", icon: "⚠️",
+    title: { zh: "USDT 在 Curve 3pool 短暂失衡 — 占比升至 58%", en: "USDT Curve 3pool Imbalance — Ratio Hit 58%" },
+    desc:  { zh: "Curve 3pool 中 USDT 占比升至 58%，偏离正常的 33% 水平，暗示市场存在 USDT→USDC 的结构性转换压力。", en: "USDT share in Curve 3pool hit 58% vs normal 33%, signaling structural USDT→USDC conversion pressure." },
+    tags: ["USDT", "Curve", "Stablecoin"],
+    time: "28m ago",
+    category: { zh: "稳定币", en: "Stablecoin" },
+  },
+  {
+    level: "high", icon: "🔴",
+    title: { zh: "ARB 大规模解锁即将到来 — $4,900 万", en: "ARB Massive Unlock Incoming — $49M" },
+    desc:  { zh: "6 月 8 日将有 9,200 万枚 ARB（约 $4,900 万）解锁，占流通供应量 2.8%，可能带来短期抛压。", en: "92M ARB (~$49M) unlocks on Jun 8, representing 2.8% of circulating supply. Watch for sell pressure." },
+    tags: ["ARB", "Unlock"],
+    time: "1h ago",
+    category: { zh: "解锁预警", en: "Unlock" },
+  },
+  {
+    level: "high", icon: "🛡️",
+    title: { zh: "Euler Finance 再审计完成 — 发现 2 个中危漏洞", en: "Euler Finance Re-Audit Complete — 2 Medium Issues Found" },
+    desc:  { zh: "第三方审计机构 Trail of Bits 完成 Euler V2 重审计，发现 2 个中等风险漏洞已修复，未发现高危。建议谨慎参与新部署合约。", en: "Trail of Bits completed Euler V2 re-audit. 2 medium issues found and patched, no critical. Exercise caution with new deployments." },
+    tags: ["DeFi", "Security"],
+    time: "3h ago",
+    category: { zh: "安全", en: "Security" },
+  },
+  {
+    level: "medium", icon: "🟡",
+    title: { zh: "BTC 休眠币加速移动 — 链上 HODL 波浪信号", en: "BTC Dormant Coins Accelerating — HODL Wave Signal" },
+    desc:  { zh: "过去 24h 超过 12,000 BTC 的休眠地址（沉睡 >2 年）开始活动，Coin Days Destroyed 指标显著上升，历史上此信号出现在周期顶部附近。", en: "12,000+ BTC from addresses dormant >2 years became active in 24h. CDD metric surging — historically appears near cycle tops." },
+    tags: ["BTC", "On-chain"],
+    time: "5h ago",
+    category: { zh: "市场信号", en: "Market Signal" },
+  },
+  {
+    level: "medium", icon: "📋",
+    title: { zh: "美 SEC 暂缓 3 家 ETF 审批 — 等待更多信息", en: "SEC Delays 3 ETF Approvals — Awaiting More Info" },
+    desc:  { zh: "美国 SEC 宣布对 Grayscale ETH ETF、Franklin Templeton SOL ETF 等 3 个申请要求补充材料，90 天内作出最终决定。", en: "SEC requested additional info for 3 applications including Grayscale ETH ETF. Final decision within 90 days." },
+    tags: ["ETF", "Regulation", "SEC"],
+    time: "8h ago",
+    category: { zh: "监管", en: "Regulation" },
+  },
+  {
+    level: "low", icon: "🟢",
+    title: { zh: "以太坊 gas 费创 6 个月新低 — 均值 3 Gwei", en: "Ethereum Gas Hits 6-Month Low — Avg 3 Gwei" },
+    desc:  { zh: "以太坊主网 gas 费降至 3 Gwei，为近 6 个月最低水平，链上交互成本大幅降低，DeFi 用户友好度上升。", en: "Ethereum mainnet gas dropped to 3 Gwei, 6-month low. On-chain interaction costs significantly reduced." },
+    tags: ["ETH", "Gas"],
+    time: "12h ago",
+    category: { zh: "网络状态", en: "Network" },
+  },
+];
+
+const LEVEL_STYLE = {
+  critical: { border: "border-red-300",    bg: "bg-red-50",    badge: "bg-red-500 text-white",     dot: "bg-red-500",    label: { zh: "严重", en: "Critical" } },
+  high:     { border: "border-orange-300", bg: "bg-orange-50", badge: "bg-orange-500 text-white",   dot: "bg-orange-500", label: { zh: "高危", en: "High"     } },
+  medium:   { border: "border-amber-300",  bg: "bg-amber-50",  badge: "bg-amber-400 text-white",    dot: "bg-amber-400",  label: { zh: "中等", en: "Medium"   } },
+  low:      { border: "border-emerald-300",bg: "bg-emerald-50",badge: "bg-emerald-500 text-white",  dot: "bg-emerald-500",label: { zh: "正常", en: "Normal"   } },
+} as const;
+
+function AlertsSection({ zh }: { zh: boolean }) {
+  const [levelFilter, setLevelFilter] = useState<"all"|"critical"|"high"|"medium"|"low">("all");
+  const levels = ["all", "critical", "high", "medium", "low"] as const;
+  const levelLabel: Record<string, string> = { all: zh?"全部":"All", critical: zh?"严重":"Critical", high: zh?"高危":"High", medium: zh?"中等":"Medium", low: zh?"正常":"Normal" };
+
+  const filtered = ALERTS_DATA.filter(a => levelFilter === "all" || a.level === levelFilter);
+
+  return (
+    <div className="space-y-3">
+      {/* Level filter */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {levels.map(l => {
+          const style = l === "all" ? null : LEVEL_STYLE[l];
+          return (
+            <button key={l} onClick={() => setLevelFilter(l)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                levelFilter === l
+                  ? (l === "all" ? "bg-slate-800 text-white border-slate-800" : `${style!.badge} border-transparent`)
+                  : "border-border bg-white text-muted-foreground hover:border-slate-400"
+              }`}>
+              {levelLabel[l]}
+            </button>
+          );
+        })}
+        <span className="ml-auto text-[11px] text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+          {zh ? "⚠️ 模拟数据" : "⚠️ Demo data"}
+        </span>
+      </div>
+
+      {/* Alert cards */}
+      <div className="space-y-3">
+        {filtered.map((alert, i) => {
+          const style = LEVEL_STYLE[alert.level as keyof typeof LEVEL_STYLE];
+          return (
+            <div key={i} className={`rounded-2xl border ${style.border} ${style.bg} p-4 hover:shadow-md transition-all`}>
+              <div className="flex items-start gap-3">
+                <span className="text-xl shrink-0 mt-0.5">{alert.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${style.badge}`}>
+                      {style.label[zh ? "zh" : "en"]}
+                    </span>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/70 text-muted-foreground border border-border/40">
+                      {alert.category[zh ? "zh" : "en"]}
+                    </span>
+                    {alert.tags.filter(t => typeof t === "string").map(tag => (
+                      <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded bg-white/60 text-muted-foreground border border-border/30">{tag}</span>
+                    ))}
+                    <span className="ml-auto text-[11px] text-muted-foreground">{alert.time}</span>
+                  </div>
+                  <h4 className="font-bold text-sm text-foreground leading-snug mb-1">
+                    {alert.title[zh ? "zh" : "en"]}
+                  </h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {alert.desc[zh ? "zh" : "en"]}
+                  </p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function OnchainPage() {
@@ -762,19 +1129,25 @@ export default function OnchainPage() {
               {active === "etf"     && (zh ? "现货 BTC ETF 资金流向" : "Spot BTC ETF fund flows")}
               {active === "stocks"  && (zh ? "加密相关上市公司" : "Crypto-related public companies")}
               {active === "unlocks" && (zh ? "大额代币解锁预警" : "Major token unlock alerts")}
-              {active === "smart"   && (zh ? "巨鲸链上动向追踪" : "On-chain whale activity")}
+              {active === "smart"     && (zh ? "巨鲸链上动向追踪" : "On-chain whale activity")}
+              {active === "halving"   && (zh ? "BTC 减半倒计时 · 历史数据" : "BTC halving countdown & history")}
+              {active === "transfers" && (zh ? "链上异常大额转账实时监控" : "Real-time large on-chain transfer monitor")}
+              {active === "alerts"    && (zh ? "市场风险信号 · 安全 · 监管" : "Market risk signals · Security · Regulation")}
             </p>
           </div>
         </div>
 
         {/* Section content */}
-        {active === "crypto"  && <CryptoSection  zh={zh} />}
-        {active === "index"   && <IndexSection   zh={zh} />}
-        {active === "tvl"     && <TvlSection     zh={zh} />}
-        {active === "etf"     && <EtfSection     zh={zh} />}
-        {active === "stocks"  && <StocksSection  zh={zh} />}
-        {active === "unlocks" && <UnlocksSection zh={zh} />}
-        {active === "smart"   && <SmartSection   zh={zh} />}
+        {active === "crypto"    && <CryptoSection    zh={zh} />}
+        {active === "index"     && <IndexSection     zh={zh} />}
+        {active === "tvl"       && <TvlSection       zh={zh} />}
+        {active === "etf"       && <EtfSection       zh={zh} />}
+        {active === "stocks"    && <StocksSection    zh={zh} />}
+        {active === "unlocks"   && <UnlocksSection   zh={zh} />}
+        {active === "smart"     && <SmartSection     zh={zh} />}
+        {active === "halving"   && <HalvingSection   zh={zh} />}
+        {active === "transfers" && <TransfersSection zh={zh} />}
+        {active === "alerts"    && <AlertsSection    zh={zh} />}
       </main>
     </div>
   );

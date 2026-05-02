@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useGetPosts, useGetMe } from "@workspace/api-client-react";
 import { useQuery } from "@tanstack/react-query";
 import { useWeb3Auth } from "@/lib/web3";
-import { PenSquare, CheckCircle2, Eye, BarChart2, Activity, Layers, Briefcase, Building2, Lock, Brain } from "lucide-react";
+import { PenSquare, CheckCircle2, Eye, BarChart2, Activity, Layers, Briefcase, Building2, Lock, Brain, Timer, ArrowLeftRight, AlertTriangle } from "lucide-react";
 import { EventList } from "@/components/events/EventList";
 import { Link, useLocation } from "wouter";
 import { useLang } from "@/lib/i18n";
@@ -407,7 +407,10 @@ export default function Home() {
           { key: "etf",     zhLabel: "ETF",      enLabel: "ETF",      icon: <Briefcase className="w-3.5 h-3.5" />, color: "#f59e0b" },
           { key: "stocks",  zhLabel: "币股",     enLabel: "Stocks",   icon: <Building2 className="w-3.5 h-3.5" />, color: "#64748b" },
           { key: "unlocks", zhLabel: "解锁",     enLabel: "Unlocks",  icon: <Lock      className="w-3.5 h-3.5" />, color: "#f97316" },
-          { key: "smart",   zhLabel: "聪明钱",   enLabel: "Smart $",  icon: <Brain     className="w-3.5 h-3.5" />, color: "#ec4899" },
+          { key: "smart",     zhLabel: "聪明钱",   enLabel: "Smart $",   icon: <Brain          className="w-3.5 h-3.5" />, color: "#ec4899" },
+          { key: "halving",   zhLabel: "减半倒计时", enLabel: "Halving",  icon: <Timer          className="w-3.5 h-3.5" />, color: "#f59e0b" },
+          { key: "transfers", zhLabel: "大额转账",  enLabel: "Transfers", icon: <ArrowLeftRight className="w-3.5 h-3.5" />, color: "#6366f1" },
+          { key: "alerts",    zhLabel: "风险预警",  enLabel: "Alerts",    icon: <AlertTriangle  className="w-3.5 h-3.5" />, color: "#ef4444" },
         ] as const).map(item => (
           <Link
             key={item.key}
