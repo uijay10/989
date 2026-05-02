@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useGetPosts, useGetMe } from "@workspace/api-client-react";
 import { useQuery } from "@tanstack/react-query";
 import { useWeb3Auth } from "@/lib/web3";
-import { PenSquare, CheckCircle2, Eye, BarChart2, Activity, Layers, Briefcase, Building2, Lock, Brain, Timer, ArrowLeftRight, AlertTriangle } from "lucide-react";
+import { PenSquare, CheckCircle2, Eye, BarChart2, Activity, Layers, Briefcase, Building2, Lock, Brain, Timer, ArrowLeftRight, AlertTriangle, Flame, Gauge, Anchor, Link2, Rocket, LayoutGrid, Cpu, Server, History } from "lucide-react";
 import { EventList } from "@/components/events/EventList";
 import { Link, useLocation } from "wouter";
 import { useLang } from "@/lib/i18n";
@@ -398,31 +398,50 @@ export default function Home() {
         </div>
       </div>
 
-      {/* On-chain Data Center quick nav */}
-      <div className="flex flex-wrap gap-2">
-        {([
-          { key: "crypto",  zhLabel: "加密货币", enLabel: "Crypto",   icon: <BarChart2 className="w-3.5 h-3.5" />, color: "#3b82f6" },
-          { key: "index",   zhLabel: "指数",     enLabel: "Indices",  icon: <Activity  className="w-3.5 h-3.5" />, color: "#8b5cf6" },
-          { key: "tvl",     zhLabel: "TVL",      enLabel: "TVL",      icon: <Layers    className="w-3.5 h-3.5" />, color: "#10b981" },
-          { key: "etf",     zhLabel: "ETF",      enLabel: "ETF",      icon: <Briefcase className="w-3.5 h-3.5" />, color: "#f59e0b" },
-          { key: "stocks",  zhLabel: "币股",     enLabel: "Stocks",   icon: <Building2 className="w-3.5 h-3.5" />, color: "#64748b" },
-          { key: "unlocks", zhLabel: "解锁",     enLabel: "Unlocks",  icon: <Lock      className="w-3.5 h-3.5" />, color: "#f97316" },
-          { key: "smart",     zhLabel: "聪明钱",   enLabel: "Smart $",   icon: <Brain          className="w-3.5 h-3.5" />, color: "#ec4899" },
-          { key: "halving",   zhLabel: "减半倒计时", enLabel: "Halving",  icon: <Timer          className="w-3.5 h-3.5" />, color: "#f59e0b" },
-          { key: "transfers", zhLabel: "大额转账",  enLabel: "Transfers", icon: <ArrowLeftRight className="w-3.5 h-3.5" />, color: "#6366f1" },
-          { key: "alerts",    zhLabel: "风险预警",  enLabel: "Alerts",    icon: <AlertTriangle  className="w-3.5 h-3.5" />, color: "#ef4444" },
-        ] as const).map(item => (
+      {/* On-chain Data Center quick nav — 2 rows */}
+      {(() => {
+        const ALL_NAV = [
+          { key: "crypto",      zhLabel: "加密货币",  enLabel: "Crypto",      icon: <BarChart2      className="w-3.5 h-3.5" />, color: "#3b82f6" },
+          { key: "index",       zhLabel: "指数",      enLabel: "Indices",     icon: <Activity       className="w-3.5 h-3.5" />, color: "#8b5cf6" },
+          { key: "tvl",         zhLabel: "TVL",       enLabel: "TVL",         icon: <Layers         className="w-3.5 h-3.5" />, color: "#10b981" },
+          { key: "etf",         zhLabel: "ETF",       enLabel: "ETF",         icon: <Briefcase      className="w-3.5 h-3.5" />, color: "#f59e0b" },
+          { key: "stocks",      zhLabel: "币股",      enLabel: "Stocks",      icon: <Building2      className="w-3.5 h-3.5" />, color: "#64748b" },
+          { key: "unlocks",     zhLabel: "解锁",      enLabel: "Unlocks",     icon: <Lock           className="w-3.5 h-3.5" />, color: "#f97316" },
+          { key: "smart",       zhLabel: "聪明钱",    enLabel: "Smart $",     icon: <Brain          className="w-3.5 h-3.5" />, color: "#ec4899" },
+          { key: "halving",     zhLabel: "减半倒计时", enLabel: "Halving",    icon: <Timer          className="w-3.5 h-3.5" />, color: "#f59e0b" },
+          { key: "transfers",   zhLabel: "大额转账",  enLabel: "Transfers",   icon: <ArrowLeftRight className="w-3.5 h-3.5" />, color: "#6366f1" },
+          { key: "alerts",      zhLabel: "风险预警",  enLabel: "Alerts",      icon: <AlertTriangle  className="w-3.5 h-3.5" />, color: "#ef4444" },
+          { key: "gas",         zhLabel: "Gas监控",   enLabel: "Gas Fee",     icon: <Gauge          className="w-3.5 h-3.5" />, color: "#0ea5e9" },
+          { key: "whales",      zhLabel: "鲸鱼持仓",  enLabel: "Whales",      icon: <Anchor         className="w-3.5 h-3.5" />, color: "#0891b2" },
+          { key: "derivatives", zhLabel: "衍生品",    enLabel: "Derivatives", icon: <BarChart2      className="w-3.5 h-3.5" />, color: "#7c3aed" },
+          { key: "bridge",      zhLabel: "跨链桥",    enLabel: "Bridge",      icon: <Link2          className="w-3.5 h-3.5" />, color: "#059669" },
+          { key: "trending",    zhLabel: "热门",      enLabel: "Trending",    icon: <Flame          className="w-3.5 h-3.5" />, color: "#dc2626" },
+          { key: "launch",      zhLabel: "新币上线",  enLabel: "Launch",      icon: <Rocket         className="w-3.5 h-3.5" />, color: "#2563eb" },
+          { key: "sectors",     zhLabel: "叙事板块",  enLabel: "Sectors",     icon: <LayoutGrid     className="w-3.5 h-3.5" />, color: "#d97706" },
+          { key: "mev",         zhLabel: "MEV套利",   enLabel: "MEV",         icon: <Cpu            className="w-3.5 h-3.5" />, color: "#475569" },
+          { key: "staking",     zhLabel: "节点质押",  enLabel: "Staking",     icon: <Server         className="w-3.5 h-3.5" />, color: "#16a34a" },
+          { key: "history",     zhLabel: "历史回溯",  enLabel: "History",     icon: <History        className="w-3.5 h-3.5" />, color: "#9333ea" },
+        ] as const;
+        const row1 = ALL_NAV.slice(0, 10);
+        const row2 = ALL_NAV.slice(10);
+        const pill = (item: typeof ALL_NAV[number]) => (
           <Link
             key={item.key}
             href={`/onchain?tab=${item.key}`}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-semibold bg-white border border-border/70 hover:border-current hover:shadow-sm transition-all whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white border border-border/70 hover:border-current hover:shadow-sm transition-all whitespace-nowrap"
             style={{ color: item.color }}
           >
             {item.icon}
             {lang === "zh-CN" ? item.zhLabel : item.enLabel}
           </Link>
-        ))}
-      </div>
+        );
+        return (
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-2">{row1.map(pill)}</div>
+            <div className="flex flex-wrap gap-2">{row2.map(pill)}</div>
+          </div>
+        );
+      })()}
 
       {/* Two-column: main feed + 重要动态 */}
       <div className="flex gap-6 items-start">

@@ -5,7 +5,8 @@ import {
   TrendingUp, TrendingDown, RefreshCw, ExternalLink, Star, Search,
   BarChart2, Layers, Briefcase, Building2, Lock, Brain, Activity,
   ChevronUp, ChevronDown, Globe, Zap, Timer, ArrowLeftRight, AlertTriangle,
-  ShieldAlert, Flame, CircleDot
+  ShieldAlert, Flame, CircleDot, Gauge, Anchor, Link2, Rocket,
+  LayoutGrid, Cpu, Server, History, Tag, Trophy
 } from "lucide-react";
 
 // ── number formatters ────────────────────────────────────────────────────────
@@ -115,6 +116,131 @@ const INDEX_DATA = [
   { name: "NFT 7日交易量",      en: "NFT 7d Volume",     value: 312.4, max: 2000, label: "", color: "#f97316", change1d: -45.2, suffix: "M", prefix: "$" },
 ];
 
+const GAS_DATA = {
+  eth: { slow: 8, normal: 13, fast: 21, baseFee: 9.4, priority: 2.1 },
+  l2: [
+    { chain: "Arbitrum",  fee: 0.008, feeUsd: 0.02, color: "#1D4ED8", change: -12 },
+    { chain: "Optimism",  fee: 0.012, feeUsd: 0.03, color: "#FF0420", change: -8  },
+    { chain: "Base",      fee: 0.006, feeUsd: 0.01, color: "#0052FF", change: -15 },
+    { chain: "Polygon",   fee: 28,    feeUsd: 0.08, color: "#8247E5", change: 4   },
+    { chain: "zkSync",    fee: 0.009, feeUsd: 0.02, color: "#6E56CA", change: -6  },
+    { chain: "Starknet",  fee: 0.004, feeUsd: 0.01, color: "#EC796B", change: -22 },
+    { chain: "Scroll",    fee: 0.010, feeUsd: 0.03, color: "#FFCB4A", change: -9  },
+  ],
+  hourly: [12,14,11,9,8,9,14,18,24,28,26,22,19,17,18,20,19,22,25,22,18,16,14,13],
+  bestWindow: "02:00–05:00 UTC",
+  bestDays: ["Tue","Wed","Thu"],
+};
+
+const WHALE_DATA = [
+  { rank: 1, label: "Satoshi (est.)",    address: "1A1zP1eP5QGefi2DMPTfTL5SLmv7Divf", btc: 1_100_000, usd: 104_500_000_000, change30d:        0, pct: 5.24, status: "dormant"  },
+  { rank: 2, label: "BlackRock IBIT",    address: "ETF Custody",                      btc:   573_520, usd:  54_500_000_000, change30d:   28_000, pct: 2.73, status: "active"   },
+  { rank: 3, label: "MicroStrategy",     address: "Multi-wallet",                     btc:   214_400, usd:  20_400_000_000, change30d:   22_000, pct: 1.02, status: "buying"   },
+  { rank: 4, label: "Binance Cold",      address: "34xp4vRoCGJym3xR",                btc:   248_597, usd:  23_600_000_000, change30d:  -12_400, pct: 1.18, status: "selling"  },
+  { rank: 5, label: "Fidelity FBTC",     address: "ETF Custody",                      btc:   201_350, usd:  19_100_000_000, change30d:    8_400, pct: 0.96, status: "buying"   },
+  { rank: 6, label: "Coinbase Custody",  address: "Multi-wallet",                     btc:   152_000, usd:  14_400_000_000, change30d:   -5_200, pct: 0.72, status: "selling"  },
+  { rank: 7, label: "Bitfinex",          address: "bc1qazcm7…",                       btc:   177_848, usd:  16_900_000_000, change30d:    3_200, pct: 0.85, status: "active"   },
+  { rank: 8, label: "Kraken",            address: "Multi-wallet",                     btc:   108_000, usd:  10_300_000_000, change30d:    1_200, pct: 0.51, status: "active"   },
+];
+
+const DERIV_DATA = {
+  futures: [
+    { exchange: "Binance",     oi: 12_800_000_000, oiChange: 4.2,   funding: 0.0103,  vol24h: 28_400_000_000, liqLong: 124_000_000, liqShort: 58_000_000  },
+    { exchange: "Bybit",       oi:  8_200_000_000, oiChange: 2.8,   funding: 0.0091,  vol24h: 15_200_000_000, liqLong:  87_000_000, liqShort: 42_000_000  },
+    { exchange: "OKX",         oi:  5_600_000_000, oiChange: -1.4,  funding: 0.0088,  vol24h:  9_800_000_000, liqLong:  45_000_000, liqShort: 31_000_000  },
+    { exchange: "Hyperliquid", oi:  2_800_000_000, oiChange: 12.4,  funding: 0.0115,  vol24h:  4_200_000_000, liqLong:  23_000_000, liqShort: 15_000_000  },
+    { exchange: "dYdX",        oi:  1_200_000_000, oiChange: 6.1,   funding: 0.0102,  vol24h:  2_100_000_000, liqLong:  12_000_000, liqShort:  8_000_000  },
+  ],
+  options: { putCall: 0.68, maxPain: 93_000, iv: 58.4, totalOI: 18_400_000_000 },
+};
+
+const BRIDGE_DATA = {
+  bridges: [
+    { name: "Wormhole",    vol24h: 312_000_000, txns: 9_240,  topRoute: "ETH → SOL",  change: 34.2, color: "#9333ea" },
+    { name: "Stargate",    vol24h: 284_000_000, txns: 4_821,  topRoute: "ETH → ARB",  change: 12.4, color: "#0ea5e9" },
+    { name: "Across",      vol24h: 198_000_000, txns: 3_240,  topRoute: "ETH → Base", change: 8.1,  color: "#10b981" },
+    { name: "Orbiter",     vol24h:  89_000_000, txns: 7_840,  topRoute: "ETH → ZkS",  change: 22.6, color: "#f59e0b" },
+    { name: "Hop",         vol24h: 124_000_000, txns: 2_180,  topRoute: "ETH → OP",   change: -3.2, color: "#ec4899" },
+    { name: "Synapse",     vol24h:  67_000_000, txns: 1_290,  topRoute: "ETH → POL",  change: -8.4, color: "#64748b" },
+  ],
+  recent: [
+    { from: "Ethereum", to: "Solana",   amount: 24_800_000, token: "USDC", bridge: "Wormhole", time: "8m ago"  },
+    { from: "Ethereum", to: "Arbitrum", amount: 18_400_000, token: "ETH",  bridge: "Stargate", time: "14m ago" },
+    { from: "Polygon",  to: "Ethereum", amount: 12_200_000, token: "USDT", bridge: "Hop",      time: "23m ago" },
+    { from: "Solana",   to: "Ethereum", amount:  9_800_000, token: "SOL",  bridge: "Wormhole", time: "31m ago" },
+  ],
+};
+
+const TRENDING_DATA = [
+  { rank: 1, symbol: "TRUMP",   name: "Official Trump",      price: 12.40,     change24h: 24.8,  vol24h: 1_840_000_000, mentions: 48_200, category: "Meme",   hot: true  },
+  { rank: 2, symbol: "PEPE",    name: "Pepe",                price: 0.0000142, change24h: 18.2,  vol24h:   980_000_000, mentions: 32_100, category: "Meme",   hot: true  },
+  { rank: 3, symbol: "VIRTUAL", name: "Virtuals Protocol",   price: 1.84,      change24h: 14.6,  vol24h:   420_000_000, mentions: 21_400, category: "AI",     hot: true  },
+  { rank: 4, symbol: "WIF",     name: "dogwifhat",           price: 1.12,      change24h: 12.1,  vol24h:   380_000_000, mentions: 18_900, category: "Meme",   hot: false },
+  { rank: 5, symbol: "FET",     name: "Fetch.ai",            price: 0.94,      change24h: 9.8,   vol24h:   248_000_000, mentions: 14_200, category: "AI",     hot: false },
+  { rank: 6, symbol: "ONDO",    name: "Ondo Finance",        price: 1.28,      change24h: 8.4,   vol24h:   184_000_000, mentions: 12_800, category: "RWA",    hot: false },
+  { rank: 7, symbol: "RENDER",  name: "Render",              price: 4.82,      change24h: 7.2,   vol24h:   142_000_000, mentions:  9_800, category: "DePIN",  hot: false },
+  { rank: 8, symbol: "PENDLE",  name: "Pendle",              price: 3.64,      change24h: 6.8,   vol24h:   128_000_000, mentions:  8_400, category: "DeFi",   hot: false },
+  { rank: 9, symbol: "ENA",     name: "Ethena",              price: 0.48,      change24h: 5.9,   vol24h:    98_000_000, mentions:  7_200, category: "DeFi",   hot: false },
+  { rank: 10,symbol: "LINK",    name: "Chainlink",           price: 14.20,     change24h: 4.6,   vol24h:   412_000_000, mentions:  6_800, category: "Oracle", hot: false },
+];
+
+const LAUNCH_DATA = [
+  { name: "Kaito AI",       symbol: "KAITO",  type: "TGE",     date: "2025-06-08", daysLeft: 37, raise: 24_000_000,  platform: "Binance Launchpool", status: "upcoming", perf: null },
+  { name: "Monad",          symbol: "MON",    type: "TGE",     date: "2025-06-15", daysLeft: 44, raise: 100_000_000, platform: "多平台",             status: "upcoming", perf: null },
+  { name: "Berachain",      symbol: "BERA",   type: "IDO",     date: "2025-06-20", daysLeft: 49, raise: 42_000_000,  platform: "Camelot",            status: "upcoming", perf: null },
+  { name: "Plume Network",  symbol: "PLUME",  type: "TGE",     date: "2025-07-01", daysLeft: 60, raise: 18_000_000,  platform: "OKX Jumpstart",      status: "upcoming", perf: null },
+  { name: "Story Protocol", symbol: "IP",     type: "TGE",     date: "2025-07-10", daysLeft: 69, raise: 80_000_000,  platform: "Binance",            status: "upcoming", perf: null },
+  { name: "Nillion",        symbol: "NIL",    type: "TGE",     date: "2025-05-01", daysLeft: -1, raise: 12_000_000,  platform: "Binance",            status: "done",     perf: 128  },
+  { name: "LayerZero",      symbol: "ZRO",    type: "TGE",     date: "2024-06-20", daysLeft: -316,raise: 120_000_000, platform: "多平台",            status: "done",     perf: -42  },
+  { name: "EigenLayer",     symbol: "EIGEN",  type: "Airdrop", date: "2024-09-30", daysLeft: -214,raise: 50_000_000,  platform: "自有",              status: "done",     perf: -68  },
+];
+
+const SECTORS_DATA = [
+  { name: "Meme",       en: "Meme",        change7d: 32.6, change30d:  84.2, mcap: 62_000_000_000,  top: ["DOGE","SHIB","PEPE"],    color: "#f59e0b" },
+  { name: "AI Agent",   en: "AI Agent",    change7d: 24.8, change30d:  68.2, mcap: 18_400_000_000,  top: ["VIRTUAL","FET","AIXBT"], color: "#6366f1" },
+  { name: "RWA",        en: "RWA",         change7d: 18.4, change30d:  42.1, mcap: 12_800_000_000,  top: ["ONDO","MKR","CFG"],      color: "#0ea5e9" },
+  { name: "DePIN",      en: "DePIN",       change7d: 14.2, change30d:  38.6, mcap:  9_200_000_000,  top: ["RENDER","HNT","MOBILE"], color: "#10b981" },
+  { name: "DeFi",       en: "DeFi",        change7d: 11.4, change30d:  28.2, mcap: 48_000_000_000,  top: ["AAVE","UNI","PENDLE"],   color: "#14b8a6" },
+  { name: "Layer2",     en: "Layer2",      change7d:  6.2, change30d:  18.8, mcap: 28_400_000_000,  top: ["ARB","OP","MATIC"],      color: "#8b5cf6" },
+  { name: "公链",        en: "L1 Chain",    change7d:  9.8, change30d:  24.6, mcap: 184_000_000_000, top: ["ETH","SOL","BNB"],       color: "#F7931A" },
+  { name: "GameFi",     en: "GameFi",      change7d:  8.4, change30d:  22.4, mcap:  6_800_000_000,  top: ["AXS","SAND","IMX"],      color: "#ec4899" },
+  { name: "稳定币",      en: "Stablecoin",  change7d:  0.1, change30d:   0.4, mcap: 232_000_000_000, top: ["USDT","USDC","DAI"],     color: "#94a3b8" },
+  { name: "NFT",        en: "NFT",         change7d: -4.2, change30d:  -8.6, mcap:  4_200_000_000,  top: ["BLUR","APE","LOOKS"],    color: "#64748b" },
+];
+
+const MEV_DATA = [
+  { type: "sandwich",   profit: 48_200,  txHash: "0x4f8c…a2d1", block: 22_184_021, pair: "ETH/USDC",  time: "2m ago",  bot: "0x000…dead" },
+  { type: "arbitrage",  profit: 32_800,  txHash: "0x9a1b…f3e2", block: 22_184_018, pair: "WBTC/ETH",  time: "4m ago",  bot: "0x111…beef" },
+  { type: "liquidation",profit: 124_000, txHash: "0x2d7e…b9c3", block: 22_184_010, pair: "AAVE/ETH",  time: "9m ago",  bot: "0x222…cafe" },
+  { type: "sandwich",   profit:  8_900,  txHash: "0x6b3a…e4f1", block: 22_184_008, pair: "PEPE/ETH",  time: "12m ago", bot: "0x333…face" },
+  { type: "arbitrage",  profit: 18_400,  txHash: "0x1c9d…a7b2", block: 22_184_002, pair: "ARB/USDC",  time: "18m ago", bot: "0x444…babe" },
+  { type: "backrun",    profit:  6_200,  txHash: "0x8e2f…c5d3", block: 22_183_998, pair: "SOL/ETH",   time: "24m ago", bot: "0x555…code" },
+  { type: "liquidation",profit: 88_400,  txHash: "0x3a5d…f1c8", block: 22_183_990, pair: "COMP/ETH",  time: "31m ago", bot: "0x666…feed" },
+];
+
+const STAKING_DATA = [
+  { chain: "Ethereum",  symbol: "ETH",  staked: 34_800_000,  stakedUsd: 112_800_000_000, apr: 3.8,  validators: 1_082_000, change7d:  142_000, color: "#627EEA" },
+  { chain: "Solana",    symbol: "SOL",  staked: 404_000_000, stakedUsd:  71_900_000_000, apr: 8.2,  validators: 1_924,     change7d: 2_800_000, color: "#9945FF" },
+  { chain: "BNB Chain", symbol: "BNB",  staked:  18_200_000, stakedUsd:  12_400_000_000, apr: 4.2,  validators: 21,        change7d:   84_000, color: "#F3BA2F" },
+  { chain: "Avalanche", symbol: "AVAX", staked: 248_000_000, stakedUsd:   8_200_000_000, apr: 8.6,  validators: 1_248,     change7d: 1_200_000, color: "#E84142" },
+  { chain: "Cosmos",    symbol: "ATOM", staked: 381_000_000, stakedUsd:   2_900_000_000, apr: 14.8, validators: 180,       change7d: 2_100_000, color: "#6F7390" },
+  { chain: "Polkadot",  symbol: "DOT",  staked: 784_000_000, stakedUsd:   6_100_000_000, apr: 12.4, validators: 297,       change7d: 4_200_000, color: "#E6007A" },
+  { chain: "Tron",      symbol: "TRX",  staked: 88_000_000_000, stakedUsd: 14_200_000_000, apr: 4.6, validators: 27,      change7d: 480_000_000, color: "#EF4444" },
+];
+
+const HISTORY_EVENTS = [
+  { date: "2025-05-22", zh: "BTC突破10万美元",      en: "BTC breaks $100K",       type: "bull",   btcImpact: "+8.4% (3d)", category: "price"    },
+  { date: "2024-04-19", zh: "BTC第四次减半",         en: "BTC 4th Halving",        type: "event",  btcImpact: "+61% (90d)", category: "protocol" },
+  { date: "2023-03-10", zh: "硅谷银行暴雷",          en: "Silicon Valley Bank Run", type: "bear",   btcImpact: "+40% (30d)", category: "macro"    },
+  { date: "2022-11-11", zh: "FTX宣告破产",           en: "FTX Bankruptcy",         type: "bear",   btcImpact: "-28% (2d)",  category: "exchange" },
+  { date: "2022-05-09", zh: "Terra/LUNA崩盘",        en: "Terra/LUNA Collapse",    type: "bear",   btcImpact: "-55% (7d)",  category: "defi"     },
+  { date: "2021-11-10", zh: "BTC历史高位 $69K",      en: "BTC ATH $69K",           type: "bull",   btcImpact: "ATH",        category: "price"    },
+  { date: "2020-03-13", zh: "312大跌 -50%",          en: "Black Thursday −50%",    type: "bear",   btcImpact: "-50% (1d)",  category: "macro"    },
+  { date: "2020-05-11", zh: "BTC第三次减半",         en: "BTC 3rd Halving",        type: "event",  btcImpact: "+559% (1yr)",category: "protocol" },
+  { date: "2017-12-17", zh: "BTC历史高位 $19.8K",   en: "BTC ATH $19.8K (2017)",  type: "bull",   btcImpact: "+18x (1yr)", category: "price"    },
+  { date: "2013-11-29", zh: "BTC首破 $1000",         en: "BTC first breaks $1000", type: "bull",   btcImpact: "+5000%",     category: "price"    },
+];
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface Coin {
@@ -128,19 +254,664 @@ interface Coin {
 interface ChainRow { name: string; tvl: number; change_1d?: number; change_7d?: number; }
 interface Protocol  { name: string; tvl: number; change_1d?: number; change_7d?: number; logo?: string; chain?: string; }
 
+// ── Section: Gas Fee ──────────────────────────────────────────────────────────
+
+function GasSection({ zh }: { zh: boolean }) {
+  const g = GAS_DATA;
+  const minH = Math.min(...g.hourly), maxH = Math.max(...g.hourly);
+  const pts = g.hourly.map((v, i) => {
+    const x = (i / 23) * 280;
+    const y = 60 - ((v - minH) / (maxH - minH)) * 52;
+    return `${x},${y}`;
+  }).join(" ");
+  return (
+    <div className="space-y-4">
+      {/* ETH gas cards */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: zh?"慢速":"Slow",   val: g.eth.slow,   unit:"gwei", color:"#10b981", emoji:"🐢" },
+          { label: zh?"正常":"Normal", val: g.eth.normal, unit:"gwei", color:"#f59e0b", emoji:"⚡" },
+          { label: zh?"快速":"Fast",   val: g.eth.fast,   unit:"gwei", color:"#ef4444", emoji:"🚀" },
+        ].map((c,i) => (
+          <div key={i} className="bg-white border border-border/60 rounded-2xl p-4 text-center">
+            <div className="text-lg mb-1">{c.emoji}</div>
+            <div className="text-xs text-muted-foreground mb-1">{c.label}</div>
+            <div className="text-xl font-extrabold tabular-nums" style={{ color: c.color }}>{c.val}</div>
+            <div className="text-[10px] text-muted-foreground">{c.unit}</div>
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-white border border-border/60 rounded-2xl p-4">
+          <div className="text-xs text-muted-foreground mb-1">{zh?"基础费用":"Base Fee"}</div>
+          <div className="text-lg font-extrabold text-blue-600">{g.eth.baseFee} gwei</div>
+        </div>
+        <div className="bg-white border border-border/60 rounded-2xl p-4">
+          <div className="text-xs text-muted-foreground mb-1">{zh?"推荐优先费":"Priority Fee"}</div>
+          <div className="text-lg font-extrabold text-purple-600">{g.eth.priority} gwei</div>
+        </div>
+      </div>
+
+      {/* 24h gas heatmap */}
+      <div className="bg-white border border-border/60 rounded-2xl p-4">
+        <div className="text-sm font-bold text-foreground mb-3">{zh?"ETH Gas 24小时走势":"ETH Gas 24h Trend"}</div>
+        <svg viewBox="0 0 280 70" className="w-full h-16">
+          <defs>
+            <linearGradient id="gasGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.3" />
+              <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <polyline points={pts} fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinejoin="round" />
+        </svg>
+        <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+          <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span>
+        </div>
+        <div className="mt-2 text-xs text-emerald-600 font-semibold">
+          ✅ {zh?"最优交易窗口":"Best window"}: {g.bestWindow} ({g.bestDays.join(" / ")})
+        </div>
+      </div>
+
+      {/* L2 gas table */}
+      <div className="overflow-x-auto rounded-2xl border border-border/60 bg-white">
+        <div className="px-4 py-2.5 border-b border-border/30 bg-slate-50/50">
+          <span className="text-sm font-bold">{zh?"Layer2 实时 Gas":"Layer2 Real-time Gas"}</span>
+        </div>
+        <table className="w-full text-sm">
+          <thead><tr className="border-b border-border/30 bg-slate-50/30">
+            {[zh?"网络":"Network", "Gas", zh?"≈USD":"≈USD", zh?"24h变化":"24h Change"].map((h,i) => (
+              <th key={i} className={`px-4 py-2 text-xs font-semibold text-muted-foreground ${i===0?"text-left":"text-right"}`}>{h}</th>
+            ))}
+          </tr></thead>
+          <tbody className="divide-y divide-border/20">
+            {g.l2.map((l,i) => (
+              <tr key={i} className="hover:bg-slate-50/60">
+                <td className="px-4 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full" style={{ background: l.color }} />
+                    <span className="font-semibold text-foreground text-sm">{l.chain}</span>
+                  </div>
+                </td>
+                <td className="px-4 py-2.5 text-right font-mono text-xs text-muted-foreground">{l.fee} gwei</td>
+                <td className="px-4 py-2.5 text-right font-semibold text-foreground">${l.feeUsd.toFixed(2)}</td>
+                <td className="px-4 py-2.5 text-right">
+                  <span className={`text-sm font-bold ${l.change < 0 ? "text-emerald-600" : "text-red-500"}`}>
+                    {l.change > 0 ? "+" : ""}{l.change}%
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ── Section: Whale Holdings ────────────────────────────────────────────────────
+
+function WhaleSection({ zh }: { zh: boolean }) {
+  const statusColor: Record<string, string> = { buying: "#10b981", selling: "#ef4444", active: "#f59e0b", dormant: "#94a3b8" };
+  const statusLabel = (s: string) => ({ buying: zh?"买入":"Buying", selling: zh?"卖出":"Selling", active: zh?"活跃":"Active", dormant: zh?"休眠":"Dormant" }[s] ?? s);
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: zh?"鲸鱼总持仓(BTC)":"Whale BTC Holdings", val: "3.47M",   color: "#F7931A" },
+          { label: zh?"占总供应量":"% of Supply",             val: "16.5%",   color: "#8b5cf6" },
+          { label: zh?"30日净流入":"30d Net Flow",            val: "+47,200", color: "#10b981" },
+        ].map((c,i) => (
+          <div key={i} className="bg-white border border-border/60 rounded-2xl p-4 text-center">
+            <div className="text-xs text-muted-foreground mb-1">{c.label}</div>
+            <div className="text-lg font-extrabold tabular-nums" style={{ color: c.color }}>{c.val}</div>
+          </div>
+        ))}
+      </div>
+      <div className="overflow-x-auto rounded-2xl border border-border/60 bg-white">
+        <div className="px-4 py-2.5 border-b border-border/30 bg-slate-50/50">
+          <span className="text-sm font-bold">{zh?"鲸鱼地址排行 (BTC)":"Top Whale Addresses (BTC)"}</span>
+        </div>
+        <table className="w-full text-sm">
+          <thead><tr className="border-b border-border/30 bg-slate-50/30">
+            {["#", zh?"标签":"Label", zh?"持仓(BTC)":"BTC Holdings", zh?"持仓(USD)":"USD Value", zh?"30日变化":"30d Change", zh?"占比":"% Supply", zh?"状态":"Status"].map((h,i) => (
+              <th key={i} className={`px-3 py-2 text-xs font-semibold text-muted-foreground ${i<=1?"text-left":"text-right"}`}>{h}</th>
+            ))}
+          </tr></thead>
+          <tbody className="divide-y divide-border/20">
+            {WHALE_DATA.map(w => (
+              <tr key={w.rank} className="hover:bg-slate-50/60">
+                <td className="px-3 py-2.5 text-muted-foreground text-xs font-mono">{w.rank}</td>
+                <td className="px-3 py-2.5">
+                  <div className="font-semibold text-foreground text-sm">{w.label}</div>
+                  <div className="text-[10px] text-muted-foreground font-mono">{w.address.slice(0,16)}…</div>
+                </td>
+                <td className="px-3 py-2.5 text-right font-bold tabular-nums text-amber-600">{w.btc.toLocaleString()}</td>
+                <td className="px-3 py-2.5 text-right text-xs tabular-nums text-muted-foreground">${(w.usd/1e9).toFixed(1)}B</td>
+                <td className="px-3 py-2.5 text-right font-semibold text-sm">
+                  <span className={w.change30d > 0 ? "text-emerald-600" : w.change30d < 0 ? "text-red-500" : "text-muted-foreground"}>
+                    {w.change30d > 0 ? "+" : ""}{w.change30d.toLocaleString()}
+                  </span>
+                </td>
+                <td className="px-3 py-2.5 text-right text-xs text-muted-foreground">{w.pct}%</td>
+                <td className="px-3 py-2.5 text-right">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ background: statusColor[w.status] }}>
+                    {statusLabel(w.status)}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ── Section: Derivatives ───────────────────────────────────────────────────────
+
+function DerivSection({ zh }: { zh: boolean }) {
+  const d = DERIV_DATA;
+  const totalOI = d.futures.reduce((s, f) => s + f.oi, 0);
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: zh?"期货总OI":"Futures Total OI",      val: fmtLarge(totalOI),      color: "#6366f1" },
+          { label: zh?"期权总OI":"Options Total OI",      val: fmtLarge(d.options.totalOI), color: "#8b5cf6" },
+          { label: zh?"Put/Call 比率":"Put/Call Ratio",   val: d.options.putCall.toFixed(2), color: d.options.putCall < 0.8 ? "#10b981" : "#ef4444" },
+          { label: zh?"Max Pain":"Max Pain",               val: `$${d.options.maxPain.toLocaleString()}`, color: "#f59e0b" },
+        ].map((c,i) => (
+          <div key={i} className="bg-white border border-border/60 rounded-2xl p-4 text-center">
+            <div className="text-xs text-muted-foreground mb-1">{c.label}</div>
+            <div className="text-lg font-extrabold" style={{ color: c.color }}>{c.val}</div>
+          </div>
+        ))}
+      </div>
+      <div className="overflow-x-auto rounded-2xl border border-border/60 bg-white">
+        <div className="px-4 py-2.5 border-b border-border/30 bg-slate-50/50">
+          <span className="text-sm font-bold">{zh?"各交易所期货数据":"Futures by Exchange"}</span>
+        </div>
+        <table className="w-full text-sm">
+          <thead><tr className="border-b border-border/30 bg-slate-50/30">
+            {[zh?"交易所":"Exchange", zh?"持仓量(OI)":"Open Interest", zh?"OI变化":"OI Δ", zh?"资金费率":"Funding", zh?"24h成交":"24h Vol", zh?"多头清算":"Liq Long", zh?"空头清算":"Liq Short"].map((h,i) => (
+              <th key={i} className={`px-3 py-2 text-xs font-semibold text-muted-foreground ${i===0?"text-left":"text-right"}`}>{h}</th>
+            ))}
+          </tr></thead>
+          <tbody className="divide-y divide-border/20">
+            {d.futures.map((f,i) => (
+              <tr key={i} className="hover:bg-slate-50/60">
+                <td className="px-3 py-2.5 font-bold text-foreground">{f.exchange}</td>
+                <td className="px-3 py-2.5 text-right tabular-nums font-semibold text-foreground">{fmtLarge(f.oi)}</td>
+                <td className="px-3 py-2.5 text-right"><PctCell v={f.oiChange} /></td>
+                <td className="px-3 py-2.5 text-right">
+                  <span className={`font-bold text-sm ${f.funding > 0 ? "text-emerald-600" : "text-red-500"}`}>
+                    {f.funding > 0 ? "+" : ""}{(f.funding * 100).toFixed(4)}%
+                  </span>
+                </td>
+                <td className="px-3 py-2.5 text-right tabular-nums text-muted-foreground text-xs">{fmtLarge(f.vol24h)}</td>
+                <td className="px-3 py-2.5 text-right text-red-500 font-semibold text-xs">{fmtLarge(f.liqLong)}</td>
+                <td className="px-3 py-2.5 text-right text-emerald-600 font-semibold text-xs">{fmtLarge(f.liqShort)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-white border border-border/60 rounded-2xl p-4">
+          <div className="text-xs text-muted-foreground mb-1">{zh?"隐含波动率 (IV)":"Implied Volatility"}</div>
+          <div className="text-2xl font-extrabold text-purple-600">{d.options.iv}%</div>
+          <div className="text-xs text-muted-foreground mt-1">{zh?"7日平均":"7d avg"}</div>
+        </div>
+        <div className="bg-white border border-border/60 rounded-2xl p-4">
+          <div className="text-xs text-muted-foreground mb-1">{zh?"市场情绪":"Market Sentiment"}</div>
+          <div className="text-2xl font-extrabold text-amber-500">{zh?"偏多":"Bullish"}</div>
+          <div className="text-xs text-muted-foreground mt-1">P/C {d.options.putCall} &lt; 1 → {zh?"多头主导":"Long-biased"}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Section: Bridge ────────────────────────────────────────────────────────────
+
+function BridgeSection({ zh }: { zh: boolean }) {
+  const b = BRIDGE_DATA;
+  const totalVol = b.bridges.reduce((s, x) => s + x.vol24h, 0);
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: zh?"跨链总量(24h)":"Total Bridge Vol 24h", val: fmtLarge(totalVol), color: "#6366f1" },
+          { label: zh?"活跃桥数":"Active Bridges",            val: b.bridges.length,   color: "#0ea5e9" },
+          { label: zh?"最大单笔":"Largest Single",            val: "$24.8M",            color: "#10b981" },
+        ].map((c,i) => (
+          <div key={i} className="bg-white border border-border/60 rounded-2xl p-4 text-center">
+            <div className="text-xs text-muted-foreground mb-1">{c.label}</div>
+            <div className="text-lg font-extrabold" style={{ color: c.color }}>{c.val}</div>
+          </div>
+        ))}
+      </div>
+      <div className="overflow-x-auto rounded-2xl border border-border/60 bg-white">
+        <div className="px-4 py-2.5 border-b border-border/30 bg-slate-50/50">
+          <span className="text-sm font-bold">{zh?"桥接量排行 (24h)":"Bridge Volume Ranking (24h)"}</span>
+        </div>
+        <table className="w-full text-sm">
+          <thead><tr className="border-b border-border/30 bg-slate-50/30">
+            {[zh?"桥名":"Bridge", zh?"24h量":"24h Vol", zh?"交易笔数":"Txns", zh?"最热路由":"Top Route", zh?"变化":"Change"].map((h,i) => (
+              <th key={i} className={`px-4 py-2 text-xs font-semibold text-muted-foreground ${i===0?"text-left":"text-right"}`}>{h}</th>
+            ))}
+          </tr></thead>
+          <tbody className="divide-y divide-border/20">
+            {b.bridges.map((br,i) => (
+              <tr key={i} className="hover:bg-slate-50/60">
+                <td className="px-4 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ background: br.color }} />
+                    <span className="font-bold text-foreground">{br.name}</span>
+                  </div>
+                </td>
+                <td className="px-4 py-2.5 text-right font-bold text-foreground">{fmtLarge(br.vol24h)}</td>
+                <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{br.txns.toLocaleString()}</td>
+                <td className="px-4 py-2.5 text-right text-xs font-mono text-muted-foreground">{br.topRoute}</td>
+                <td className="px-4 py-2.5 text-right"><PctCell v={br.change} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="rounded-2xl border border-border/60 bg-white">
+        <div className="px-4 py-2.5 border-b border-border/30 bg-slate-50/50">
+          <span className="text-sm font-bold">{zh?"近期大额跨链":"Recent Large Cross-chain"}</span>
+        </div>
+        <div className="divide-y divide-border/20">
+          {b.recent.map((r,i) => (
+            <div key={i} className="px-4 py-3 flex items-center justify-between hover:bg-slate-50/60">
+              <div className="flex items-center gap-2 text-sm">
+                <span className="font-semibold text-foreground">{r.from}</span>
+                <span className="text-muted-foreground">→</span>
+                <span className="font-semibold text-foreground">{r.to}</span>
+                <span className="text-xs bg-slate-100 px-2 py-0.5 rounded-full text-muted-foreground">{r.bridge}</span>
+              </div>
+              <div className="text-right">
+                <div className="font-bold text-foreground">${(r.amount/1e6).toFixed(1)}M <span className="text-muted-foreground font-normal">{r.token}</span></div>
+                <div className="text-xs text-muted-foreground">{r.time}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Section: Trending ──────────────────────────────────────────────────────────
+
+const CAT_COLORS: Record<string, string> = {
+  Meme:"#f59e0b", AI:"#6366f1", RWA:"#0ea5e9", DePIN:"#10b981",
+  DeFi:"#14b8a6", Oracle:"#8b5cf6", NFT:"#ec4899",
+};
+
+function TrendingSection({ zh }: { zh: boolean }) {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: zh?"最热板块":"Hottest Sector",   val: "Meme",      color: "#f59e0b" },
+          { label: zh?"最热代币":"Top Token",        val: "TRUMP",     color: "#ef4444" },
+          { label: zh?"社交提及增幅":"Social Spike", val: "+284%",     color: "#6366f1" },
+          { label: zh?"新叙事":"New Narrative",      val: "AI Agent",  color: "#10b981" },
+        ].map((c,i) => (
+          <div key={i} className="bg-white border border-border/60 rounded-2xl p-4 text-center">
+            <div className="text-xs text-muted-foreground mb-1">{c.label}</div>
+            <div className="text-lg font-extrabold" style={{ color: c.color }}>{c.val}</div>
+          </div>
+        ))}
+      </div>
+      <div className="overflow-x-auto rounded-2xl border border-border/60 bg-white">
+        <div className="px-4 py-2.5 border-b border-border/30 bg-slate-50/50">
+          <span className="text-sm font-bold">{zh?"热门代币排行 (24h)":"Trending Tokens (24h)"}</span>
+        </div>
+        <table className="w-full text-sm">
+          <thead><tr className="border-b border-border/30 bg-slate-50/30">
+            {["#", zh?"代币":"Token", zh?"价格":"Price", zh?"24h涨跌":"24h %", zh?"成交量":"Volume", zh?"社交热度":"Social", zh?"板块":"Sector"].map((h,i) => (
+              <th key={i} className={`px-3 py-2 text-xs font-semibold text-muted-foreground ${i<=1?"text-left":"text-right"}`}>{h}</th>
+            ))}
+          </tr></thead>
+          <tbody className="divide-y divide-border/20">
+            {TRENDING_DATA.map(t => (
+              <tr key={t.rank} className="hover:bg-slate-50/60">
+                <td className="px-3 py-2.5 text-muted-foreground text-xs">
+                  {t.hot ? <Flame className="w-4 h-4 text-orange-500 inline" /> : t.rank}
+                </td>
+                <td className="px-3 py-2.5">
+                  <div className="font-bold text-foreground">{t.symbol}</div>
+                  <div className="text-[10px] text-muted-foreground">{t.name}</div>
+                </td>
+                <td className="px-3 py-2.5 text-right font-mono text-foreground">{fmtPrice(t.price)}</td>
+                <td className="px-3 py-2.5 text-right"><PctCell v={t.change24h} /></td>
+                <td className="px-3 py-2.5 text-right tabular-nums text-muted-foreground text-xs">{fmtLarge(t.vol24h)}</td>
+                <td className="px-3 py-2.5 text-right">
+                  <div className="flex items-center justify-end gap-1">
+                    <div className="h-1.5 rounded-full bg-orange-400" style={{ width: `${Math.min(40, t.mentions/1500)}px` }} />
+                    <span className="text-xs tabular-nums text-muted-foreground">{(t.mentions/1000).toFixed(1)}k</span>
+                  </div>
+                </td>
+                <td className="px-3 py-2.5 text-right">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ background: CAT_COLORS[t.category] ?? "#94a3b8" }}>{t.category}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ── Section: Launch ────────────────────────────────────────────────────────────
+
+function LaunchSection({ zh }: { zh: boolean }) {
+  const upcoming = LAUNCH_DATA.filter(l => l.status === "upcoming");
+  const done = LAUNCH_DATA.filter(l => l.status === "done");
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-border/60 bg-white">
+        <div className="px-4 py-2.5 border-b border-border/30 bg-slate-50/50 flex items-center gap-2">
+          <Rocket className="w-4 h-4 text-blue-500" />
+          <span className="text-sm font-bold">{zh?"即将上线":"Upcoming Launches"}</span>
+        </div>
+        <div className="divide-y divide-border/20">
+          {upcoming.map((l,i) => (
+            <div key={i} className="px-4 py-3 flex items-center justify-between hover:bg-slate-50/60">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-foreground">{l.name}</span>
+                  <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">{l.symbol}</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 font-semibold">{l.type}</span>
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">{l.platform} · {l.date}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-xs text-muted-foreground">{zh?"融资":"Raise"}: {fmtLarge(l.raise)}</div>
+                <div className="font-extrabold text-blue-600 text-sm">{l.daysLeft}{zh?"天后":"d left"}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="overflow-x-auto rounded-2xl border border-border/60 bg-white">
+        <div className="px-4 py-2.5 border-b border-border/30 bg-slate-50/50">
+          <span className="text-sm font-bold">{zh?"近期上线表现":"Recent Launch Performance"}</span>
+        </div>
+        <table className="w-full text-sm">
+          <thead><tr className="border-b border-border/30 bg-slate-50/30">
+            {[zh?"项目":"Project", zh?"代号":"Symbol", zh?"类型":"Type", zh?"日期":"Date", zh?"融资额":"Raise", zh?"当前表现":"Performance"].map((h,i) => (
+              <th key={i} className={`px-4 py-2 text-xs font-semibold text-muted-foreground ${i<=1?"text-left":"text-right"}`}>{h}</th>
+            ))}
+          </tr></thead>
+          <tbody className="divide-y divide-border/20">
+            {done.map((l,i) => (
+              <tr key={i} className="hover:bg-slate-50/60">
+                <td className="px-4 py-2.5 font-bold text-foreground">{l.name}</td>
+                <td className="px-4 py-2.5"><span className="text-xs font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700">{l.symbol}</span></td>
+                <td className="px-4 py-2.5 text-right text-xs text-muted-foreground">{l.type}</td>
+                <td className="px-4 py-2.5 text-right font-mono text-xs text-muted-foreground">{l.date}</td>
+                <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground text-xs">{fmtLarge(l.raise)}</td>
+                <td className="px-4 py-2.5 text-right">
+                  {l.perf !== null && (
+                    <span className={`font-extrabold text-sm ${l.perf! > 0 ? "text-emerald-600" : "text-red-500"}`}>
+                      {l.perf! > 0 ? "+" : ""}{l.perf}%
+                    </span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ── Section: Sectors ───────────────────────────────────────────────────────────
+
+function SectorsSection({ zh }: { zh: boolean }) {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        {SECTORS_DATA.map((s,i) => (
+          <div key={i} className="bg-white border border-border/60 rounded-2xl p-4 hover:shadow-sm transition-shadow cursor-pointer"
+            style={{ borderLeft: `3px solid ${s.color}` }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-bold text-foreground text-sm">{zh ? s.name : s.en}</span>
+              <span className={`text-xs font-extrabold ${s.change7d >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                {s.change7d >= 0 ? "+" : ""}{s.change7d}%
+              </span>
+            </div>
+            <div className="text-xs text-muted-foreground mb-1">{zh?"市值":"MCap"}: {fmtLarge(s.mcap)}</div>
+            <div className="text-xs text-muted-foreground mb-2">{zh?"30日":"30d"}: <span className={s.change30d >= 0 ? "text-emerald-600 font-semibold" : "text-red-500 font-semibold"}>{s.change30d >= 0 ? "+" : ""}{s.change30d}%</span></div>
+            <div className="flex gap-1 flex-wrap">
+              {s.top.map((t,j) => (
+                <span key={j} className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold text-white" style={{ background: s.color + "cc" }}>{t}</span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="overflow-x-auto rounded-2xl border border-border/60 bg-white">
+        <div className="px-4 py-2.5 border-b border-border/30 bg-slate-50/50">
+          <span className="text-sm font-bold">{zh?"板块热力图":"Sector Performance Table"}</span>
+        </div>
+        <table className="w-full text-sm">
+          <thead><tr className="border-b border-border/30 bg-slate-50/30">
+            {[zh?"板块":"Sector", zh?"总市值":"Market Cap", zh?"7日":"7d %", zh?"30日":"30d %", zh?"代表币":"Top Tokens"].map((h,i) => (
+              <th key={i} className={`px-4 py-2 text-xs font-semibold text-muted-foreground ${i===0?"text-left":"text-right"}`}>{h}</th>
+            ))}
+          </tr></thead>
+          <tbody className="divide-y divide-border/20">
+            {[...SECTORS_DATA].sort((a,b) => b.change7d - a.change7d).map((s,i) => (
+              <tr key={i} className="hover:bg-slate-50/60">
+                <td className="px-4 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full" style={{ background: s.color }} />
+                    <span className="font-bold text-foreground">{zh ? s.name : s.en}</span>
+                  </div>
+                </td>
+                <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{fmtLarge(s.mcap)}</td>
+                <td className="px-4 py-2.5 text-right"><PctCell v={s.change7d} /></td>
+                <td className="px-4 py-2.5 text-right"><PctCell v={s.change30d} /></td>
+                <td className="px-4 py-2.5 text-right text-xs text-muted-foreground">{s.top.join(" · ")}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ── Section: MEV ──────────────────────────────────────────────────────────────
+
+function MevSection({ zh }: { zh: boolean }) {
+  const typeColor: Record<string, string> = { sandwich:"#ef4444", arbitrage:"#10b981", liquidation:"#f59e0b", backrun:"#6366f1" };
+  const typeLabel = (t: string) => ({ sandwich: zh?"三明治":"Sandwich", arbitrage: zh?"套利":"Arbitrage", liquidation: zh?"清算":"Liquidation", backrun: zh?"抢跑":"Backrun" }[t] ?? t);
+  const totalProfit = MEV_DATA.reduce((s, m) => s + m.profit, 0);
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: zh?"今日MEV总收益":"Today MEV Profit",   val: fmtLarge(totalProfit * 144), color: "#10b981" },
+          { label: zh?"三明治攻击":"Sandwich Attacks",      val: "1,284",                       color: "#ef4444" },
+          { label: zh?"套利次数":"Arbitrage Ops",           val: "3,842",                       color: "#6366f1" },
+          { label: zh?"清算次数":"Liquidations",            val: "124",                         color: "#f59e0b" },
+        ].map((c,i) => (
+          <div key={i} className="bg-white border border-border/60 rounded-2xl p-4 text-center">
+            <div className="text-xs text-muted-foreground mb-1">{c.label}</div>
+            <div className="text-lg font-extrabold" style={{ color: c.color }}>{c.val}</div>
+          </div>
+        ))}
+      </div>
+      <div className="overflow-x-auto rounded-2xl border border-border/60 bg-white">
+        <div className="px-4 py-2.5 border-b border-border/30 bg-slate-50/50">
+          <span className="text-sm font-bold">{zh?"最近MEV交易":"Recent MEV Transactions"}</span>
+        </div>
+        <table className="w-full text-sm">
+          <thead><tr className="border-b border-border/30 bg-slate-50/30">
+            {[zh?"类型":"Type", zh?"利润":"Profit", zh?"交易对":"Pair", zh?"区块":"Block", zh?"机器人":"Bot", zh?"时间":"Time"].map((h,i) => (
+              <th key={i} className={`px-3 py-2 text-xs font-semibold text-muted-foreground ${i===0?"text-left":"text-right"}`}>{h}</th>
+            ))}
+          </tr></thead>
+          <tbody className="divide-y divide-border/20">
+            {MEV_DATA.map((m,i) => (
+              <tr key={i} className="hover:bg-slate-50/60">
+                <td className="px-3 py-2.5">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ background: typeColor[m.type] }}>
+                    {typeLabel(m.type)}
+                  </span>
+                </td>
+                <td className="px-3 py-2.5 text-right font-bold text-emerald-600">${m.profit.toLocaleString()}</td>
+                <td className="px-3 py-2.5 text-right text-xs font-mono text-muted-foreground">{m.pair}</td>
+                <td className="px-3 py-2.5 text-right tabular-nums text-xs text-muted-foreground">{m.block.toLocaleString()}</td>
+                <td className="px-3 py-2.5 text-right font-mono text-xs text-muted-foreground">{m.bot}</td>
+                <td className="px-3 py-2.5 text-right text-xs text-muted-foreground">{m.time}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ── Section: Staking ───────────────────────────────────────────────────────────
+
+function StakingSection({ zh }: { zh: boolean }) {
+  const totalUsd = STAKING_DATA.reduce((s, x) => s + x.stakedUsd, 0);
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: zh?"质押总价值":"Total Staked Value", val: fmtLarge(totalUsd), color: "#6366f1" },
+          { label: zh?"最高APR":"Best APR",               val: "14.8%",            color: "#10b981" },
+          { label: zh?"支持链数":"Chains Tracked",        val: STAKING_DATA.length, color: "#f59e0b" },
+        ].map((c,i) => (
+          <div key={i} className="bg-white border border-border/60 rounded-2xl p-4 text-center">
+            <div className="text-xs text-muted-foreground mb-1">{c.label}</div>
+            <div className="text-lg font-extrabold" style={{ color: c.color }}>{c.val}</div>
+          </div>
+        ))}
+      </div>
+      <div className="overflow-x-auto rounded-2xl border border-border/60 bg-white">
+        <div className="px-4 py-2.5 border-b border-border/30 bg-slate-50/50">
+          <span className="text-sm font-bold">{zh?"主流链质押数据":"Major Chain Staking"}</span>
+        </div>
+        <table className="w-full text-sm">
+          <thead><tr className="border-b border-border/30 bg-slate-50/30">
+            {[zh?"公链":"Chain", zh?"质押量":"Staked", zh?"质押价值":"Staked USD", zh?"APR":"APR", zh?"验证节点":"Validators", zh?"7日变化":"7d Δ"].map((h,i) => (
+              <th key={i} className={`px-3 py-2 text-xs font-semibold text-muted-foreground ${i===0?"text-left":"text-right"}`}>{h}</th>
+            ))}
+          </tr></thead>
+          <tbody className="divide-y divide-border/20">
+            {[...STAKING_DATA].sort((a,b) => b.stakedUsd - a.stakedUsd).map((s,i) => (
+              <tr key={i} className="hover:bg-slate-50/60">
+                <td className="px-3 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-extrabold" style={{ background: s.color }}>
+                      {s.symbol[0]}
+                    </div>
+                    <div>
+                      <div className="font-bold text-foreground text-sm">{s.chain}</div>
+                      <div className="text-[10px] text-muted-foreground">{s.symbol}</div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-3 py-2.5 text-right tabular-nums text-muted-foreground text-xs">{(s.staked/1e6).toFixed(1)}M {s.symbol}</td>
+                <td className="px-3 py-2.5 text-right font-semibold text-foreground">{fmtLarge(s.stakedUsd)}</td>
+                <td className="px-3 py-2.5 text-right font-extrabold text-emerald-600">{s.apr}%</td>
+                <td className="px-3 py-2.5 text-right tabular-nums text-muted-foreground">{s.validators.toLocaleString()}</td>
+                <td className="px-3 py-2.5 text-right">
+                  <span className={`font-semibold text-sm ${s.change7d > 0 ? "text-emerald-600" : "text-red-500"}`}>
+                    {s.change7d > 0 ? "+" : ""}{(s.change7d/1e6).toFixed(1)}M
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ── Section: History ───────────────────────────────────────────────────────────
+
+function HistorySection({ zh }: { zh: boolean }) {
+  const [filter, setFilter] = useState<"all"|"bull"|"bear"|"event">("all");
+  const typeColor = { bull: "#10b981", bear: "#ef4444", event: "#f59e0b" };
+  const typeLabel = { bull: zh?"牛市事件":"Bull Event", bear: zh?"黑天鹅":"Black Swan", event: zh?"重大事件":"Key Event" };
+  const filtered = filter === "all" ? HISTORY_EVENTS : HISTORY_EVENTS.filter(e => e.type === filter);
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {(["all","bull","bear","event"] as const).map(f => (
+          <button key={f} onClick={() => setFilter(f)}
+            className={`px-3.5 py-1.5 rounded-full text-sm font-semibold border-2 transition-all ${filter===f ? "text-white border-transparent" : "bg-white border-border text-muted-foreground hover:border-current"}`}
+            style={filter===f ? { background: f==="all" ? "#64748b" : typeColor[f], borderColor: f==="all" ? "#64748b" : typeColor[f] } : {}}>
+            {f==="all" ? (zh?"全部":"All") : typeLabel[f]}
+          </button>
+        ))}
+      </div>
+      <div className="space-y-3">
+        {filtered.map((e,i) => (
+          <div key={i} className="bg-white border border-border/60 rounded-2xl p-4 hover:shadow-sm transition-shadow"
+            style={{ borderLeft: `3px solid ${typeColor[e.type as keyof typeof typeColor]}` }}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-mono text-muted-foreground">{e.date}</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold text-white"
+                    style={{ background: typeColor[e.type as keyof typeof typeColor] }}>
+                    {typeLabel[e.type as keyof typeof typeLabel]}
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-muted-foreground capitalize">{e.category}</span>
+                </div>
+                <div className="font-bold text-foreground text-sm">{zh ? e.zh : e.en}</div>
+              </div>
+              <div className="text-right shrink-0">
+                <div className="text-xs text-muted-foreground mb-0.5">{zh?"BTC影响":"BTC Impact"}</div>
+                <div className="font-extrabold text-sm" style={{ color: typeColor[e.type as keyof typeof typeColor] }}>{e.btcImpact}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Sidebar nav items ─────────────────────────────────────────────────────────
 
 const NAV = [
-  { key: "crypto",   zhLabel: "加密货币", enLabel: "Crypto",   icon: <BarChart2 className="w-4 h-4" /> },
-  { key: "index",    zhLabel: "指数",     enLabel: "Indices",  icon: <Activity  className="w-4 h-4" /> },
-  { key: "tvl",      zhLabel: "TVL",      enLabel: "TVL",      icon: <Layers    className="w-4 h-4" /> },
-  { key: "etf",      zhLabel: "ETF",      enLabel: "ETF",      icon: <Briefcase className="w-4 h-4" /> },
-  { key: "stocks",   zhLabel: "币股",     enLabel: "Stocks",   icon: <Building2 className="w-4 h-4" /> },
-  { key: "unlocks",  zhLabel: "解锁",     enLabel: "Unlocks",  icon: <Lock      className="w-4 h-4" /> },
-  { key: "smart",    zhLabel: "聪明钱",   enLabel: "Smart $",  icon: <Brain          className="w-4 h-4" /> },
-  { key: "halving",  zhLabel: "减半倒计时", enLabel: "Halving",icon: <Timer          className="w-4 h-4" /> },
-  { key: "transfers",zhLabel: "大额转账",  enLabel: "Transfers",icon: <ArrowLeftRight className="w-4 h-4" /> },
-  { key: "alerts",   zhLabel: "风险预警",  enLabel: "Alerts",  icon: <AlertTriangle  className="w-4 h-4" /> },
+  { key: "crypto",      zhLabel: "加密货币",  enLabel: "Crypto",      icon: <BarChart2      className="w-4 h-4" /> },
+  { key: "index",       zhLabel: "指数",      enLabel: "Indices",     icon: <Activity       className="w-4 h-4" /> },
+  { key: "tvl",         zhLabel: "TVL",       enLabel: "TVL",         icon: <Layers         className="w-4 h-4" /> },
+  { key: "etf",         zhLabel: "ETF",       enLabel: "ETF",         icon: <Briefcase      className="w-4 h-4" /> },
+  { key: "stocks",      zhLabel: "币股",      enLabel: "Stocks",      icon: <Building2      className="w-4 h-4" /> },
+  { key: "unlocks",     zhLabel: "解锁",      enLabel: "Unlocks",     icon: <Lock           className="w-4 h-4" /> },
+  { key: "smart",       zhLabel: "聪明钱",    enLabel: "Smart $",     icon: <Brain          className="w-4 h-4" /> },
+  { key: "halving",     zhLabel: "减半倒计时", enLabel: "Halving",    icon: <Timer          className="w-4 h-4" /> },
+  { key: "transfers",   zhLabel: "大额转账",  enLabel: "Transfers",   icon: <ArrowLeftRight className="w-4 h-4" /> },
+  { key: "alerts",      zhLabel: "风险预警",  enLabel: "Alerts",      icon: <AlertTriangle  className="w-4 h-4" /> },
+  { key: "gas",         zhLabel: "Gas监控",   enLabel: "Gas Fee",     icon: <Gauge          className="w-4 h-4" /> },
+  { key: "whales",      zhLabel: "鲸鱼持仓",  enLabel: "Whales",      icon: <Anchor         className="w-4 h-4" /> },
+  { key: "derivatives", zhLabel: "衍生品",    enLabel: "Derivatives", icon: <Trophy         className="w-4 h-4" /> },
+  { key: "bridge",      zhLabel: "跨链桥",    enLabel: "Bridge",      icon: <Link2          className="w-4 h-4" /> },
+  { key: "trending",    zhLabel: "热门",      enLabel: "Trending",    icon: <Flame          className="w-4 h-4" /> },
+  { key: "launch",      zhLabel: "新币上线",  enLabel: "Launch",      icon: <Rocket         className="w-4 h-4" /> },
+  { key: "sectors",     zhLabel: "叙事板块",  enLabel: "Sectors",     icon: <LayoutGrid     className="w-4 h-4" /> },
+  { key: "mev",         zhLabel: "MEV套利",   enLabel: "MEV",         icon: <Cpu            className="w-4 h-4" /> },
+  { key: "staking",     zhLabel: "节点质押",  enLabel: "Staking",     icon: <Server         className="w-4 h-4" /> },
+  { key: "history",     zhLabel: "历史回溯",  enLabel: "History",     icon: <History        className="w-4 h-4" /> },
 ] as const;
 
 type NavKey = typeof NAV[number]["key"];
@@ -1275,31 +2046,51 @@ export default function OnchainPage() {
               {zh ? current.zhLabel : current.enLabel}
             </h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {active === "crypto"  && (zh ? "实时行情 · CoinGecko" : "Live prices · CoinGecko")}
-              {active === "index"   && (zh ? "市场情绪与关键指数" : "Market sentiment & key indices")}
-              {active === "tvl"     && (zh ? "链上流动性 · DefiLlama" : "On-chain liquidity · DefiLlama")}
-              {active === "etf"     && (zh ? "现货 BTC ETF 资金流向" : "Spot BTC ETF fund flows")}
-              {active === "stocks"  && (zh ? "加密相关上市公司" : "Crypto-related public companies")}
-              {active === "unlocks" && (zh ? "大额代币解锁预警" : "Major token unlock alerts")}
-              {active === "smart"     && (zh ? "巨鲸链上动向追踪" : "On-chain whale activity")}
-              {active === "halving"   && (zh ? "BTC 减半倒计时 · 历史数据" : "BTC halving countdown & history")}
-              {active === "transfers" && (zh ? "链上异常大额转账实时监控" : "Real-time large on-chain transfer monitor")}
-              {active === "alerts"    && (zh ? "市场风险信号 · 安全 · 监管" : "Market risk signals · Security · Regulation")}
+              {active === "crypto"      && (zh ? "实时行情 · CoinGecko" : "Live prices · CoinGecko")}
+              {active === "index"       && (zh ? "市场情绪与关键指数" : "Market sentiment & key indices")}
+              {active === "tvl"         && (zh ? "链上流动性 · DefiLlama" : "On-chain liquidity · DefiLlama")}
+              {active === "etf"         && (zh ? "现货 BTC ETF 资金流向" : "Spot BTC ETF fund flows")}
+              {active === "stocks"      && (zh ? "加密相关上市公司" : "Crypto-related public companies")}
+              {active === "unlocks"     && (zh ? "大额代币解锁预警" : "Major token unlock alerts")}
+              {active === "smart"       && (zh ? "巨鲸链上动向追踪" : "On-chain whale activity")}
+              {active === "halving"     && (zh ? "多币种减半倒计时 · 历史数据" : "Multi-coin halving countdown & history")}
+              {active === "transfers"   && (zh ? "链上异常大额转账实时监控" : "Real-time large on-chain transfer monitor")}
+              {active === "alerts"      && (zh ? "市场风险信号 · 安全 · 监管" : "Market risk signals · Security · Regulation")}
+              {active === "gas"         && (zh ? "ETH & L2 实时 Gas 价格 · 最优交易时机" : "ETH & L2 real-time Gas · Best tx windows")}
+              {active === "whales"      && (zh ? "BTC 鲸鱼地址持仓 · 30日流向追踪" : "BTC whale addresses · 30d flow tracking")}
+              {active === "derivatives" && (zh ? "期货持仓 · 资金费率 · 期权数据" : "Futures OI · Funding rates · Options data")}
+              {active === "bridge"      && (zh ? "跨链桥接量 · 大额跨链转移监控" : "Bridge volumes · Large cross-chain transfers")}
+              {active === "trending"    && (zh ? "当前最热代币 · 叙事 · 社交热度" : "Hottest tokens · Narratives · Social buzz")}
+              {active === "launch"      && (zh ? "即将上线 TGE / IDO · 近期发行表现" : "Upcoming TGE / IDO · Recent launch perf")}
+              {active === "sectors"     && (zh ? "板块/主题聚合 · 热力图" : "Sector aggregation · Narrative heatmap")}
+              {active === "mev"         && (zh ? "MEV · 三明治攻击 · 套利 · 清算" : "MEV · Sandwich attacks · Arbitrage · Liquidations")}
+              {active === "staking"     && (zh ? "主流链质押数据 · APR · 验证节点" : "Major chain staking · APR · Validators")}
+              {active === "history"     && (zh ? "重大历史事件 · BTC 价格影响回溯" : "Major historical events · BTC price impact")}
             </p>
           </div>
         </div>
 
         {/* Section content */}
-        {active === "crypto"    && <CryptoSection    zh={zh} />}
-        {active === "index"     && <IndexSection     zh={zh} />}
-        {active === "tvl"       && <TvlSection       zh={zh} />}
-        {active === "etf"       && <EtfSection       zh={zh} />}
-        {active === "stocks"    && <StocksSection    zh={zh} />}
-        {active === "unlocks"   && <UnlocksSection   zh={zh} />}
-        {active === "smart"     && <SmartSection     zh={zh} />}
-        {active === "halving"   && <HalvingSection   zh={zh} />}
-        {active === "transfers" && <TransfersSection zh={zh} />}
-        {active === "alerts"    && <AlertsSection    zh={zh} />}
+        {active === "crypto"      && <CryptoSection      zh={zh} />}
+        {active === "index"       && <IndexSection       zh={zh} />}
+        {active === "tvl"         && <TvlSection         zh={zh} />}
+        {active === "etf"         && <EtfSection         zh={zh} />}
+        {active === "stocks"      && <StocksSection      zh={zh} />}
+        {active === "unlocks"     && <UnlocksSection     zh={zh} />}
+        {active === "smart"       && <SmartSection       zh={zh} />}
+        {active === "halving"     && <HalvingSection     zh={zh} />}
+        {active === "transfers"   && <TransfersSection   zh={zh} />}
+        {active === "alerts"      && <AlertsSection      zh={zh} />}
+        {active === "gas"         && <GasSection         zh={zh} />}
+        {active === "whales"      && <WhaleSection       zh={zh} />}
+        {active === "derivatives" && <DerivSection       zh={zh} />}
+        {active === "bridge"      && <BridgeSection      zh={zh} />}
+        {active === "trending"    && <TrendingSection    zh={zh} />}
+        {active === "launch"      && <LaunchSection      zh={zh} />}
+        {active === "sectors"     && <SectorsSection     zh={zh} />}
+        {active === "mev"         && <MevSection         zh={zh} />}
+        {active === "staking"     && <StakingSection     zh={zh} />}
+        {active === "history"     && <HistorySection     zh={zh} />}
       </main>
     </div>
   );
