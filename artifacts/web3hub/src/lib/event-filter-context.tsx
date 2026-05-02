@@ -11,6 +11,8 @@ export const NAV_KEY_TO_CATEGORY: Record<string, string> = {
   nav_grant:     "项目捐赠/赞助",
   nav_defi:      "DeFi",
   nav_analytics: "数据分析",
+  nav_nft:       "NFT/GameFi",
+  nav_research:  "研报精选",
 };
 
 interface EventFilterCtx {

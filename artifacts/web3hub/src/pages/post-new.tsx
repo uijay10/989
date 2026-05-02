@@ -12,7 +12,7 @@ import { CHAINS, EXCHANGES, makeEcosystemSectionId, parseEcosystemSectionId, get
 
 const NAV_SECTIONS = [
   "ido", "funding", "quest", "policy",
-  "testnet", "nodes", "devbounty", "grant", "defi", "analytics",
+  "testnet", "nodes", "devbounty", "grant", "defi", "analytics", "nft", "research",
 ] as const;
 
 type NavSection = typeof NAV_SECTIONS[number];
@@ -20,11 +20,11 @@ type NavSection = typeof NAV_SECTIONS[number];
 const PROJECT_SECTIONS: NavSection[] = [...NAV_SECTIONS];
 
 const KOL_SECTIONS: NavSection[] = [
-  "ido", "quest", "testnet", "nodes", "devbounty", "grant", "defi", "analytics",
+  "ido", "quest", "testnet", "nodes", "devbounty", "grant", "defi", "analytics", "nft", "research",
 ];
 
 const DEV_SECTIONS: NavSection[] = [
-  "devbounty", "testnet", "quest", "grant", "defi",
+  "devbounty", "testnet", "quest", "grant", "defi", "research",
 ];
 
 const NORMAL_SECTIONS: NavSection[] = [];
@@ -35,6 +35,7 @@ const SECTION_LABEL_KEYS: Record<string, string> = {
   testnet: "nav_testnet", nodes: "nav_nodes",
   devbounty: "nav_devbounty", grant: "nav_grant",
   defi: "nav_defi", analytics: "nav_analytics",
+  nft: "nav_nft", research: "nav_research",
 };
 
 function sectionLabel(sectionId: string, lang: string, t: (k: string) => string) {

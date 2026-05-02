@@ -25,6 +25,8 @@ const NAV_KEYS = [
   { key: "nav_quest",      href: "/section/quest" },
   { key: "nav_defi",       href: "/section/defi" },
   { key: "nav_analytics",  href: "/section/analytics" },
+  { key: "nav_nft",        href: "/section/nft" },
+  { key: "nav_research",   href: "/section/research" },
   { key: "nav_policy",     href: "/section/policy" },
   { key: "nav_testnet",    href: "/section/testnet" },
   { key: "nav_nodes",      href: "/section/nodes" },

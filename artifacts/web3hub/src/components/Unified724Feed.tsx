@@ -33,6 +33,8 @@ const SECTION_LABEL_ZH: Record<string, string> = {
   nodes:      "节点招募",
   defi:       "DeFi",
   analytics:  "数据分析",
+  nft:        "NFT/GameFi",
+  research:   "研报精选",
   devbounty:  "开发者漏洞奖金",
   grant:      "捐赠/赞助",
 };
@@ -50,6 +52,8 @@ const SECTION_LABEL_EN: Record<string, string> = {
   nodes:      "Node Recruitment",
   defi:       "DeFi",
   analytics:  "Analytics",
+  nft:        "NFT/GameFi",
+  research:   "Research",
   devbounty:  "Dev & Bug Bounty",
   grant:      "Grants & Sponsorship",
 };

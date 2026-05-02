@@ -39,6 +39,8 @@ const SECTION_ICONS: Record<string, string> = {
   industry: "📰",
   defi: "🏛️",
   analytics: "📊",
+  nft: "🎮",
+  research: "📑",
 };
 
 const SECTION_COLORS: Record<string, string> = {
@@ -53,6 +55,8 @@ const SECTION_COLORS: Record<string, string> = {
   nodes:       "from-slate-50 to-gray-50 border-slate-100 dark:from-slate-900/30 dark:to-gray-900/30 dark:border-slate-800",
   defi:        "from-violet-50 to-purple-50 border-violet-100 dark:from-violet-950/30 dark:to-purple-950/30 dark:border-violet-900/50",
   analytics:   "from-cyan-50 to-blue-50 border-cyan-100 dark:from-cyan-950/30 dark:to-blue-950/30 dark:border-cyan-900/50",
+  nft:         "from-pink-50 to-rose-50 border-pink-100 dark:from-pink-950/30 dark:to-rose-950/30 dark:border-pink-900/50",
+  research:    "from-indigo-50 to-slate-50 border-indigo-100 dark:from-indigo-950/30 dark:to-slate-900/30 dark:border-indigo-900/50",
   unlock:      "from-amber-50 to-orange-50 border-amber-100 dark:from-amber-950/30 dark:to-orange-950/30 dark:border-amber-900/50",
   quest:       "from-cyan-50 to-teal-50 border-cyan-100 dark:from-cyan-950/30 dark:to-teal-950/30 dark:border-cyan-900/50",
   developer:   "from-indigo-50 to-violet-50 border-indigo-100 dark:from-indigo-950/30 dark:to-violet-950/30 dark:border-indigo-900/50",
@@ -83,6 +87,8 @@ const SECTION_I18N_KEYS: Record<string, { label: string; desc: string }> = {
   nodes:       { label: "sNodesLabel",       desc: "sNodesDesc" },
   defi:        { label: "sDefiLabel",        desc: "sDefiDesc" },
   analytics:   { label: "sAnalyticsLabel",  desc: "sAnalyticsDesc" },
+  nft:         { label: "sNftLabel",        desc: "sNftDesc" },
+  research:    { label: "sResearchLabel",   desc: "sResearchDesc" },
   unlock:      { label: "sUnlockLabel",      desc: "sUnlockDesc" },
   quest:       { label: "sQuestLabel",       desc: "sQuestDesc" },
   industry:    { label: "sIndustryLabel",    desc: "sIndustryDesc" },
