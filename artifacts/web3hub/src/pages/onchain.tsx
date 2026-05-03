@@ -1819,11 +1819,11 @@ function HalvingSection({ zh }: { zh: boolean }) {
   );
 }
 
-// ── Section: Large Transfers ──────────────────────────────────────────────────
+// ── Section: Risk Alerts ──────────────────────────────────────────────────────
 
-const TRANSFER_DATA = [
-  { time: "2m ago",  from: "0x28C6c06298d514Db089934071355E5743bf21d60", fromLabel: "Binance 14",    to: "0x742d35Cc6634C0532925a3b8D4C9b4e5b0e7c1B5", toLabel: null,          amount: 18_420, token: "ETH",  usd: 42_600_000,  chain: "Ethereum", type: "withdraw" },
-  { time: "5m ago",  from: "Unknown",                                       fromLabel: null,          to: "0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE",   toLabel: "Binance 14",  amount: 9_800,  token: "ETH",  usd: 22_700_000,  chain: "Ethereum", type: "deposit"  },
+const ALERTS_DATA = [
+  {
+    level: "critical", icon: "⚠️",
     title: { zh: "Binance ETH 大规模出金 — 2h 累计 $4.2 亿", en: "Binance ETH Mass Outflow — $420M in 2h" },
     desc:  { zh: "过去 2 小时 Binance ETH 热钱包累计出金超 18 万枚 ETH，历史上此类大规模流出往往先于大行情发生。", en: "Over 180,000 ETH outflowed from Binance hot wallet in 2h. Historically precedes major price moves." },
     tags: ["ETH", "Binance"],
