@@ -118,6 +118,7 @@ const INDEX_DATA = [
 
 const GAS_DATA = {
   eth: { slow: 8, normal: 13, fast: 21, baseFee: 9.4, priority: 2.1 },
+  btc: { slow: 3, normal: 8, fast: 18, mempoolMB: 142, nextBlockMin: 7, feeUsdLow: 0.42, feeUsdMid: 1.12, feeUsdHigh: 2.52 },
   l2: [
     { chain: "Arbitrum",  fee: 0.008, feeUsd: 0.02, color: "#1D4ED8", change: -12 },
     { chain: "Optimism",  fee: 0.012, feeUsd: 0.03, color: "#FF0420", change: -8  },
@@ -184,15 +185,30 @@ const TRENDING_DATA = [
   { rank: 10,symbol: "LINK",    name: "Chainlink",           price: 14.20,     change24h: 4.6,   vol24h:   412_000_000, mentions:  6_800, category: "Oracle", hot: false },
 ];
 
+// 动态日期：基于当前时间生成"距今N天"，避免硬编码过期
+const _today = new Date();
+const _daysFromNow = (year: number, month: number, day: number): { date: string; daysLeft: number } => {
+  const target = new Date(year, month - 1, day);
+  const diffMs = target.getTime() - _today.getTime();
+  const daysLeft = Math.ceil(diffMs / (24 * 60 * 60 * 1000));
+  const date = `${year}-${String(month).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+  return { date, daysLeft };
+};
+
 const LAUNCH_DATA = [
-  { name: "Kaito AI",       symbol: "KAITO",  type: "TGE",     date: "2025-06-08", daysLeft: 37, raise: 24_000_000,  platform: "Binance Launchpool", status: "upcoming", perf: null },
-  { name: "Monad",          symbol: "MON",    type: "TGE",     date: "2025-06-15", daysLeft: 44, raise: 100_000_000, platform: "多平台",             status: "upcoming", perf: null },
-  { name: "Berachain",      symbol: "BERA",   type: "IDO",     date: "2025-06-20", daysLeft: 49, raise: 42_000_000,  platform: "Camelot",            status: "upcoming", perf: null },
-  { name: "Plume Network",  symbol: "PLUME",  type: "TGE",     date: "2025-07-01", daysLeft: 60, raise: 18_000_000,  platform: "OKX Jumpstart",      status: "upcoming", perf: null },
-  { name: "Story Protocol", symbol: "IP",     type: "TGE",     date: "2025-07-10", daysLeft: 69, raise: 80_000_000,  platform: "Binance",            status: "upcoming", perf: null },
-  { name: "Nillion",        symbol: "NIL",    type: "TGE",     date: "2025-05-01", daysLeft: -1, raise: 12_000_000,  platform: "Binance",            status: "done",     perf: 128  },
-  { name: "LayerZero",      symbol: "ZRO",    type: "TGE",     date: "2024-06-20", daysLeft: -316,raise: 120_000_000, platform: "多平台",            status: "done",     perf: -42  },
-  { name: "EigenLayer",     symbol: "EIGEN",  type: "Airdrop", date: "2024-09-30", daysLeft: -214,raise: 50_000_000,  platform: "自有",              status: "done",     perf: -68  },
+  // 即将上线（未来 1-3 个月内）
+  { name: "Plasma",         symbol: "XPL",    type: "TGE",     ..._daysFromNow(2026, 5, 14), raise:  50_000_000, platform: "Binance Launchpad",   status: "upcoming" as const, perf: null },
+  { name: "MegaETH",        symbol: "MEGA",   type: "TGE",     ..._daysFromNow(2026, 5, 22), raise:  20_000_000, platform: "Echo / 多平台",        status: "upcoming" as const, perf: null },
+  { name: "Monad",          symbol: "MON",    type: "TGE",     ..._daysFromNow(2026, 6,  3), raise: 225_000_000, platform: "Coinbase / Binance",   status: "upcoming" as const, perf: null },
+  { name: "Linea",          symbol: "LINEA",  type: "Airdrop", ..._daysFromNow(2026, 6, 12), raise: 725_000_000, platform: "ConsenSys",            status: "upcoming" as const, perf: null },
+  { name: "Berachain V2",   symbol: "BERA2",  type: "IDO",     ..._daysFromNow(2026, 6, 25), raise:  69_000_000, platform: "Camelot / Binance",    status: "upcoming" as const, perf: null },
+  { name: "Sonic Labs",     symbol: "S",      type: "TGE",     ..._daysFromNow(2026, 7,  8), raise:  10_000_000, platform: "Bybit Launchpad",      status: "upcoming" as const, perf: null },
+  // 近期上线表现（过去 1-3 个月内）
+  { name: "Hyperliquid V2", symbol: "HYPE2",  type: "Airdrop", ..._daysFromNow(2026, 4, 18), raise:  85_000_000, platform: "自有",                  status: "done" as const,     perf:  142 },
+  { name: "Plume Network",  symbol: "PLUME",  type: "TGE",     ..._daysFromNow(2026, 4,  6), raise:  18_000_000, platform: "OKX Jumpstart",        status: "done" as const,     perf:   28 },
+  { name: "Story Protocol", symbol: "IP",     type: "TGE",     ..._daysFromNow(2026, 3, 25), raise:  80_000_000, platform: "Binance",              status: "done" as const,     perf:  -18 },
+  { name: "Kaito AI",       symbol: "KAITO",  type: "TGE",     ..._daysFromNow(2026, 2, 20), raise:  24_000_000, platform: "Binance Launchpool",   status: "done" as const,     perf:   84 },
+  { name: "Berachain",      symbol: "BERA",   type: "IDO",     ..._daysFromNow(2026, 2,  6), raise:  42_000_000, platform: "Camelot",              status: "done" as const,     perf:  -36 },
 ];
 
 const SECTORS_DATA = [
@@ -267,19 +283,57 @@ function GasSection({ zh }: { zh: boolean }) {
   return (
     <div className="space-y-4">
       {/* ETH gas cards */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: zh?"慢速":"Slow",   val: g.eth.slow,   unit:"gwei", color:"#10b981", emoji:"🐢" },
-          { label: zh?"正常":"Normal", val: g.eth.normal, unit:"gwei", color:"#f59e0b", emoji:"⚡" },
-          { label: zh?"快速":"Fast",   val: g.eth.fast,   unit:"gwei", color:"#ef4444", emoji:"🚀" },
-        ].map((c,i) => (
-          <div key={i} className="bg-white border border-border/60 rounded-2xl p-4 text-center">
-            <div className="text-lg mb-1">{c.emoji}</div>
-            <div className="text-xs text-muted-foreground mb-1">{c.label}</div>
-            <div className="text-xl font-extrabold tabular-nums" style={{ color: c.color }}>{c.val}</div>
-            <div className="text-[10px] text-muted-foreground">{c.unit}</div>
+      <div>
+        <div className="text-xs font-bold text-muted-foreground mb-2 flex items-center gap-1.5">
+          <span className="inline-block w-2 h-2 rounded-full bg-[#627EEA]" />
+          {zh?"以太坊 Gas (gwei)":"Ethereum Gas (gwei)"}
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: zh?"慢速":"Slow",   val: g.eth.slow,   unit:"gwei", color:"#10b981", emoji:"🐢" },
+            { label: zh?"正常":"Normal", val: g.eth.normal, unit:"gwei", color:"#f59e0b", emoji:"⚡" },
+            { label: zh?"快速":"Fast",   val: g.eth.fast,   unit:"gwei", color:"#ef4444", emoji:"🚀" },
+          ].map((c,i) => (
+            <div key={i} className="bg-white border border-border/60 rounded-2xl p-4 text-center">
+              <div className="text-lg mb-1">{c.emoji}</div>
+              <div className="text-xs text-muted-foreground mb-1">{c.label}</div>
+              <div className="text-xl font-extrabold tabular-nums" style={{ color: c.color }}>{c.val}</div>
+              <div className="text-[10px] text-muted-foreground">{c.unit}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* BTC gas cards */}
+      <div>
+        <div className="text-xs font-bold text-muted-foreground mb-2 flex items-center gap-1.5">
+          <span className="inline-block w-2 h-2 rounded-full bg-[#F7931A]" />
+          {zh?"比特币 Gas (sat/vB)":"Bitcoin Gas (sat/vB)"}
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: zh?"低优先":"Low",     val: g.btc.slow,   usd: g.btc.feeUsdLow,  color:"#10b981", emoji:"🐢" },
+            { label: zh?"中优先":"Medium",  val: g.btc.normal, usd: g.btc.feeUsdMid,  color:"#f59e0b", emoji:"⚡" },
+            { label: zh?"高优先":"High",    val: g.btc.fast,   usd: g.btc.feeUsdHigh, color:"#ef4444", emoji:"🚀" },
+          ].map((c,i) => (
+            <div key={i} className="bg-white border border-border/60 rounded-2xl p-4 text-center">
+              <div className="text-lg mb-1">{c.emoji}</div>
+              <div className="text-xs text-muted-foreground mb-1">{c.label}</div>
+              <div className="text-xl font-extrabold tabular-nums" style={{ color: c.color }}>{c.val}</div>
+              <div className="text-[10px] text-muted-foreground">sat/vB · ≈${c.usd.toFixed(2)}</div>
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-3 mt-3">
+          <div className="bg-white border border-border/60 rounded-2xl p-4">
+            <div className="text-xs text-muted-foreground mb-1">{zh?"内存池":"Mempool"}</div>
+            <div className="text-lg font-extrabold text-orange-600">{g.btc.mempoolMB} MB</div>
           </div>
-        ))}
+          <div className="bg-white border border-border/60 rounded-2xl p-4">
+            <div className="text-xs text-muted-foreground mb-1">{zh?"下个区块":"Next Block"}</div>
+            <div className="text-lg font-extrabold text-orange-600">~{g.btc.nextBlockMin} {zh?"分钟":"min"}</div>
+          </div>
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-white border border-border/60 rounded-2xl p-4">
