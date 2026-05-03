@@ -4,9 +4,9 @@ import { useSearch } from "wouter";
 import {
   TrendingUp, TrendingDown, RefreshCw, ExternalLink, Star, Search,
   BarChart2, Layers, Briefcase, Building2, Lock, Brain, Activity,
-  ChevronUp, ChevronDown, Globe, Zap, Timer, ArrowLeftRight, AlertTriangle,
-  ShieldAlert, Flame, CircleDot, Gauge, Anchor, Link2, Rocket,
-  LayoutGrid, Cpu, Server, History, Tag, Trophy
+  ChevronUp, ChevronDown, Globe, Zap, Timer, AlertTriangle,
+  ShieldAlert, Flame, CircleDot, Link2, Rocket,
+  LayoutGrid, Cpu, Tag, Trophy
 } from "lucide-react";
 
 // ── number formatters ────────────────────────────────────────────────────────
@@ -147,33 +147,6 @@ const INDEX_DATA = [
   { name: "NFT 7日交易量",      en: "NFT 7d Volume",     value: 312.4, max: 2000, label: "", color: "#f97316", change1d: -45.2, suffix: "M", prefix: "$" },
 ];
 
-const GAS_DATA = {
-  eth: { slow: 8, normal: 13, fast: 21, baseFee: 9.4, priority: 2.1 },
-  btc: { slow: 3, normal: 8, fast: 18, mempoolMB: 142, nextBlockMin: 7, feeUsdLow: 0.42, feeUsdMid: 1.12, feeUsdHigh: 2.52 },
-  l2: [
-    { chain: "Arbitrum",  fee: 0.008, feeUsd: 0.02, color: "#1D4ED8", change: -12 },
-    { chain: "Optimism",  fee: 0.012, feeUsd: 0.03, color: "#FF0420", change: -8  },
-    { chain: "Base",      fee: 0.006, feeUsd: 0.01, color: "#0052FF", change: -15 },
-    { chain: "Polygon",   fee: 28,    feeUsd: 0.08, color: "#8247E5", change: 4   },
-    { chain: "zkSync",    fee: 0.009, feeUsd: 0.02, color: "#6E56CA", change: -6  },
-    { chain: "Starknet",  fee: 0.004, feeUsd: 0.01, color: "#EC796B", change: -22 },
-    { chain: "Scroll",    fee: 0.010, feeUsd: 0.03, color: "#FFCB4A", change: -9  },
-  ],
-  hourly: [12,14,11,9,8,9,14,18,24,28,26,22,19,17,18,20,19,22,25,22,18,16,14,13],
-  bestWindow: "02:00–05:00 UTC",
-  bestDays: ["Tue","Wed","Thu"],
-};
-
-const WHALE_DATA = [
-  { rank: 1, label: "Satoshi (est.)",    address: "1A1zP1eP5QGefi2DMPTfTL5SLmv7Divf", btc: 1_100_000, usd: 104_500_000_000, change30d:        0, pct: 5.24, status: "dormant"  },
-  { rank: 2, label: "BlackRock IBIT",    address: "ETF Custody",                      btc:   573_520, usd:  54_500_000_000, change30d:   28_000, pct: 2.73, status: "active"   },
-  { rank: 3, label: "MicroStrategy",     address: "Multi-wallet",                     btc:   214_400, usd:  20_400_000_000, change30d:   22_000, pct: 1.02, status: "buying"   },
-  { rank: 4, label: "Binance Cold",      address: "34xp4vRoCGJym3xR",                btc:   248_597, usd:  23_600_000_000, change30d:  -12_400, pct: 1.18, status: "selling"  },
-  { rank: 5, label: "Fidelity FBTC",     address: "ETF Custody",                      btc:   201_350, usd:  19_100_000_000, change30d:    8_400, pct: 0.96, status: "buying"   },
-  { rank: 6, label: "Coinbase Custody",  address: "Multi-wallet",                     btc:   152_000, usd:  14_400_000_000, change30d:   -5_200, pct: 0.72, status: "selling"  },
-  { rank: 7, label: "Bitfinex",          address: "bc1qazcm7…",                       btc:   177_848, usd:  16_900_000_000, change30d:    3_200, pct: 0.85, status: "active"   },
-  { rank: 8, label: "Kraken",            address: "Multi-wallet",                     btc:   108_000, usd:  10_300_000_000, change30d:    1_200, pct: 0.51, status: "active"   },
-];
 
 const DERIV_DATA = {
   futures: [
@@ -265,28 +238,6 @@ const MEV_DATA = [
   { type: "liquidation",profit: 88_400,  txHash: "0x3a5d…f1c8", block: 22_183_990, pair: "COMP/ETH",  time: "31m ago", bot: "0x666…feed" },
 ];
 
-const STAKING_DATA = [
-  { chain: "Ethereum",  symbol: "ETH",  staked: 34_800_000,  stakedUsd: 112_800_000_000, apr: 3.8,  validators: 1_082_000, change7d:  142_000, color: "#627EEA" },
-  { chain: "Solana",    symbol: "SOL",  staked: 404_000_000, stakedUsd:  71_900_000_000, apr: 8.2,  validators: 1_924,     change7d: 2_800_000, color: "#9945FF" },
-  { chain: "BNB Chain", symbol: "BNB",  staked:  18_200_000, stakedUsd:  12_400_000_000, apr: 4.2,  validators: 21,        change7d:   84_000, color: "#F3BA2F" },
-  { chain: "Avalanche", symbol: "AVAX", staked: 248_000_000, stakedUsd:   8_200_000_000, apr: 8.6,  validators: 1_248,     change7d: 1_200_000, color: "#E84142" },
-  { chain: "Cosmos",    symbol: "ATOM", staked: 381_000_000, stakedUsd:   2_900_000_000, apr: 14.8, validators: 180,       change7d: 2_100_000, color: "#6F7390" },
-  { chain: "Polkadot",  symbol: "DOT",  staked: 784_000_000, stakedUsd:   6_100_000_000, apr: 12.4, validators: 297,       change7d: 4_200_000, color: "#E6007A" },
-  { chain: "Tron",      symbol: "TRX",  staked: 88_000_000_000, stakedUsd: 14_200_000_000, apr: 4.6, validators: 27,      change7d: 480_000_000, color: "#EF4444" },
-];
-
-const HISTORY_EVENTS = [
-  { date: "2025-05-22", zh: "BTC突破10万美元",      en: "BTC breaks $100K",       type: "bull",   btcImpact: "+8.4% (3d)", category: "price"    },
-  { date: "2024-04-19", zh: "BTC第四次减半",         en: "BTC 4th Halving",        type: "event",  btcImpact: "+61% (90d)", category: "protocol" },
-  { date: "2023-03-10", zh: "硅谷银行暴雷",          en: "Silicon Valley Bank Run", type: "bear",   btcImpact: "+40% (30d)", category: "macro"    },
-  { date: "2022-11-11", zh: "FTX宣告破产",           en: "FTX Bankruptcy",         type: "bear",   btcImpact: "-28% (2d)",  category: "exchange" },
-  { date: "2022-05-09", zh: "Terra/LUNA崩盘",        en: "Terra/LUNA Collapse",    type: "bear",   btcImpact: "-55% (7d)",  category: "defi"     },
-  { date: "2021-11-10", zh: "BTC历史高位 $69K",      en: "BTC ATH $69K",           type: "bull",   btcImpact: "ATH",        category: "price"    },
-  { date: "2020-03-13", zh: "312大跌 -50%",          en: "Black Thursday −50%",    type: "bear",   btcImpact: "-50% (1d)",  category: "macro"    },
-  { date: "2020-05-11", zh: "BTC第三次减半",         en: "BTC 3rd Halving",        type: "event",  btcImpact: "+559% (1yr)",category: "protocol" },
-  { date: "2017-12-17", zh: "BTC历史高位 $19.8K",   en: "BTC ATH $19.8K (2017)",  type: "bull",   btcImpact: "+18x (1yr)", category: "price"    },
-  { date: "2013-11-29", zh: "BTC首破 $1000",         en: "BTC first breaks $1000", type: "bull",   btcImpact: "+5000%",     category: "price"    },
-];
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
