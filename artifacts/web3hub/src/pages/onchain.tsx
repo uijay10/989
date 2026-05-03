@@ -976,6 +976,30 @@ function PctCell({ v, decimals = 2 }: { v?: number; decimals?: number }) {
   );
 }
 
+// ── Sidebar nav items ─────────────────────────────────────────────────────────
+
+const NAV = [
+  { key: "crypto",      zhLabel: "加密货币",  enLabel: "Crypto",      icon: <BarChart2      className="w-4 h-4" /> },
+  { key: "index",       zhLabel: "指数",      enLabel: "Indices",     icon: <Activity       className="w-4 h-4" /> },
+  { key: "tvl",         zhLabel: "TVL",       enLabel: "TVL",         icon: <Layers         className="w-4 h-4" /> },
+  { key: "etf",         zhLabel: "ETF",       enLabel: "ETF",         icon: <Briefcase      className="w-4 h-4" /> },
+  { key: "stocks",      zhLabel: "币股",      enLabel: "Stocks",      icon: <Building2      className="w-4 h-4" /> },
+  { key: "unlocks",     zhLabel: "解锁",      enLabel: "Unlocks",     icon: <Lock           className="w-4 h-4" /> },
+  { key: "smart",       zhLabel: "聪明钱",    enLabel: "Smart $",     icon: <Brain          className="w-4 h-4" /> },
+  { key: "halving",     zhLabel: "减半倒计时", enLabel: "Halving",    icon: <Timer          className="w-4 h-4" /> },
+  { key: "alerts",      zhLabel: "风险预警",  enLabel: "Alerts",      icon: <AlertTriangle  className="w-4 h-4" /> },
+  { key: "derivatives", zhLabel: "衍生品",    enLabel: "Derivatives", icon: <Trophy         className="w-4 h-4" /> },
+  { key: "bridge",      zhLabel: "跨链桥",    enLabel: "Bridge",      icon: <Link2          className="w-4 h-4" /> },
+  { key: "trending",    zhLabel: "热门",      enLabel: "Trending",    icon: <Flame          className="w-4 h-4" /> },
+  { key: "launch",      zhLabel: "新币上线",  enLabel: "Launch",      icon: <Rocket         className="w-4 h-4" /> },
+  { key: "sectors",     zhLabel: "叙事板块",  enLabel: "Sectors",     icon: <LayoutGrid     className="w-4 h-4" /> },
+  { key: "mev",         zhLabel: "MEV套利",   enLabel: "MEV",         icon: <Cpu            className="w-4 h-4" /> },
+] as const;
+
+type NavKey = typeof NAV[number]["key"];
+
+type SortDir = "asc" | "desc";
+
 // ── Section: Crypto list ──────────────────────────────────────────────────────
 
 function CryptoSection({ zh }: { zh: boolean }) {
