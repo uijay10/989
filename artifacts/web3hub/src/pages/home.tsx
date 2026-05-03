@@ -409,21 +409,16 @@ export default function Home() {
           { key: "unlocks",     zhLabel: "解锁",      enLabel: "Unlocks",     icon: <Lock           className="w-3.5 h-3.5" />, color: "#f97316" },
           { key: "smart",       zhLabel: "聪明钱",    enLabel: "Smart $",     icon: <Brain          className="w-3.5 h-3.5" />, color: "#ec4899" },
           { key: "halving",     zhLabel: "减半倒计时", enLabel: "Halving",    icon: <Timer          className="w-3.5 h-3.5" />, color: "#f59e0b" },
-          { key: "transfers",   zhLabel: "大额转账",  enLabel: "Transfers",   icon: <ArrowLeftRight className="w-3.5 h-3.5" />, color: "#6366f1" },
           { key: "alerts",      zhLabel: "风险预警",  enLabel: "Alerts",      icon: <AlertTriangle  className="w-3.5 h-3.5" />, color: "#ef4444" },
-          { key: "gas",         zhLabel: "Gas监控",   enLabel: "Gas Fee",     icon: <Gauge          className="w-3.5 h-3.5" />, color: "#0ea5e9" },
-          { key: "whales",      zhLabel: "鲸鱼持仓",  enLabel: "Whales",      icon: <Anchor         className="w-3.5 h-3.5" />, color: "#0891b2" },
           { key: "derivatives", zhLabel: "衍生品",    enLabel: "Derivatives", icon: <BarChart2      className="w-3.5 h-3.5" />, color: "#7c3aed" },
           { key: "bridge",      zhLabel: "跨链桥",    enLabel: "Bridge",      icon: <Link2          className="w-3.5 h-3.5" />, color: "#059669" },
           { key: "trending",    zhLabel: "热门",      enLabel: "Trending",    icon: <Flame          className="w-3.5 h-3.5" />, color: "#dc2626" },
           { key: "launch",      zhLabel: "新币上线",  enLabel: "Launch",      icon: <Rocket         className="w-3.5 h-3.5" />, color: "#2563eb" },
           { key: "sectors",     zhLabel: "叙事板块",  enLabel: "Sectors",     icon: <LayoutGrid     className="w-3.5 h-3.5" />, color: "#d97706" },
           { key: "mev",         zhLabel: "MEV套利",   enLabel: "MEV",         icon: <Cpu            className="w-3.5 h-3.5" />, color: "#475569" },
-          { key: "staking",     zhLabel: "节点质押",  enLabel: "Staking",     icon: <Server         className="w-3.5 h-3.5" />, color: "#16a34a" },
-          { key: "history",     zhLabel: "历史回溯",  enLabel: "History",     icon: <History        className="w-3.5 h-3.5" />, color: "#9333ea" },
         ] as const;
-        const row1 = ALL_NAV.slice(0, 10);
-        const row2 = ALL_NAV.slice(10);
+        const row1 = ALL_NAV.slice(0, 8);
+        const row2 = ALL_NAV.slice(8);
         const pill = (item: typeof ALL_NAV[number]) => (
           <Link
             key={item.key}
