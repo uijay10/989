@@ -638,6 +638,7 @@ Platform sections (choose 1–2 from this exact list):
 - 开发者漏洞奖金: Bug bounties (Immunefi, Code4rena, HackenProof), hackathons (ETHGlobal), security audits, SDK/API releases.
 - 项目捐赠/赞助: Grant programs (Gitcoin, Ethereum/Solana/Arbitrum/Optimism Foundation), ecosystem funds, accelerators.
 - 政策监管: Government/regulatory announcements — SEC, CFTC, EU MiCA, crypto tax laws, exchange licensing, ETF approvals.
+- 研报精选: In-depth research reports, market analysis, on-chain data reports, sector reports — from analyst firms, VC research arms, or data platforms (Nansen, Kaiko, Galaxy, Binance Research, Coinbase Institute, Grayscale, Dragonfly, 1kx, OurNetwork, Dune).
 - 快讯: Any clearly Web3/crypto article that does not fit a specific section — general crypto news, market updates, protocol news, ecosystem updates, TradFi×Crypto crossover (RWA, ETF, CBDC, institutional). Use as catch-all.
 
 Routing priority (apply in order):
@@ -651,8 +652,9 @@ Routing priority (apply in order):
 8. Bug bounty / hackathon / security audit → 开发者漏洞奖金
 9. Grant / ecosystem fund / accelerator → 项目捐赠/赞助
 10. Regulatory / government crypto policy → 政策监管
-11. Any other clearly Web3/crypto content → 快讯 (catch-all)
-12. NOT Web3/crypto at all → reject (return nothing for this item)
+11. In-depth research / market report / sector analysis → 研报精选
+12. Any other clearly Web3/crypto content → 快讯 (catch-all)
+13. NOT Web3/crypto at all → reject (return nothing for this item)
 
 Task: For each article decide: (a) Is it Web3/crypto? (b) Which section best fits the content? (c) Extract dates.
 
@@ -997,6 +999,28 @@ function enforceKeywordSection(event: ProcessedEvent, originalText: string): Pro
   // Original text missing required keyword → demote to 724news
   console.log(`[keyword-guard] "${primarySection}" → 724news (no keyword in text): ${event.title.slice(0, 60)}`);
   return { ...event, category: ["快讯"] };
+}
+
+/** Known research RSS source names → force "研报精选" category when AI falls back to 快讯 */
+const RESEARCH_SOURCE_PATTERNS = [
+  "coindesk research", "nansen research", "binance research", "bybit research",
+  "coinbase institute", "grayscale", "ournetwork", "kaiko", "dune blog",
+  "1kx research", "variant fund", "placeholder research", "galaxy digital research",
+  "dragonfly research", "multicoin capital", "electric capital", "spartan group",
+  "gnews crypto research", "gnews 研报",
+];
+
+function applySourceCategoryOverride(sourceName: string, event: ProcessedEvent): ProcessedEvent {
+  const lowerSource = sourceName.toLowerCase();
+  const isResearchSource = RESEARCH_SOURCE_PATTERNS.some(p => lowerSource.includes(p));
+  if (!isResearchSource) return event;
+
+  const currentSection = mapAllCategories(event.category)[0];
+  // Only override if AI fell back to catch-all; preserve specific sections (funding, vc, etc.)
+  if (currentSection && currentSection !== "724news" && currentSection !== "flash") return event;
+
+  console.log(`[source-override] "${sourceName}" → 研报精选: ${event.title.slice(0, 60)}`);
+  return { ...event, category: ["研报精选"] };
 }
 
 // ── AI batch processor (unified for all sections) ─────────────────────────────
@@ -1572,7 +1596,32 @@ export async function runUnifiedScrape(opts: UnifiedScrapeOptions = {}): Promise
     // ════════════════════════════════════════════════════════════
     // PART 1: RSS sources
     // ════════════════════════════════════════════════════════════
-    const rssSources = await getSourcesFromDb();
+    const rssSourcesRaw = await getSourcesFromDb();
+
+    // Shuffle within each priority group so specialized sources (research, exchange, etc.)
+    // get a chance every run rather than always being blocked by high-volume general feeds.
+    function shuffleWithinPriority(sources: ScrapeSource[]): ScrapeSource[] {
+      const byPriority = new Map<number, ScrapeSource[]>();
+      for (const s of sources) {
+        const bucket = byPriority.get(s.priority) ?? [];
+        bucket.push(s);
+        byPriority.set(s.priority, bucket);
+      }
+      const priorities = [...byPriority.keys()].sort((a, b) => a - b);
+      const result: ScrapeSource[] = [];
+      for (const p of priorities) {
+        const bucket = byPriority.get(p)!;
+        // Fisher-Yates shuffle
+        for (let i = bucket.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [bucket[i], bucket[j]] = [bucket[j], bucket[i]];
+        }
+        result.push(...bucket);
+      }
+      return result;
+    }
+
+    const rssSources = shuffleWithinPriority(rssSourcesRaw);
 
     for (const source of rssSources) {
       if (globalCount >= maxArticlesPerRun) break;
@@ -1641,7 +1690,8 @@ export async function runUnifiedScrape(opts: UnifiedScrapeOptions = {}): Promise
           });
           if (batch.length === 0) continue;
 
-          const events = await processBatch(batch, paidOnly);
+          const rawEvents = await processBatch(batch, paidOnly);
+          const events = rawEvents.map(ev => applySourceCategoryOverride(source.name, ev));
           const existingTitles = await getExistingTitles(events.map(ev => ev.title).filter(Boolean));
           for (const ev of events) {
             if (existingTitles.has(ev.title.toLowerCase().trim())) continue;
