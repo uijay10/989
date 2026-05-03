@@ -317,7 +317,12 @@ function GasSection({ zh }: { zh: boolean }) {
         const [btcFeesR, mempoolR, ethGasR, priceR] = await Promise.allSettled([
           fetch("https://mempool.space/api/v1/fees/recommended").then(r => r.json()),
           fetch("https://mempool.space/api/mempool").then(r => r.json()),
-          fetch("https://ethgas.watch/api/gas").then(r => r.json()),
+          // 用以太坊公共 RPC 的 eth_feeHistory 获取最近 5 个区块的 base fee + 25/50/75 百分位 priority fee
+          fetch("https://ethereum-rpc.publicnode.com", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ jsonrpc: "2.0", method: "eth_feeHistory", params: ["0x5", "latest", [25, 50, 75]], id: 1 }),
+          }).then(r => r.json()),
           fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd").then(r => r.json()),
         ]);
         if (cancelled) return;
@@ -355,20 +360,35 @@ function GasSection({ zh }: { zh: boolean }) {
           anyLive = true;
         }
 
-        // ETH gas (gwei)
-        if (ethGasR.status === "fulfilled" && ethGasR.value) {
-          const e = ethGasR.value;
-          // ethgas.watch 返回结构: { fast: { gwei }, standard: { gwei }, slow: { gwei } }
-          const slow   = Number(e?.slow?.gwei     ?? e?.slow     ?? next.eth.slow);
-          const normal = Number(e?.standard?.gwei ?? e?.standard ?? next.eth.normal);
-          const fast   = Number(e?.fast?.gwei     ?? e?.fast     ?? next.eth.fast);
-          if (slow > 0)   next.eth.slow    = Math.round(slow);
-          if (normal > 0) next.eth.normal  = Math.round(normal);
-          if (fast > 0)   next.eth.fast    = Math.round(fast);
-          // 基础费按"normal - 2"近似，优先费按 1.5 默认
-          next.eth.baseFee  = Math.max(1, +(normal - 1.5).toFixed(1));
-          next.eth.priority = 1.5;
-          anyLive = true;
+        // ETH gas (gwei) — 来自公共 RPC 的 eth_feeHistory
+        if (ethGasR.status === "fulfilled" && ethGasR.value?.result) {
+          const r = ethGasR.value.result;
+          const baseFees: string[] = r.baseFeePerGas || [];
+          const rewards: string[][] = r.reward || [];
+          if (baseFees.length > 0 && rewards.length > 0) {
+            // 下个区块的 base fee = baseFeePerGas 数组的最后一项
+            const nextBaseFeeWei = parseInt(baseFees[baseFees.length - 1], 16);
+            const baseFeeGwei = nextBaseFeeWei / 1e9;
+            // 5 个区块取 25/50/75 百分位 priority fee 的平均值
+            const avgPriority = (idx: number) => {
+              const sum = rewards.reduce((s, blk) => s + parseInt(blk[idx] || "0x0", 16), 0);
+              return sum / rewards.length / 1e9; // wei → gwei
+            };
+            const p25 = avgPriority(0);
+            const p50 = avgPriority(1);
+            const p75 = avgPriority(2);
+            const totalSlow   = baseFeeGwei + p25;
+            const totalNormal = baseFeeGwei + p50;
+            const totalFast   = baseFeeGwei + p75;
+            // 用更高精度，<1 gwei 时保留一位小数
+            const fmt = (n: number) => n < 10 ? +n.toFixed(2) : Math.round(n);
+            next.eth.slow    = fmt(totalSlow);
+            next.eth.normal  = fmt(totalNormal);
+            next.eth.fast    = fmt(totalFast);
+            next.eth.baseFee = +baseFeeGwei.toFixed(2);
+            next.eth.priority = +p50.toFixed(2);
+            anyLive = true;
+          }
         }
 
         if (anyLive) {
@@ -394,6 +414,33 @@ function GasSection({ zh }: { zh: boolean }) {
   }).join(" ");
   return (
     <div className="space-y-4">
+      {/* Live indicator */}
+      <div className="flex items-center justify-between text-xs">
+        <div className="flex items-center gap-2">
+          {live ? (
+            <>
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span className="font-semibold text-emerald-600">{zh?"实时数据":"LIVE"}</span>
+              <span className="text-muted-foreground">· mempool.space + ethgas.watch</span>
+            </>
+          ) : (
+            <>
+              <span className="inline-block h-2 w-2 rounded-full bg-amber-400" />
+              <span className="font-semibold text-amber-600">{zh?"演示数据":"DEMO"}</span>
+              <span className="text-muted-foreground">· {zh?"加载中或 API 不可用":"loading or API unavailable"}</span>
+            </>
+          )}
+        </div>
+        {updatedAt && (
+          <span className="text-muted-foreground tabular-nums">
+            {zh?"更新于 ":"updated "}{updatedAt.toLocaleTimeString()}
+          </span>
+        )}
+      </div>
+
       {/* ETH gas cards */}
       <div>
         <div className="text-xs font-bold text-muted-foreground mb-2 flex items-center gap-1.5">
