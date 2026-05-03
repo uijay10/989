@@ -413,7 +413,7 @@ initDeepSeekDailyBudget();
 // Refreshes /api/onchain/{etf,launch,whales} cache on a slow schedule.
 // First run 3 min after boot, then every 6h. Each kind staggered 60s apart to avoid burst.
 if (process.env.NODE_ENV !== "test" && process.env.DISABLE_ONCHAIN_SCRAPE !== "true") {
-  const KINDS = ["etf", "launch", "whales"] as const;
+  const KINDS = ["etf", "launch"] as const;
   const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 
   const tickOnchain = async (kind: typeof KINDS[number]) => {
