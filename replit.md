@@ -83,3 +83,21 @@ pnpm --filter @workspace/db run push
 - Energy/Points system for users
 - Admin panel for managing users and applications
 - Twitter-style timelines (Showcase, KOL, Developer, Community pages)
+
+## On-chain Hub Live Data Sources (`/onchain` page)
+
+Sections wired to free public APIs (no key required). Each section keeps a mock fallback constant and shows a `LiveBadge` (LIVE/DEMO + last update time).
+
+| Section | Source | Endpoint | Refresh |
+|---|---|---|---|
+| Gas Fee — BTC | mempool.space | `/api/v1/fees/recommended`, `/api/mempool` | 30s |
+| Gas Fee — ETH | publicnode.com | `eth_feeHistory` (RPC) | 30s |
+| Gas Fee — L2 | Public RPCs (Arbitrum, Optimism, Base, Polygon, zkSync, Scroll) | `eth_gasPrice` | 30s |
+| TVL | DefiLlama | `/protocols`, `/v2/historicalChainTvl` | on mount |
+| Derivatives | CoinGecko | `/derivatives` (BTC perpetuals, grouped by exchange) | 60s |
+| Bridges | DefiLlama | `/protocols` filtered by `category=Bridge` | 120s |
+| Trending | CoinGecko | `/search/trending` | 60s |
+| Sectors / Narratives | CoinGecko | `/coins/categories` | 120s |
+| Prices for USD calc | CoinGecko | `/simple/price` (bitcoin, ethereum, matic-network) | 30s |
+
+Sections still on mock data (need API keys or scraping): ETF flows, MEV, whale holdings, launch/IDO, large transfers, smart money.
