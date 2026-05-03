@@ -85,15 +85,46 @@ const STOCK_DATA = [
   { ticker: "CIFR", name: "Cipher Mining", price: 4.2,   change1d: 2.4,  change7d: -4.3,  btcHeld: 1_063,   mktCap:    940_000_000 },
 ];
 
+// 解锁数据：覆盖市值≥5亿美元主流代币，未来30天滚动窗口（动态日期）
+const _unlockDate = (daysFromToday: number): string => {
+  const d = new Date(Date.now() + daysFromToday * 24 * 60 * 60 * 1000);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+};
+
 const UNLOCK_DATA = [
-  { token: "SUI",  amount: 64_000_000,  usd: 73_000_000,  date: "2025-06-01", pctSupply: 4.2, risk: "high"   },
-  { token: "APT",  amount: 11_300_000,  usd: 56_000_000,  date: "2025-06-05", pctSupply: 1.9, risk: "medium" },
-  { token: "ARB",  amount: 92_000_000,  usd: 49_000_000,  date: "2025-06-08", pctSupply: 2.8, risk: "high"   },
-  { token: "OP",   amount: 31_400_000,  usd: 28_000_000,  date: "2025-06-12", pctSupply: 1.5, risk: "medium" },
-  { token: "BLUR", amount: 128_000_000, usd: 14_000_000,  date: "2025-06-15", pctSupply: 5.1, risk: "low"    },
-  { token: "STRK", amount: 64_000_000,  usd: 19_200_000,  date: "2025-06-18", pctSupply: 2.3, risk: "medium" },
-  { token: "IMX",  amount: 32_000_000,  usd: 12_800_000,  date: "2025-06-22", pctSupply: 1.1, risk: "low"    },
-  { token: "ZK",   amount: 220_000_000, usd: 32_000_000,  date: "2025-06-25", pctSupply: 6.8, risk: "high"   },
+  // ── L1 / L2 主流（市值 $1B+）─────────────────────────────────────────────────
+  { token: "SUI",     mcap: 12_400_000_000, amount:  64_000_000, usd: 240_000_000, date: _unlockDate( 1), pctSupply: 1.42, risk: "high"   as const },
+  { token: "APT",     mcap:  4_800_000_000, amount:  11_300_000, usd:  98_000_000, date: _unlockDate( 2), pctSupply: 1.74, risk: "high"   as const },
+  { token: "TIA",     mcap:  2_100_000_000, amount:  17_900_000, usd: 138_000_000, date: _unlockDate( 3), pctSupply: 4.79, risk: "high"   as const },
+  { token: "ARB",     mcap:  4_200_000_000, amount:  92_700_000, usd:  92_000_000, date: _unlockDate( 4), pctSupply: 2.10, risk: "high"   as const },
+  { token: "AVAX",    mcap: 13_800_000_000, amount:   9_540_000, usd: 286_000_000, date: _unlockDate( 5), pctSupply: 0.69, risk: "medium" as const },
+  { token: "OP",      mcap:  3_100_000_000, amount:  31_400_000, usd:  78_000_000, date: _unlockDate( 6), pctSupply: 2.51, risk: "high"   as const },
+  { token: "SEI",     mcap:  2_400_000_000, amount:  62_000_000, usd:  46_000_000, date: _unlockDate( 7), pctSupply: 2.40, risk: "medium" as const },
+  { token: "INJ",     mcap:  2_800_000_000, amount:   3_680_000, usd: 102_000_000, date: _unlockDate( 8), pctSupply: 3.65, risk: "high"   as const },
+  { token: "ONDO",    mcap:  2_900_000_000, amount: 134_000_000, usd: 172_000_000, date: _unlockDate( 9), pctSupply: 8.50, risk: "high"   as const },
+  { token: "JUP",     mcap:  1_900_000_000, amount: 128_000_000, usd:  82_000_000, date: _unlockDate(10), pctSupply: 4.40, risk: "high"   as const },
+  // ── 主流 DeFi / Infra（$1B+）──────────────────────────────────────────────────
+  { token: "ENA",     mcap:  1_700_000_000, amount: 171_000_000, usd:  87_000_000, date: _unlockDate(11), pctSupply: 5.70, risk: "high"   as const },
+  { token: "PYTH",    mcap:  1_600_000_000, amount: 213_000_000, usd:  93_000_000, date: _unlockDate(12), pctSupply: 5.91, risk: "high"   as const },
+  { token: "JTO",     mcap:  1_300_000_000, amount:  18_500_000, usd:  46_000_000, date: _unlockDate(13), pctSupply: 1.85, risk: "medium" as const },
+  { token: "FIL",     mcap:  2_700_000_000, amount:   3_240_000, usd:  14_000_000, date: _unlockDate(14), pctSupply: 0.49, risk: "low"    as const },
+  { token: "NEAR",    mcap:  4_600_000_000, amount:  10_240_000, usd:  44_000_000, date: _unlockDate(15), pctSupply: 0.85, risk: "low"    as const },
+  { token: "STRK",    mcap:    920_000_000, amount:  64_000_000, usd:  22_000_000, date: _unlockDate(16), pctSupply: 2.31, risk: "medium" as const },
+  { token: "IMX",     mcap:  1_400_000_000, amount:  24_900_000, usd:  29_000_000, date: _unlockDate(17), pctSupply: 1.42, risk: "medium" as const },
+  { token: "LDO",     mcap:  1_800_000_000, amount:   3_400_000, usd:   7_800_000, date: _unlockDate(18), pctSupply: 0.34, risk: "low"    as const },
+  { token: "AAVE",    mcap:  2_100_000_000, amount:     280_000, usd:  41_000_000, date: _unlockDate(19), pctSupply: 0.18, risk: "low"    as const },
+  // ── 后起之秀 & L2（$500M+）────────────────────────────────────────────────────
+  { token: "ZK",      mcap:    680_000_000, amount: 220_000_000, usd:  32_000_000, date: _unlockDate(20), pctSupply: 5.51, risk: "high"   as const },
+  { token: "W",       mcap:    810_000_000, amount: 174_500_000, usd:  48_000_000, date: _unlockDate(21), pctSupply: 5.82, risk: "high"   as const },
+  { token: "DYM",     mcap:    560_000_000, amount:  17_400_000, usd:  18_000_000, date: _unlockDate(22), pctSupply: 5.77, risk: "high"   as const },
+  { token: "ALT",     mcap:    520_000_000, amount:  62_500_000, usd:  14_600_000, date: _unlockDate(23), pctSupply: 5.75, risk: "high"   as const },
+  { token: "MANTA",   mcap:    580_000_000, amount:  25_400_000, usd:  16_200_000, date: _unlockDate(24), pctSupply: 6.10, risk: "medium" as const },
+  { token: "ZRO",     mcap:    920_000_000, amount:   8_240_000, usd:  31_000_000, date: _unlockDate(25), pctSupply: 1.78, risk: "medium" as const },
+  { token: "IO",      mcap:    540_000_000, amount:   4_960_000, usd:  12_000_000, date: _unlockDate(26), pctSupply: 4.00, risk: "medium" as const },
+  { token: "BLUR",    mcap:    620_000_000, amount: 102_000_000, usd:  18_300_000, date: _unlockDate(27), pctSupply: 3.40, risk: "medium" as const },
+  { token: "CYBER",   mcap:    510_000_000, amount:   2_400_000, usd:   8_400_000, date: _unlockDate(28), pctSupply: 4.80, risk: "medium" as const },
+  { token: "ETHFI",   mcap:    690_000_000, amount:   8_600_000, usd:  21_000_000, date: _unlockDate(29), pctSupply: 2.69, risk: "medium" as const },
+  { token: "REZ",     mcap:    540_000_000, amount:  43_500_000, usd:  17_400_000, date: _unlockDate(30), pctSupply: 4.35, risk: "medium" as const },
 ];
 
 const SMART_MONEY = [
@@ -1452,13 +1483,15 @@ function UnlocksSection({ zh }: { zh: boolean }) {
   return (
     <div className="space-y-3">
       <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 text-sm text-amber-700">
-        {zh ? `📅 未来 30 天合计解锁：${fmtLarge(totalUsd)}（模拟数据）` : `📅 Next 30d total unlocks: ${fmtLarge(totalUsd)} (Demo data)`}
+        {zh
+          ? `📅 未来 30 天合计解锁：${fmtLarge(totalUsd)} · ${UNLOCK_DATA.length} 个市值≥$5亿代币（模拟数据）`
+          : `📅 Next 30d total unlocks: ${fmtLarge(totalUsd)} · ${UNLOCK_DATA.length} tokens with MCap ≥ $500M (Demo data)`}
       </div>
       <div className="overflow-x-auto rounded-2xl border border-border/60 bg-white">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[760px] text-sm">
           <thead>
             <tr className="border-b border-border/40 bg-slate-50/50">
-              {[zh ? "代币" : "Token", zh ? "解锁日期" : "Date", zh ? "解锁数量" : "Amount", zh ? "等值 USD" : "USD Value", zh ? "占流通比" : "% Supply", zh ? "风险" : "Risk"].map((h, i) => (
+              {[zh ? "代币" : "Token", zh ? "市值" : "MCap", zh ? "解锁日期" : "Date", zh ? "解锁数量" : "Amount", zh ? "等值 USD" : "USD Value", zh ? "占流通比" : "% Supply", zh ? "风险" : "Risk"].map((h, i) => (
                 <th key={i} className={`px-3 py-2 text-xs font-semibold text-muted-foreground ${i === 0 ? "text-left" : "text-right"}`}>{h}</th>
               ))}
             </tr>
@@ -1470,6 +1503,7 @@ function UnlocksSection({ zh }: { zh: boolean }) {
               return (
                 <tr key={i} className="hover:bg-blue-50/30 transition-colors">
                   <td className="px-3 py-2.5 font-bold text-foreground">{u.token}</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-muted-foreground">{fmtLarge(u.mcap)}</td>
                   <td className="px-3 py-2.5 text-right font-mono text-xs text-muted-foreground">{u.date}</td>
                   <td className="px-3 py-2.5 text-right tabular-nums text-muted-foreground">{u.amount.toLocaleString()}</td>
                   <td className="px-3 py-2.5 text-right font-semibold tabular-nums">{fmtLarge(u.usd)}</td>
