@@ -409,6 +409,39 @@ async function ensureTables() {
 ensureTables();
 initDeepSeekDailyBudget();
 
+// ── Onchain data scrapers (route B: scrape + DeepSeek extract) ───────────────
+// Refreshes /api/onchain/{etf,launch,whales} cache on a slow schedule.
+// First run 3 min after boot, then every 6h. Each kind staggered 60s apart to avoid burst.
+if (process.env.NODE_ENV !== "test" && process.env.DISABLE_ONCHAIN_SCRAPE !== "true") {
+  const KINDS = ["etf", "launch", "whales"] as const;
+  const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
+
+  const tickOnchain = async (kind: typeof KINDS[number]) => {
+    try {
+      // Multi-instance safety: only one replica runs the paid scrape per tick.
+      const instanceId = getCronInstanceId();
+      if (!(await tryClaimCronLeaderLease(instanceId))) {
+        console.log(`[cron:onchain:${kind}] not leader — skipping`);
+        return;
+      }
+      const { ensureOnchainCacheTable, runOnchainScrapeGuarded } = await import("./lib/onchain-scrapers");
+      await ensureOnchainCacheTable();
+      console.log(`[cron:onchain:${kind}] starting scrape`);
+      const out = await runOnchainScrapeGuarded(kind);
+      console.log(`[cron:onchain:${kind}] result:`, out);
+    } catch (e) {
+      console.error(`[cron:onchain:${kind}] error:`, e);
+    }
+  };
+
+  KINDS.forEach((k, i) => {
+    const initialDelay = (3 * 60 + i * 60) * 1000; // boot + 3,4,5 min
+    setTimeout(() => { void tickOnchain(k); }, initialDelay);
+    setInterval(() => { void tickOnchain(k); }, SIX_HOURS_MS);
+  });
+  console.log(`[cron:onchain] scheduler ready — every 6h for ${KINDS.join(", ")} (DeepSeek extraction)`);
+}
+
 // ── Scrape scheduler ──────────────────────────────────────────────────────────
 //
 //  v2.0_migrated_2026 unified cron

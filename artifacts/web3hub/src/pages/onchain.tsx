@@ -333,6 +333,36 @@ function LiveBadge({ live, updatedAt, source, zh }: { live: boolean; updatedAt: 
   );
 }
 
+// ── Shared: Backend onchain cache hook (route B: scrape + DeepSeek extract) ──
+
+function useOnchainCache<T = any>(kind: "etf" | "launch" | "whales") {
+  const [items, setItems] = useState<T[] | null>(null);
+  const [source, setSource] = useState<string | null>(null);
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const r = await fetch(`/api/onchain/${kind}`);
+        if (!r.ok) return;
+        const j = await r.json();
+        if (cancelled) return;
+        if (Array.isArray(j?.items) && j.items.length > 0) {
+          setItems(j.items);
+          setSource(j.source ?? null);
+          setUpdatedAt(j.fetchedAt ? new Date(j.fetchedAt) : null);
+        }
+      } catch { /* keep null → mock fallback */ }
+    }
+    load();
+    const id = setInterval(load, 5 * 60 * 1000); // poll cache every 5min
+    return () => { cancelled = true; clearInterval(id); };
+  }, [kind]);
+
+  return { items, source, updatedAt, live: items !== null };
+}
+
 // ── Section: Gas Fee ──────────────────────────────────────────────────────────
 
 function GasSection({ zh }: { zh: boolean }) {
@@ -646,13 +676,19 @@ function GasSection({ zh }: { zh: boolean }) {
 function WhaleSection({ zh }: { zh: boolean }) {
   const statusColor: Record<string, string> = { buying: "#10b981", selling: "#ef4444", active: "#f59e0b", dormant: "#94a3b8" };
   const statusLabel = (s: string) => ({ buying: zh?"买入":"Buying", selling: zh?"卖出":"Selling", active: zh?"活跃":"Active", dormant: zh?"休眠":"Dormant" }[s] ?? s);
+  const cache = useOnchainCache<typeof WHALE_DATA[number]>("whales");
+  const data = cache.items ?? WHALE_DATA;
+  const totalBtc = data.reduce((s, w) => s + (Number(w.btc) || 0), 0);
+  const totalNet = data.reduce((s, w) => s + (Number(w.change30d) || 0), 0);
+  const totalPct = data.reduce((s, w) => s + (Number(w.pct) || 0), 0);
   return (
     <div className="space-y-4">
+      <LiveBadge live={cache.live} updatedAt={cache.updatedAt} source={cache.source ?? (zh?"BitInfoCharts · 由 DeepSeek 提取":"BitInfoCharts · extracted by DeepSeek")} zh={zh} />
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: zh?"鲸鱼总持仓(BTC)":"Whale BTC Holdings", val: "3.47M",   color: "#F7931A" },
-          { label: zh?"占总供应量":"% of Supply",             val: "16.5%",   color: "#8b5cf6" },
-          { label: zh?"30日净流入":"30d Net Flow",            val: "+47,200", color: "#10b981" },
+          { label: zh?"鲸鱼总持仓(BTC)":"Whale BTC Holdings", val: totalBtc >= 1e6 ? (totalBtc/1e6).toFixed(2)+"M" : Math.round(totalBtc).toLocaleString(),   color: "#F7931A" },
+          { label: zh?"占总供应量":"% of Supply",             val: totalPct.toFixed(2)+"%",   color: "#8b5cf6" },
+          { label: zh?"30日净流入":"30d Net Flow",            val: (totalNet>=0?"+":"")+Math.round(totalNet).toLocaleString(), color: totalNet>=0?"#10b981":"#ef4444" },
         ].map((c,i) => (
           <div key={i} className="bg-white border border-border/60 rounded-2xl p-4 text-center">
             <div className="text-xs text-muted-foreground mb-1">{c.label}</div>
@@ -671,7 +707,7 @@ function WhaleSection({ zh }: { zh: boolean }) {
             ))}
           </tr></thead>
           <tbody className="divide-y divide-border/20">
-            {WHALE_DATA.map(w => (
+            {data.map(w => (
               <tr key={w.rank} className="hover:bg-slate-50/60">
                 <td className="px-3 py-2.5 text-muted-foreground text-xs font-mono">{w.rank}</td>
                 <td className="px-3 py-2.5">
@@ -679,13 +715,13 @@ function WhaleSection({ zh }: { zh: boolean }) {
                   <div className="text-[10px] text-muted-foreground font-mono">{w.address.slice(0,16)}…</div>
                 </td>
                 <td className="px-3 py-2.5 text-right font-bold tabular-nums text-amber-600">{w.btc.toLocaleString()}</td>
-                <td className="px-3 py-2.5 text-right text-xs tabular-nums text-muted-foreground">${(w.usd/1e9).toFixed(1)}B</td>
+                <td className="px-3 py-2.5 text-right text-xs tabular-nums text-muted-foreground">{w.usd ? "$"+(w.usd/1e9).toFixed(1)+"B" : "—"}</td>
                 <td className="px-3 py-2.5 text-right font-semibold text-sm">
                   <span className={w.change30d > 0 ? "text-emerald-600" : w.change30d < 0 ? "text-red-500" : "text-muted-foreground"}>
                     {w.change30d > 0 ? "+" : ""}{w.change30d.toLocaleString()}
                   </span>
                 </td>
-                <td className="px-3 py-2.5 text-right text-xs text-muted-foreground">{w.pct}%</td>
+                <td className="px-3 py-2.5 text-right text-xs text-muted-foreground">{w.pct != null ? w.pct.toFixed(2)+"%" : "—"}</td>
                 <td className="px-3 py-2.5 text-right">
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ background: statusColor[w.status] }}>
                     {statusLabel(w.status)}
@@ -1042,10 +1078,28 @@ function TrendingSection({ zh }: { zh: boolean }) {
 // ── Section: Launch ────────────────────────────────────────────────────────────
 
 function LaunchSection({ zh }: { zh: boolean }) {
-  const upcoming = LAUNCH_DATA.filter(l => l.status === "upcoming");
+  const cache = useOnchainCache<any>("launch");
+  type LaunchRow = { name: string; symbol: string; type: string; platform: string; date: string; raise: number | null; daysLeft: number | null; status: "upcoming" | "done"; perf: number | null };
+  const liveItems: LaunchRow[] = (cache.items ?? []).map((x: any): LaunchRow => {
+    const d = x.date ? new Date(x.date) : null;
+    const daysLeft = d ? Math.ceil((d.getTime() - Date.now()) / 86_400_000) : null;
+    return {
+      name: x.name,
+      symbol: x.symbol,
+      type: x.type ?? "TGE",
+      platform: x.platform ?? "—",
+      date: x.date ?? "—",
+      raise: typeof x.raised === "number" ? x.raised * 1_000_000 : null,
+      daysLeft,
+      status: "upcoming",
+      perf: null,
+    };
+  });
+  const upcoming = liveItems.length > 0 ? liveItems : LAUNCH_DATA.filter(l => l.status === "upcoming");
   const done = LAUNCH_DATA.filter(l => l.status === "done");
   return (
     <div className="space-y-4">
+      <LiveBadge live={cache.live} updatedAt={cache.updatedAt} source={cache.source ?? (zh?"ICODrops · 由 DeepSeek 提取":"ICODrops · extracted by DeepSeek")} zh={zh} />
       <div className="rounded-2xl border border-border/60 bg-white">
         <div className="px-4 py-2.5 border-b border-border/30 bg-slate-50/50 flex items-center gap-2">
           <Rocket className="w-4 h-4 text-blue-500" />
@@ -1063,8 +1117,8 @@ function LaunchSection({ zh }: { zh: boolean }) {
                 <div className="text-xs text-muted-foreground mt-0.5">{l.platform} · {l.date}</div>
               </div>
               <div className="text-right">
-                <div className="text-xs text-muted-foreground">{zh?"融资":"Raise"}: {fmtLarge(l.raise)}</div>
-                <div className="font-extrabold text-blue-600 text-sm">{l.daysLeft}{zh?"天后":"d left"}</div>
+                <div className="text-xs text-muted-foreground">{zh?"融资":"Raise"}: {l.raise ? fmtLarge(l.raise) : "—"}</div>
+                <div className="font-extrabold text-blue-600 text-sm">{l.daysLeft != null ? `${l.daysLeft}${zh?"天后":"d left"}` : "—"}</div>
               </div>
             </div>
           ))}
@@ -1800,16 +1854,29 @@ function TvlSection({ zh }: { zh: boolean }) {
 // ── Section: ETF ──────────────────────────────────────────────────────────────
 
 function EtfSection({ zh }: { zh: boolean }) {
-  const totalAum   = ETF_DATA.reduce((s, e) => s + e.aum, 0);
-  const totalFlow  = ETF_DATA.reduce((s, e) => s + e.flow1d, 0);
-  const totalBtc   = ETF_DATA.reduce((s, e) => s + e.btcHeld, 0);
+  const cache = useOnchainCache<any>("etf");
+  type EtfRow = { name: string; ticker: string; issuer: string; aum: number; flow1d: number; flow7d: number; btcHeld: number };
+  const liveData: EtfRow[] = (cache.items ?? []).map((x: any): EtfRow => ({
+    name: x.issuer ? `${x.issuer} ${x.ticker}` : x.ticker,
+    ticker: x.ticker,
+    issuer: x.issuer ?? "—",
+    aum: typeof x.totalAum === "number" ? x.totalAum * 1_000_000 : 0,
+    flow1d: typeof x.flow1d === "number" ? x.flow1d * 1_000_000 : 0,
+    flow7d: typeof x.flowMtd === "number" ? x.flowMtd * 1_000_000 : 0,
+    btcHeld: 0,
+  }));
+  const data = liveData.length > 0 ? liveData : ETF_DATA;
+  const totalAum   = data.reduce((s, e) => s + e.aum, 0);
+  const totalFlow  = data.reduce((s, e) => s + e.flow1d, 0);
+  const totalBtc   = data.reduce((s, e) => s + e.btcHeld, 0);
 
   return (
     <div className="space-y-3">
+      <LiveBadge live={cache.live} updatedAt={cache.updatedAt} source={cache.source ?? (zh?"Farside Investors · 由 DeepSeek 提取":"Farside Investors · extracted by DeepSeek")} zh={zh} />
       {/* Summary strip */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: zh ? "总管理规模" : "Total AUM", value: fmtLarge(totalAum), color: "#3b82f6" },
+          { label: cache.live ? (zh ? "1日总流入" : "1d Net Flow") : (zh ? "总管理规模" : "Total AUM"), value: cache.live ? ((totalFlow>=0?"+":"")+fmtLarge(Math.abs(totalFlow))) : fmtLarge(totalAum), color: cache.live ? (totalFlow>=0?"#10b981":"#ef4444") : "#3b82f6" },
           { label: zh ? "今日净流入" : "Today Net Flow", value: `${totalFlow >= 0 ? "+" : ""}${fmtLarge(Math.abs(totalFlow))}`, color: totalFlow >= 0 ? "#10b981" : "#ef4444" },
           { label: zh ? "总 BTC 持有量" : "Total BTC Held", value: totalBtc.toLocaleString(), color: "#F7931A" },
         ].map((s, i) => (
@@ -1823,27 +1890,27 @@ function EtfSection({ zh }: { zh: boolean }) {
         <table className="w-full min-w-[600px] text-sm">
           <thead>
             <tr className="border-b border-border/40 bg-slate-50/50">
-              {[zh ? "基金" : "Fund", zh ? "代码" : "Ticker", zh ? "发行方" : "Issuer", "AUM", zh ? "今日流量" : "Today Flow", zh ? "7日流量" : "7d Flow", zh ? "BTC持有" : "BTC Held"].map((h, i) => (
+              {[zh ? "基金" : "Fund", zh ? "代码" : "Ticker", zh ? "发行方" : "Issuer", "AUM", zh ? "今日流量" : "Today Flow", cache.live ? (zh ? "月初至今" : "MTD Flow") : (zh ? "7日流量" : "7d Flow"), zh ? "BTC持有" : "BTC Held"].map((h, i) => (
                 <th key={i} className={`px-3 py-2 text-xs font-semibold text-muted-foreground ${i < 3 ? "text-left" : "text-right"}`}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-border/30">
-            {ETF_DATA.map((e, i) => (
+            {data.map((e) => (
               <tr key={e.ticker} className="hover:bg-blue-50/30 transition-colors">
                 <td className="px-3 py-2.5 font-semibold text-foreground">{e.name}</td>
                 <td className="px-3 py-2.5"><span className="font-mono font-bold text-xs bg-slate-100 px-2 py-0.5 rounded">{e.ticker}</span></td>
                 <td className="px-3 py-2.5 text-muted-foreground">{e.issuer}</td>
-                <td className="px-3 py-2.5 text-right font-semibold tabular-nums">{fmtLarge(e.aum)}</td>
+                <td className="px-3 py-2.5 text-right font-semibold tabular-nums">{e.aum ? fmtLarge(e.aum) : "—"}</td>
                 <td className="px-3 py-2.5 text-right"><span className={`font-semibold tabular-nums ${e.flow1d >= 0 ? "text-emerald-600" : "text-red-500"}`}>{e.flow1d >= 0 ? "+" : ""}{fmtLarge(Math.abs(e.flow1d))}</span></td>
                 <td className="px-3 py-2.5 text-right"><span className={`font-semibold tabular-nums ${e.flow7d >= 0 ? "text-emerald-600" : "text-red-500"}`}>{e.flow7d >= 0 ? "+" : ""}{fmtLarge(Math.abs(e.flow7d))}</span></td>
-                <td className="px-3 py-2.5 text-right tabular-nums text-muted-foreground">{e.btcHeld.toLocaleString()} ₿</td>
+                <td className="px-3 py-2.5 text-right tabular-nums text-muted-foreground">{e.btcHeld > 0 ? e.btcHeld.toLocaleString() + " ₿" : "—"}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <p className="text-[11px] text-muted-foreground px-1">{zh ? "⚠️ 模拟数据，仅供产品展示。实际数据接入需对接 Bloomberg / Farside Investors 等渠道。" : "⚠️ Demo data for product display only. Real data requires Bloomberg / Farside Investors integration."}</p>
+      {!cache.live && <p className="text-[11px] text-muted-foreground px-1">{zh ? "⚠️ 当前显示演示数据。后台正在通过 DeepSeek 从 Farside 提取实时数据，刷新即可。" : "⚠️ Showing demo data. Backend is extracting live data from Farside via DeepSeek; refresh to load."}</p>}
     </div>
   );
 }

@@ -100,4 +100,20 @@ Sections wired to free public APIs (no key required). Each section keeps a mock 
 | Sectors / Narratives | CoinGecko | `/coins/categories` | 120s |
 | Prices for USD calc | CoinGecko | `/simple/price` (bitcoin, ethereum, matic-network) | 30s |
 
-Sections still on mock data (need API keys or scraping): ETF flows, MEV, whale holdings, launch/IDO, large transfers, smart money.
+Sections still on mock data (need API keys or scraping): MEV, large transfers, smart money.
+
+### Route B — Scraper + DeepSeek LLM extraction (`/api/onchain/:kind`)
+
+For sites without a free JSON API, we scrape the public HTML through **Jina Reader** (`https://r.jina.ai/<url>` — bypasses Cloudflare/IP bot guards that block our container's outbound IP and returns clean LLM-friendly markdown) and use **DeepSeek** (via `callAiWithFallback(..., paidOnly=true)`) to extract structured rows.
+
+| Section | Source URL (proxied through Jina Reader) | Cache `kind` |
+|---|---|---|
+| ETF flows | `farside.co.uk/btc/` | `etf` |
+| Upcoming Launches / IDO | `icodrops.com/category/upcoming-ico/` | `launch` |
+| Whale Holdings | `bitinfocharts.com/top-100-richest-bitcoin-addresses.html` | `whales` |
+
+- **Cache**: `onchain_cache(kind PK, data_json, source, item_count, fetched_at)` (Postgres)
+- **Cron** (in `app.ts`): boot + 3/4/5 min, then every 6h, gated by `DISABLE_ONCHAIN_SCRAPE`
+- **Routes**: `GET /api/onchain/:kind` (read cache) · `POST /api/onchain/refresh/:kind` (force refresh)
+- **Frontend**: `useOnchainCache()` hook in `onchain.tsx` polls cache every 5min, mock fallback when empty, shows `LiveBadge` with source + timestamp
+- **Key files**: `artifacts/api-server/src/lib/onchain-scrapers.ts`, `artifacts/api-server/src/routes/onchain.ts`
