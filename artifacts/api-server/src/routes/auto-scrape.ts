@@ -9,6 +9,7 @@ import { getDailyQuotaStats, areFreeProvidersDailyExhausted, getDeepSeekHourlyBu
 import { readArticlesBackupFile } from "../lib/articles-backup";
 import { importBackupToDb } from "../lib/import-backup";
 import { dedupAiPosts } from "../lib/dedup-posts";
+import { runJsBulkScrape } from "../scripts/js-bulk-scrape";
 
 const router: IRouter = Router();
 
@@ -122,6 +123,36 @@ router.post("/backup/import", checkScrapeAuth, async (req, res) => {
   } catch (e: unknown) {
     res.status(500).json({ ok: false, error: String(e) });
   }
+});
+
+// ── JS Section 一次性历史批量抓取（近3个月，关键词直接匹配，无需AI配额）────────
+// Auth: SCRAPE_INTERNAL_KEY header/query OR admin credentials.
+let jsBulkRunning = false;
+router.post("/js-bulk", checkScrapeAuth, async (req, res) => {
+  if (jsBulkRunning) {
+    res.status(409).json({ error: "JS bulk scrape already running" });
+    return;
+  }
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const windowDays = Math.min(180, Math.max(7, Number(body.windowDays ?? 90)));
+
+  res.json({ ok: true, message: `JS bulk scrape started (window: ${windowDays} days, no AI quota used)` });
+
+  jsBulkRunning = true;
+  runJsBulkScrape(windowDays)
+    .then(r => {
+      console.log("[js-bulk] done:", JSON.stringify({ inserted: r.inserted, matched: r.matched, duplicatesSkipped: r.duplicatesSkipped, sourcesFailed: r.sourcesFailed }));
+    })
+    .catch(e => {
+      console.error("[js-bulk] error:", e);
+    })
+    .finally(() => {
+      jsBulkRunning = false;
+    });
+});
+
+router.get("/js-bulk/status", checkScrapeAuth, (_req, res) => {
+  res.json({ running: jsBulkRunning });
 });
 
 // De-duplicate AI posts after import or scraping.
