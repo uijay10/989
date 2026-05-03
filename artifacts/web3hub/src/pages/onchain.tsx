@@ -304,7 +304,88 @@ interface Protocol  { name: string; tvl: number; change_1d?: number; change_7d?:
 // ── Section: Gas Fee ──────────────────────────────────────────────────────────
 
 function GasSection({ zh }: { zh: boolean }) {
-  const g = GAS_DATA;
+  const [g, setG]         = useState(GAS_DATA);
+  const [live, setLive]   = useState(false);
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const AVG_BTC_TX_VBYTES = 140; // 一笔典型 P2WPKH 交易约 140 vB
+
+    async function fetchAll() {
+      try {
+        const [btcFeesR, mempoolR, ethGasR, priceR] = await Promise.allSettled([
+          fetch("https://mempool.space/api/v1/fees/recommended").then(r => r.json()),
+          fetch("https://mempool.space/api/mempool").then(r => r.json()),
+          fetch("https://ethgas.watch/api/gas").then(r => r.json()),
+          fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd").then(r => r.json()),
+        ]);
+        if (cancelled) return;
+
+        const btcUsd: number = priceR.status === "fulfilled" ? (priceR.value?.bitcoin?.usd ?? 0) : 0;
+        const next = { ...GAS_DATA, eth: { ...GAS_DATA.eth }, btc: { ...GAS_DATA.btc } };
+        let anyLive = false;
+
+        // BTC fees (sat/vB)
+        if (btcFeesR.status === "fulfilled" && btcFeesR.value) {
+          const f = btcFeesR.value;
+          const slow   = Number(f.economyFee  ?? f.hourFee     ?? next.btc.slow);
+          const normal = Number(f.halfHourFee ?? f.hourFee     ?? next.btc.normal);
+          const fast   = Number(f.fastestFee  ?? f.halfHourFee ?? next.btc.fast);
+          next.btc.slow   = slow;
+          next.btc.normal = normal;
+          next.btc.fast   = fast;
+          if (btcUsd > 0) {
+            const toUsd = (satVb: number) => (satVb * AVG_BTC_TX_VBYTES / 1e8) * btcUsd;
+            next.btc.feeUsdLow  = toUsd(slow);
+            next.btc.feeUsdMid  = toUsd(normal);
+            next.btc.feeUsdHigh = toUsd(fast);
+          }
+          anyLive = true;
+        }
+
+        // BTC mempool
+        if (mempoolR.status === "fulfilled" && mempoolR.value) {
+          const m = mempoolR.value;
+          const vsize = Number(m.vsize ?? 0);
+          if (vsize > 0) next.btc.mempoolMB = Math.round(vsize / 1_000_000);
+          // 下个区块时间用一个粗略估算（基于 mempool 拥堵度），保留默认 7 分钟若无法估算
+          // mempool.space 不直接给"下个区块多久"，正常出块 10 分钟
+          next.btc.nextBlockMin = 10;
+          anyLive = true;
+        }
+
+        // ETH gas (gwei)
+        if (ethGasR.status === "fulfilled" && ethGasR.value) {
+          const e = ethGasR.value;
+          // ethgas.watch 返回结构: { fast: { gwei }, standard: { gwei }, slow: { gwei } }
+          const slow   = Number(e?.slow?.gwei     ?? e?.slow     ?? next.eth.slow);
+          const normal = Number(e?.standard?.gwei ?? e?.standard ?? next.eth.normal);
+          const fast   = Number(e?.fast?.gwei     ?? e?.fast     ?? next.eth.fast);
+          if (slow > 0)   next.eth.slow    = Math.round(slow);
+          if (normal > 0) next.eth.normal  = Math.round(normal);
+          if (fast > 0)   next.eth.fast    = Math.round(fast);
+          // 基础费按"normal - 2"近似，优先费按 1.5 默认
+          next.eth.baseFee  = Math.max(1, +(normal - 1.5).toFixed(1));
+          next.eth.priority = 1.5;
+          anyLive = true;
+        }
+
+        if (anyLive) {
+          setG(next);
+          setLive(true);
+          setUpdatedAt(new Date());
+        }
+      } catch {
+        // 静默失败 — 保留默认 GAS_DATA
+      }
+    }
+
+    fetchAll();
+    const id = setInterval(fetchAll, 30_000); // 30 秒刷新
+    return () => { cancelled = true; clearInterval(id); };
+  }, []);
+
   const minH = Math.min(...g.hourly), maxH = Math.max(...g.hourly);
   const pts = g.hourly.map((v, i) => {
     const x = (i / 23) * 280;
