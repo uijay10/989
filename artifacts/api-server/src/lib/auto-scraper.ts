@@ -75,12 +75,14 @@ export const CATEGORY_MAP: Record<string, string> = {
   "空投": "quest", "Airdrop": "quest", "airdrop": "quest",
   "节点招募": "nodes",
   "DeFi": "defi", "去中心化金融": "defi", "Decentralized Finance": "defi",
-  "DEX": "defi", "借贷协议": "defi", "流动性挖矿": "defi", "收益聚合": "defi",
+  "DEX": "defi", "借贷协议": "defi", "流动性挖矿": "defi", "收益聚合": "defi", "收益率": "defi",
+  "流动性": "defi", "TVL": "defi", "APR": "defi", "APY": "defi", "永续合约": "defi",
   "数据分析": "analytics", "链上数据": "analytics", "On-chain Analytics": "analytics",
-  "市场分析": "analytics", "加密分析": "analytics", "Chain Analytics": "analytics",
+  "市场分析": "analytics", "加密分析": "analytics", "Chain Analytics": "analytics", "分析报告": "analytics",
   "NFT": "nft", "Non-Fungible Token": "nft", "GameFi": "nft", "链游": "nft",
   "Play to Earn": "nft", "P2E": "nft", "Play-to-Earn": "nft",
   "元宇宙": "nft", "数字藏品": "nft", "数字收藏品": "nft", "OpenSea": "nft",
+  "PFP": "nft", "数字艺术": "nft", "收藏品": "nft", "Marketplace": "nft",
   "NFT交易": "nft", "NFT游戏": "nft", "区块链游戏": "nft",
   "研报": "research", "研究报告": "research", "加密研报": "research",
   "Research Report": "research", "Crypto Research": "research", "Market Report": "research",
@@ -115,6 +117,24 @@ function mapAllCategories(cats: string[], title?: string): string[] {
     console.log(`[multi-section] "${title.slice(0, 60)}..." → ${JSON.stringify(sections)}`);
   }
   return sections;
+}
+
+const FORCE_SUBSECTIONS = new Set(["defi", "analytics", "nft", "research"]);
+
+function normalizeSectionAlias(section: string): string {
+  return section === "flash" ? "724news" : section;
+}
+
+function ensureSectionCoverage(sections: string[], event: ProcessedEvent): string[] {
+  const merged = new Set(sections.map(normalizeSectionAlias));
+  const text = `${event.title ?? ""}\n${event.description ?? ""}`.toLowerCase();
+  if ([..."defi"].length && /defi|dex|tvl|yield|liquidity|swap|amm|lending|perp|uniswap|aave|curve|gmx|dydx|gamefi|nft|opensea|magic eden|analytics|on-chain data|data analysis|research report|market analysis|market outlook|research|研报|数据分析|链上数据|nft|gamefi/.test(text)) {
+    if (/defi|dex|tvl|yield|liquidity|swap|amm|lending|perp|uniswap|aave|curve|gmx|dydx/.test(text)) merged.add("defi");
+    if (/analytics|on-chain data|onchain data|data analysis|chain analysis|nansen|glassnode|dune|messari|coingecko|链上数据|数据分析|市场分析/.test(text)) merged.add("analytics");
+    if (/nft|gamefi|play to earn|p2e|opensea|magic eden|blur|immutable|metaverse|链游|元宇宙|数字藏品|区块链游戏/.test(text)) merged.add("nft");
+    if (/research report|market analysis|market outlook|sector report|研报|研究报告|深度研报|投研/.test(text)) merged.add("research");
+  }
+  return [...merged];
 }
 
 // ── RSS Sources ────────────────────────────────────────────────────────────────
@@ -214,6 +234,9 @@ export const DEFAULT_SOURCES = [
   { name: "EigenLayer Blog", url: "https://www.blog.eigenlayer.xyz/rss/", type: "rss", priority: 1 },
   { name: "Messari Research", url: "https://messari.io/rss/news.xml", type: "rss", priority: 1 },
   { name: "DeFiLlama Blog", url: "https://defillama.com/blog/rss.xml", type: "rss", priority: 1 },
+  { name: "The Defiant", url: "https://thedefiant.io/feed/", type: "rss", priority: 1 },
+  { name: "Bankless", url: "https://www.bankless.com/feed", type: "rss", priority: 1 },
+  { name: "DeFiPrime", url: "https://defiprime.com/feed", type: "rss", priority: 2 },
   // AirdropAlert: dedicated airdrop tracking site — boosts 空投/链上任务 section
   { name: "AirdropAlert", url: "https://airdropalert.com/feed/rssfeed", type: "rss", priority: 1 },
   // Web3 Is Going Great: curated Web3 event tracker — good for 政策监管 and 行业动态
@@ -259,6 +282,7 @@ export const DEFAULT_SOURCES = [
   { name: "GNews NFT", url: "https://news.google.com/rss/search?q=NFT+blockchain+market&hl=en-US&gl=US&ceid=US:en", type: "rss", priority: 1 },
   { name: "GNews GameFi", url: "https://news.google.com/rss/search?q=GameFi+blockchain+gaming+play-to-earn&hl=en-US&gl=US&ceid=US:en", type: "rss", priority: 1 },
   { name: "GNews NFT中文", url: "https://news.google.com/rss/search?q=NFT+链游+区块链游戏&hl=zh-CN&gl=CN&ceid=CN:zh-Hans", type: "rss", priority: 1 },
+  { name: "GNews NFT收藏品", url: "https://news.google.com/rss/search?q=NFT+收藏品+数字藏品+PFP+链游&hl=zh-CN&gl=CN&ceid=CN:zh-Hans", type: "rss", priority: 1 },
 
   // ── 研报精选 / Research ───────────────────────────────────────────────────────
   { name: "CoinDesk Research", url: "https://www.coindesk.com/research/feed/", type: "rss", priority: 1 },
@@ -275,6 +299,8 @@ export const DEFAULT_SOURCES = [
   { name: "Coinbase Institute", url: "https://www.coinbase.com/blog/landing/research?format=rss", type: "rss", priority: 2 },
   { name: "GNews Crypto Research", url: "https://news.google.com/rss/search?q=crypto+research+report+analysis+2025&hl=en-US&gl=US&ceid=US:en", type: "rss", priority: 1 },
   { name: "GNews 研报", url: "https://news.google.com/rss/search?q=加密研报+区块链研究报告&hl=zh-CN&gl=CN&ceid=CN:zh-Hans", type: "rss", priority: 1 },
+  { name: "GNews Data Analysis", url: "https://news.google.com/rss/search?q=on-chain+data+analysis+crypto+metrics&hl=en-US&gl=US&ceid=US:en", type: "rss", priority: 1 },
+  { name: "GNews DeFi", url: "https://news.google.com/rss/search?q=DeFi+yield+liquidity+tvl+protocol&hl=en-US&gl=US&ceid=US:en", type: "rss", priority: 1 },
 
   // ── 测试网 / Testnet ──────────────────────────────────────────────────────────
   { name: "Monad Labs Blog", url: "https://www.monad.xyz/blog/rss.xml", type: "rss", priority: 1 },
@@ -1399,11 +1425,11 @@ async function dualPublish(ev: ProcessedEvent): Promise<number> {
     : rawCat != null && String(rawCat).trim()
       ? [String(rawCat).trim()]
       : [];
-  const matchedSections = mapAllCategories(aiCategories, ev.title);
+  const matchedSections = ensureSectionCoverage(mapAllCategories(aiCategories, ev.title), ev);
 
   const plates = new Set<string>();
   for (const s of matchedSections) {
-    plates.add(normalizePlateSection(s));
+    plates.add(normalizeSectionAlias(s));
   }
   plates.add(PRIMARY_724_SECTION);
 
