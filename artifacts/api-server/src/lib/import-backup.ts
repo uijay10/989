@@ -5,6 +5,8 @@ import { readArticlesBackupFile, type BackupArticle } from "./articles-backup";
 type ImportOptions = {
   maxItems?: number;
   dryRun?: boolean;
+  since?: Date;
+  sections?: string[];
 };
 
 type ImportStats = {
@@ -102,11 +104,23 @@ async function insertArticle(a: BackupArticle, section: string, dryRun: boolean)
 export async function importBackupToDb(opts: ImportOptions = {}): Promise<ImportStats> {
   const maxItems = opts.maxItems ?? 50_000;
   const dryRun = opts.dryRun === true;
+  const since = opts.since ?? null;
+  const sections = new Set((opts.sections ?? []).map((s) => s.trim()).filter(Boolean));
 
   const all = readArticlesBackupFile();
   const totalInFile = all.length;
   const items = all
     .filter((a) => (a.author_type ?? "ai") === "ai")
+    .filter((a) => {
+      if (!since) return true;
+      const createdAt = safeDate(a.created_at);
+      return createdAt ? createdAt >= since : false;
+    })
+    .filter((a) => {
+      if (sections.size === 0) return true;
+      const s = normalizeSection(a.section);
+      return sections.has(s) || sections.has("724news");
+    })
     .slice(0, maxItems);
 
   const stats: ImportStats = {
