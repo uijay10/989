@@ -9,6 +9,8 @@ type ImportOptions = {
   sections?: string[];
   keywords?: string[];
   includeAll?: boolean;
+  targetSection?: string;
+  skipSectionDedup?: boolean;
 };
 
 type ImportStats = {
@@ -52,26 +54,16 @@ async function existsByTitle(section: string, title: string, since: Date): Promi
   return (rows.rows as unknown[]).length > 0;
 }
 
-async function insertArticle(a: BackupArticle, section: string, dryRun: boolean): Promise<boolean> {
+async function insertArticleForce(a: BackupArticle, section: string, dryRun: boolean): Promise<boolean> {
   const title = a.title.trim();
   const content = (a.content ?? "").trim();
   if (!title) return false;
 
-  const sourceUrl = (a.source_url ?? "").trim() || null;
-  if (sourceUrl) {
-    if (await existsBySourceUrl(sourceUrl, section)) return false;
-  } else {
-    // Best-effort dedup for legacy lines without source_url: exact title match in same section.
-    // Use a wide window so repeated imports don't duplicate content.
-    const since = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
-    if (await existsByTitle(section, title, since)) return false;
-  }
-
   if (dryRun) return true;
 
   const createdAt = safeDate(a.created_at) ?? new Date();
+  const sourceUrl = (a.source_url ?? "").trim() || null;
 
-  // Insert minimal required fields; keep legacy metadata if present.
   await db.execute(sql`
     INSERT INTO ${postsTable} (
       title, content, section,
@@ -103,6 +95,11 @@ async function insertArticle(a: BackupArticle, section: string, dryRun: boolean)
   return true;
 }
 
+function resolveTargetSection(a: BackupArticle, targetSection?: string): string {
+  if (!targetSection) return normalizeSection(a.section);
+  return targetSection;
+}
+
 export async function importBackupToDb(opts: ImportOptions = {}): Promise<ImportStats> {
   const maxItems = opts.maxItems ?? 50_000;
   const dryRun = opts.dryRun === true;
@@ -110,6 +107,8 @@ export async function importBackupToDb(opts: ImportOptions = {}): Promise<Import
   const sections = new Set((opts.sections ?? []).map((s) => s.trim()).filter(Boolean));
   const keywords = (opts.keywords ?? []).map((s) => s.trim().toLowerCase()).filter(Boolean);
   const includeAll = opts.includeAll === true;
+  const targetSection = (opts.targetSection ?? "").trim() || null;
+  const skipSectionDedup = opts.skipSectionDedup === true;
 
   const all = readArticlesBackupFile();
   const totalInFile = all.length;
@@ -143,18 +142,17 @@ export async function importBackupToDb(opts: ImportOptions = {}): Promise<Import
 
   for (const a of items) {
     stats.considered += 1;
-    const section = normalizeSection(a.section);
+    const section = resolveTargetSection(a, targetSection ?? undefined);
     if (!a.title || !a.title.trim()) {
       stats.skippedInvalid += 1;
       continue;
     }
 
-    // Dual publish: original section + always 724news
-    const sections = section === "724news" ? ["724news"] : [section, "724news"];
+    const sections = skipSectionDedup ? [section] : [section];
 
     let insertedAny = false;
     for (const s of sections) {
-      const ok = await insertArticle(a, s, dryRun);
+      const ok = await insertArticleForce(a, s, dryRun);
       if (ok) {
         stats.inserted += 1;
         insertedAny = true;
@@ -162,7 +160,6 @@ export async function importBackupToDb(opts: ImportOptions = {}): Promise<Import
         stats.skippedDuplicate += 1;
       }
     }
-    if (insertedAny && sections.length === 2) stats.dualPublished += 1;
   }
 
   return stats;
