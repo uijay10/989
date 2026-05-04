@@ -130,6 +130,57 @@ router.post("/backup/import", checkScrapeAuth, async (req, res) => {
   }
 });
 
+router.post("/backfill-sections", checkScrapeAuth, async (_req, res) => {
+  try {
+    const result = await db.execute(sql`
+      WITH src AS (
+        SELECT *
+        FROM posts
+        WHERE created_at >= NOW() - INTERVAL '180 days'
+          AND (
+            section IN ('defi', 'analytics', 'nft', 'research', 'HTX', 'Gate.io', 'KuCoin', 'Bitget')
+            OR lower(title) ~ '(defi|dex|tvl|yield|liquidity|swap|amm|lending|perp|uniswap|aave|curve|gmx|dydx|nft|gamefi|opensea|magic eden|blur|immutable|metaverse|htx|huobi|gate\\.io|gateio|kucoin|bitget)'
+            OR lower(content) ~ '(defi|dex|tvl|yield|liquidity|swap|amm|lending|perp|uniswap|aave|curve|gmx|dydx|nft|gamefi|opensea|magic eden|blur|immutable|metaverse|htx|huobi|gate\\.io|gateio|kucoin|bitget)'
+          )
+      ),
+      inserted AS (
+        INSERT INTO posts (
+          title, content, section, author_wallet, author_name, author_type,
+          views, likes, comments, kol_like_points, kol_comment_points,
+          is_pinned, pin_queued, expires_at, source_url, ai_confidence, importance,
+          event_start_time, event_end_time, created_at
+        )
+        SELECT
+          s.title,
+          s.content,
+          CASE
+            WHEN lower(s.title) ~ '(htx|huobi)' THEN 'HTX'
+            WHEN lower(s.title) ~ '(gate\\.io|gateio)' THEN 'Gate.io'
+            WHEN lower(s.title) ~ '(kucoin)' THEN 'KuCoin'
+            WHEN lower(s.title) ~ '(bitget)' THEN 'Bitget'
+            WHEN lower(s.title) ~ '(defi|dex|tvl|yield|liquidity|swap|amm|lending|perp|uniswap|aave|curve|gmx|dydx)' THEN 'defi'
+            WHEN lower(s.title) ~ '(nft|gamefi|opensea|magic eden|blur|immutable|metaverse)' THEN 'nft'
+            WHEN lower(s.title) ~ '(analytics|on-chain data|onchain data|data analysis|chain analysis|nansen|glassnode|dune|messari|coingecko)' THEN 'analytics'
+            ELSE 'research'
+          END,
+          s.author_wallet, s.author_name, s.author_type,
+          s.views, s.likes, s.comments, s.kol_like_points, s.kol_comment_points,
+          s.is_pinned, s.pin_queued, s.expires_at, s.source_url, s.ai_confidence, s.importance,
+          s.event_start_time, s.event_end_time, s.created_at
+        FROM src s
+        ON CONFLICT DO NOTHING
+        RETURNING 1
+      )
+      SELECT COUNT(*)::int AS inserted FROM inserted
+    `);
+
+    const inserted = Number((result.rows?.[0] as { inserted?: string | number } | undefined)?.inserted ?? 0);
+    res.json({ ok: true, inserted });
+  } catch (e: unknown) {
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
 // ── JS Section 一次性历史批量抓取（近3个月，关键词直接匹配，无需AI配额）────────
 // Auth: SCRAPE_INTERNAL_KEY header/query OR admin credentials.
 let jsBulkRunning = false;
