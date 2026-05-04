@@ -17,7 +17,7 @@ export const EXCHANGES = [
   "Coinbase",
   "Kraken",
   "HTX",
-  "GATE",
+  "Gate",
   "KuCoin",
   "Bitget",
 ] as const;
