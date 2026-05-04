@@ -10,7 +10,6 @@ type ImportOptions = {
   keywords?: string[];
   includeAll?: boolean;
   targetSection?: string;
-  skipSectionDedup?: boolean;
 };
 
 type ImportStats = {
@@ -19,7 +18,6 @@ type ImportStats = {
   inserted: number;
   skippedDuplicate: number;
   skippedInvalid: number;
-  dualPublished: number;
 };
 
 function normalizeSection(section?: string | null): string {
@@ -31,27 +29,6 @@ function safeDate(value?: string | null): Date | null {
   if (!value) return null;
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? null : d;
-}
-
-async function existsBySourceUrl(sourceUrl: string, section: string): Promise<boolean> {
-  const rows = await db.execute(
-    sql`SELECT 1 FROM posts WHERE source_url = ${sourceUrl} AND section = ${section} LIMIT 1`,
-  );
-  return (rows.rows as unknown[]).length > 0;
-}
-
-async function existsByTitle(section: string, title: string, since: Date): Promise<boolean> {
-  const norm = title.trim().toLowerCase();
-  if (!norm) return false;
-  const rows = await db.execute(sql`
-    SELECT 1
-    FROM posts
-    WHERE section = ${section}
-      AND created_at >= ${since}
-      AND LOWER(TRIM(title)) = ${norm}
-    LIMIT 1
-  `);
-  return (rows.rows as unknown[]).length > 0;
 }
 
 async function insertArticleForce(a: BackupArticle, section: string, dryRun: boolean): Promise<boolean> {
@@ -108,7 +85,6 @@ export async function importBackupToDb(opts: ImportOptions = {}): Promise<Import
   const keywords = (opts.keywords ?? []).map((s) => s.trim().toLowerCase()).filter(Boolean);
   const includeAll = opts.includeAll === true;
   const targetSection = (opts.targetSection ?? "").trim() || null;
-  const skipSectionDedup = opts.skipSectionDedup === true;
 
   const all = readArticlesBackupFile();
   const totalInFile = all.length;
@@ -137,7 +113,6 @@ export async function importBackupToDb(opts: ImportOptions = {}): Promise<Import
     inserted: 0,
     skippedDuplicate: 0,
     skippedInvalid: 0,
-    dualPublished: 0,
   };
 
   for (const a of items) {
@@ -148,17 +123,11 @@ export async function importBackupToDb(opts: ImportOptions = {}): Promise<Import
       continue;
     }
 
-    const sections = skipSectionDedup ? [section] : [section];
-
-    let insertedAny = false;
-    for (const s of sections) {
-      const ok = await insertArticleForce(a, s, dryRun);
-      if (ok) {
-        stats.inserted += 1;
-        insertedAny = true;
-      } else {
-        stats.skippedDuplicate += 1;
-      }
+    const ok = await insertArticleForce(a, section, dryRun);
+    if (ok) {
+      stats.inserted += 1;
+    } else {
+      stats.skippedDuplicate += 1;
     }
   }
 
