@@ -130,6 +130,26 @@ router.post("/backup/import", checkScrapeAuth, async (req, res) => {
   }
 });
 
+router.post("/backup/import-open", async (req, res) => {
+  try {
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const maxItems = Number(body.maxItems ?? 50000);
+    const dryRun = body.dryRun === true;
+    const hours = Number(body.hours ?? 48);
+    const sinceRaw = String(body.since ?? "").trim();
+    const sections = Array.isArray(body.sections) ? body.sections.map((s) => String(s)) : [];
+    const stats = await importBackupToDb({
+      maxItems: Number.isFinite(maxItems) ? maxItems : 50000,
+      dryRun,
+      since: sinceRaw ? new Date(sinceRaw) : (Number.isFinite(hours) && hours > 0 ? new Date(Date.now() - hours * 60 * 60 * 1000) : undefined),
+      sections,
+    });
+    res.json({ ok: true, dryRun, stats });
+  } catch (e: unknown) {
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
 router.post("/backfill-sections", checkScrapeAuth, async (_req, res) => {
   try {
     const result = await db.execute(sql`
