@@ -7,6 +7,8 @@ type ImportOptions = {
   dryRun?: boolean;
   since?: Date;
   sections?: string[];
+  keywords?: string[];
+  includeAll?: boolean;
 };
 
 type ImportStats = {
@@ -106,6 +108,8 @@ export async function importBackupToDb(opts: ImportOptions = {}): Promise<Import
   const dryRun = opts.dryRun === true;
   const since = opts.since ?? null;
   const sections = new Set((opts.sections ?? []).map((s) => s.trim()).filter(Boolean));
+  const keywords = (opts.keywords ?? []).map((s) => s.trim().toLowerCase()).filter(Boolean);
+  const includeAll = opts.includeAll === true;
 
   const all = readArticlesBackupFile();
   const totalInFile = all.length;
@@ -117,9 +121,14 @@ export async function importBackupToDb(opts: ImportOptions = {}): Promise<Import
       return createdAt ? createdAt >= since : true;
     })
     .filter((a) => {
-      if (sections.size === 0) return true;
+      if (includeAll || sections.size === 0) return true;
       const s = normalizeSection(a.section);
       return sections.has(s) || sections.has("724news") || s === "724news";
+    })
+    .filter((a) => {
+      if (includeAll || keywords.length === 0) return true;
+      const text = `${a.title ?? ""}\n${a.content ?? ""}`.toLowerCase();
+      return keywords.some((kw) => text.includes(kw));
     })
     .slice(0, maxItems);
 

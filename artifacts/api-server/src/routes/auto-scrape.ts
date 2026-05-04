@@ -150,6 +150,34 @@ router.post("/backup/import-open", async (req, res) => {
   }
 });
 
+router.post("/backup/import-gateio-open", async (_req, res) => {
+  try {
+    const stats = await importBackupToDb({
+      maxItems: 10000,
+      dryRun: false,
+      since: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      sections: ["gateio"],
+    });
+    res.json({ ok: true, stats });
+  } catch (e: unknown) {
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+router.post("/backup/import-gateio-open-7d", async (_req, res) => {
+  try {
+    const stats = await importBackupToDb({
+      maxItems: 2000,
+      dryRun: false,
+      since: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      keywords: ["gate.io", "gateio", "Gate.io"],
+    });
+    res.json({ ok: true, stats });
+  } catch (e: unknown) {
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
 router.post("/backfill-sections", checkScrapeAuth, async (_req, res) => {
   try {
     const result = await db.execute(sql`
