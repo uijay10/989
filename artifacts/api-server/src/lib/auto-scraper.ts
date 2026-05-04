@@ -142,12 +142,6 @@ function ensureSectionCoverage(sections: string[], event: ProcessedEvent): strin
     if (/kucoin/.test(text)) merged.add("KuCoin");
     if (/bitget/.test(text)) merged.add("Bitget");
   }
-  if ([..."defi"].length && /defi|dex|tvl|yield|liquidity|swap|amm|lending|perp|uniswap|aave|curve|gmx|dydx|gamefi|nft|opensea|magic eden|analytics|on-chain data|data analysis|research report|market analysis|market outlook|research|研报|数据分析|链上数据|nft|gamefi/.test(text)) {
-    if (/defi|dex|tvl|yield|liquidity|swap|amm|lending|perp|uniswap|aave|curve|gmx|dydx/.test(text)) merged.add("defi");
-    if (/analytics|on-chain data|onchain data|data analysis|chain analysis|nansen|glassnode|dune|messari|coingecko|链上数据|数据分析|市场分析/.test(text)) merged.add("analytics");
-    if (/nft|gamefi|play to earn|p2e|opensea|magic eden|blur|immutable|metaverse|链游|元宇宙|数字藏品|区块链游戏/.test(text)) merged.add("nft");
-    if (/research report|market analysis|market outlook|sector report|研报|研究报告|深度研报|投研/.test(text)) merged.add("research");
-  }
   return [...merged];
 }
 
