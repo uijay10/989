@@ -238,7 +238,7 @@ ${typeInfo.tag} #${projectName} #Web3Release #Web3
   const baseSections = getSections(spaceType, isAdminUser);
   const ecoSections = [
     ...CHAINS.map((n) => makeEcosystemSectionId("chain", n)),
-    ...EXCHANGES.map((n) => makeEcosystemSectionId("exchange", n === "Gate.io" ? exchangeSectionSlug(n) : n)),
+    ...EXCHANGES.map((n) => makeEcosystemSectionId("exchange", n)),
   ];
   const availableSections = [...baseSections, ...ecoSections];
   const inputCls = "w-full p-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/20 outline-none transition-all text-foreground placeholder:text-muted-foreground";

@@ -17,7 +17,7 @@ export const EXCHANGES = [
   "Coinbase",
   "Kraken",
   "HTX",
-  "Gate.io",
+  "GATE",
   "KuCoin",
   "Bitget",
 ] as const;
@@ -33,7 +33,7 @@ export function slugify(name: string) {
 
 export function exchangeSectionSlug(name: string) {
   const slug = slugify(name);
-  if (slug === "gate-io") return "gateio";
+  if (slug === "gate" || slug === "gate-io") return "gateio";
   if (slug === "kucoin") return "kucoin";
   if (slug === "htx") return "htx";
   if (slug === "bitget") return "bitget";

@@ -479,7 +479,7 @@ export default function Profile() {
               <div className="text-xs font-semibold text-muted-foreground">{zh ? "交易所" : "Exchanges"}</div>
               <div className="flex flex-wrap gap-2">
                 {EXCHANGES.map((name) => {
-                  const id = makeEcosystemSectionId("exchange", name === "Gate.io" ? exchangeSectionSlug(name) : name);
+                  const id = makeEcosystemSectionId("exchange", name);
                   const active = subscriptions.includes(id);
                   return (
                     <button key={id} onClick={() => toggleSubscription(id)}
