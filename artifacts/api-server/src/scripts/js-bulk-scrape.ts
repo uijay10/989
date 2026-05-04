@@ -1,6 +1,6 @@
 /**
  * JS Section Bulk Scraper (一次性历史抓取)
- * 抓取近3个月的永州教师对调/轮岗/交流相关文章，直接关键词匹配，无需AI分类配额。
+ * 抓取近6个月的永州教师对调/轮岗/交流相关文章，直接关键词匹配，无需AI分类配额。
  */
 
 import Parser from "rss-parser";
@@ -13,7 +13,7 @@ const SECONDARY_SECTION = "724news";
 const AI_SYSTEM_WALLET = "ai-system";
 const AI_SYSTEM_NAME = "AI精选";
 
-// ── JS专项RSS来源（多维搜索，尽量覆盖3个月范围）──────────────────────────────
+// ── JS专项RSS来源（多维搜索，尽量覆盖6个月范围）──────────────────────────────
 const JS_SOURCES = [
   // 永州教师核心搜索（Google News RSS，每次最多约100条，通常覆盖1-4周）
   { name: "GNews 永州教师对调", url: "https://news.google.com/rss/search?q=永州+教师+对调+轮岗&hl=zh-CN&gl=CN&ceid=CN:zh-Hans" },
@@ -21,6 +21,9 @@ const JS_SOURCES = [
   { name: "GNews 湖南教师调动", url: "https://news.google.com/rss/search?q=湖南+永州+教师+调动+交流&hl=zh-CN&gl=CN&ceid=CN:zh-Hans" },
   { name: "GNews 湖南省教育厅", url: "https://news.google.com/rss/search?q=湖南省教育厅+教师+政策&hl=zh-CN&gl=CN&ceid=CN:zh-Hans" },
   { name: "GNews 永州教育通知", url: "https://news.google.com/rss/search?q=永州+教育+教师+招聘+通知&hl=zh-CN&gl=CN&ceid=CN:zh-Hans" },
+  { name: "GNews 永州教师交流", url: "https://news.google.com/rss/search?q=永州+教师+交流+轮岗+调动&hl=zh-CN&gl=CN&ceid=CN:zh-Hans" },
+  { name: "GNews 永州教师招聘", url: "https://news.google.com/rss/search?q=永州+教师+招聘+编制+公告&hl=zh-CN&gl=CN&ceid=CN:zh-Hans" },
+  { name: "GNews 永州教育政策", url: "https://news.google.com/rss/search?q=永州+教育+政策+教师+公告&hl=zh-CN&gl=CN&ceid=CN:zh-Hans" },
   // 扩展搜索——覆盖更多维度
   { name: "GNews 永州教师编制", url: "https://news.google.com/rss/search?q=永州+教师+编制+招聘+考试&hl=zh-CN&gl=CN&ceid=CN:zh-Hans" },
   { name: "GNews 永州区县教育", url: "https://news.google.com/rss/search?q=零陵+冷水滩+祁阳+道县+教师&hl=zh-CN&gl=CN&ceid=CN:zh-Hans" },
@@ -37,6 +40,7 @@ const JS_SOURCES = [
 const STANDALONE_TERMS = [
   "教师对调", "教师轮岗", "教师交流轮岗", "教师交流调动",
   "永州市教育局", "永州教育局", "永州教师",
+  "教师招聘", "教师编制", "教师交流", "教师调动", "教育局公告", "教育局通知",
 ];
 // 双重匹配：同时含永州地名 + 教师/教育相关词
 const YONGZHOU_TERMS = [
@@ -47,7 +51,7 @@ const YONGZHOU_TERMS = [
 const EDU_TERMS = [
   "教师", "教育", "学校", "校长", "教职", "教学", "教龄",
   "对调", "轮岗", "交流", "调动", "调配", "支教", "援教", "骨干教师",
-  "编制", "招聘", "教育局", "教育厅", "中小学", "义务教育",
+  "编制", "招聘", "教育局", "教育厅", "中小学", "义务教育", "考编", "入编",
 ];
 
 function matchesJsKeywords(title: string, description: string): boolean {
@@ -80,7 +84,7 @@ export interface JsBulkScrapeResult {
   sourceStats: Array<{ name: string; fetched: number; matched: number; inserted: number; error?: string }>;
 }
 
-export async function runJsBulkScrape(windowDays = 90): Promise<JsBulkScrapeResult> {
+export async function runJsBulkScrape(windowDays = 180): Promise<JsBulkScrapeResult> {
   const cutoff = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000);
 
   const result: JsBulkScrapeResult = {
