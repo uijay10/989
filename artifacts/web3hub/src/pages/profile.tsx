@@ -18,6 +18,7 @@ import { FEATURES } from "@/lib/feature-flags";
 import { Link } from "wouter";
 import AdminPage from "./admin";
 import { getApiBase } from "@/lib/api-base";
+import { exchangeSectionSlug } from "@/lib/ecosystem";
 import { CHAINS, EXCHANGES, makeEcosystemSectionId } from "@/lib/ecosystem";
 
 const apiBase = getApiBase();
@@ -478,7 +479,7 @@ export default function Profile() {
               <div className="text-xs font-semibold text-muted-foreground">{zh ? "交易所" : "Exchanges"}</div>
               <div className="flex flex-wrap gap-2">
                 {EXCHANGES.map((name) => {
-                  const id = makeEcosystemSectionId("exchange", name);
+                  const id = makeEcosystemSectionId("exchange", name === "Gate.io" ? exchangeSectionSlug(name) : name);
                   const active = subscriptions.includes(id);
                   return (
                     <button key={id} onClick={() => toggleSubscription(id)}

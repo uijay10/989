@@ -123,9 +123,9 @@ const FORCE_SUBSECTIONS = new Set(["defi", "analytics", "nft", "research"]);
 
 function normalizeSectionAlias(section: string): string {
   if (section === "flash") return "724news";
-  if (section === "htx") return "HTX";
-  if (section === "gateio") return "Gate.io";
-  if (section === "kucoin") return "KuCoin";
+  if (section === "htx") return "htx";
+  if (section === "gateio") return "gateio";
+  if (section === "kucoin") return "kucoin";
   return section;
 }
 
@@ -137,10 +137,10 @@ function ensureSectionCoverage(sections: string[], event: ProcessedEvent): strin
   if (/nft|gamefi|play to earn|p2e|opensea|magic eden|blur|immutable|metaverse|链游|元宇宙|数字藏品|区块链游戏/.test(text)) merged.add("nft");
   if (/research report|market analysis|market outlook|sector report|研报|研究报告|深度研报|投研/.test(text)) merged.add("research");
   if (/htx|huobi|gate\.io|gate io|gateio|kucoin|bitget|mexc/.test(text)) {
-    if (/htx|huobi/.test(text)) merged.add("HTX");
-    if (/gate\.io|gate io|gateio/.test(text)) merged.add("Gate.io");
-    if (/kucoin/.test(text)) merged.add("KuCoin");
-    if (/bitget/.test(text)) merged.add("Bitget");
+    if (/htx|huobi/.test(text)) merged.add("htx");
+    if (/gate\.io|gate io|gateio/.test(text)) merged.add("gateio");
+    if (/kucoin/.test(text)) merged.add("kucoin");
+    if (/bitget/.test(text)) merged.add("bitget");
   }
   return [...merged];
 }

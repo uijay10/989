@@ -31,8 +31,17 @@ export function slugify(name: string) {
     .replace(/^-+|-+$/g, "");
 }
 
+export function exchangeSectionSlug(name: string) {
+  const slug = slugify(name);
+  if (slug === "gate-io") return "gateio";
+  if (slug === "kucoin") return "kucoin";
+  if (slug === "htx") return "htx";
+  if (slug === "bitget") return "bitget";
+  return slug;
+}
+
 export function makeEcosystemSectionId(kind: EcosystemKind, name: string) {
-  return `${kind}:${slugify(name)}`;
+  return `${kind}:${kind === "exchange" ? exchangeSectionSlug(name) : slugify(name)}`;
 }
 
 export function parseEcosystemSectionId(sectionId: string): { kind: EcosystemKind; slug: string } | null {

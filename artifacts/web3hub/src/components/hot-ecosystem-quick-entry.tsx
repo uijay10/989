@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useEventFilter } from "@/lib/event-filter-context";
+import { exchangeSectionSlug } from "@/lib/ecosystem";
 
 type QuickItem = {
   label: string;
@@ -8,15 +9,6 @@ type QuickItem = {
   href: string;
   hint: string;
 };
-
-function slugify(name: string) {
-  return name
-    .trim()
-    .toLowerCase()
-    .replace(/&/g, "and")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
 
 const CHAINS = [
   "Ethereum",
@@ -43,14 +35,14 @@ const EXCHANGES = [
 const CHAIN_ITEMS: QuickItem[] = CHAINS.map((name) => ({
   label: name,
   kind: "chain",
-  href: `/chains/${slugify(name)}`,
+  href: `/chains/${name.trim().toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`,
   hint: `查看 ${name} 专栏 - Grants、Testnet、Airdrop 等机会`,
 }));
 
 const EXCHANGE_ITEMS: QuickItem[] = EXCHANGES.map((name) => ({
   label: name,
   kind: "exchange",
-  href: `/exchanges/${slugify(name)}`,
+  href: `/exchanges/${exchangeSectionSlug(name)}`,
   hint: `查看 ${name} 专栏 - Listing、公告与机会`,
 }));
 
