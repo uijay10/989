@@ -447,7 +447,7 @@ export const DEFAULT_SOURCES = [
 // ── Base keywords (for RSS filter) ────────────────────────────────────────────
 export const DEFAULT_KEYWORDS = [
   "blockchain","web3","crypto","bitcoin","btc","ethereum","eth","solana",
-  "defi","nft","rwa","depin","layer1","layer2","dao","zk","zkp",
+  "defi","decentralized finance","nft","nfts","gamefi","gaming","rwa","depin","layer1","layer2","dao","zk","zkp",
   "airdrop","testnet","mainnet","ido","presale","launchpad","token",
   "funding","grant","hackathon","quest","node","staking","yield",
   "token sale","token listing","token generation event","tge",
@@ -456,7 +456,7 @@ export const DEFAULT_KEYWORDS = [
   "arbitrum","zksync","base","starknet","linea","scroll","mantle",
   "avalanche","polygon","bnb","sui","aptos","cosmos","polkadot","ton",
   "near","fantom","algorand","tron","hedera","stellar","iota",
-  "ai agent","defi protocol","liquidity","tvl","dex","cex","nft mint",
+  "ai agent","defi protocol","liquidity","tvl","dex","cex","nft mint","nft drop","nft marketplace","nft collection","on-chain data","onchain data","data analysis","blockchain analytics","market analysis","research report",
   "layer 2","rollup","bridge","lsd","lst","restaking","eigenlayer",
   "perp","perpetual","options","lending","borrowing","yield farming",
   "launchpad","incubator","accelerator","investment","seed round","series",
@@ -467,7 +467,7 @@ export const DEFAULT_KEYWORDS = [
   "a16z crypto","paradigm","pantera capital","coinbase ventures","polychain capital",
   "binance labs","sequoia crypto","dragonfly capital","blockchain capital","digital currency group","dcg",
   "rwa tokenization","real world assets (rwa)","real world assets","web3 infrastructure","ai + crypto",
-  "nft & gaming vc","layer 2 solutions","stablecoin projects","depin investment",
+  "nft & gaming vc","layer 2 solutions","stablecoin projects","depin investment","defi news","nft news","gamefi news","analytics report","on-chain analytics","crypto research",
   "区块链vc","区块链 vc","风投","风险投资","vc投资","vc 投资","加密货币风投","加密vc","加密 vc 机构",
   "web3 vc 投资","web3 融资","vc 投资动态","区块链初创融资","融资轮次","种子轮融资","早期投资","风险投资轮次",
   "oracle","data feed","cross-chain","interoperability","modular",
