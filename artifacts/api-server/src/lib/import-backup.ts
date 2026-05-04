@@ -114,12 +114,12 @@ export async function importBackupToDb(opts: ImportOptions = {}): Promise<Import
     .filter((a) => {
       if (!since) return true;
       const createdAt = safeDate(a.created_at);
-      return createdAt ? createdAt >= since : false;
+      return createdAt ? createdAt >= since : true;
     })
     .filter((a) => {
       if (sections.size === 0) return true;
       const s = normalizeSection(a.section);
-      return sections.has(s) || sections.has("724news");
+      return sections.has(s) || sections.has("724news") || s === "724news";
     })
     .slice(0, maxItems);
 

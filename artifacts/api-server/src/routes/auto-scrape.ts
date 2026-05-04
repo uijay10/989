@@ -115,12 +115,13 @@ router.post("/backup/import", checkScrapeAuth, async (req, res) => {
     const body = (req.body ?? {}) as Record<string, unknown>;
     const maxItems = Number(body.maxItems ?? 50000);
     const dryRun = body.dryRun === true;
-    const hours = Number(body.hours ?? 0);
+    const hours = Number(body.hours ?? 48);
+    const sinceRaw = String(body.since ?? "").trim();
     const sections = Array.isArray(body.sections) ? body.sections.map((s) => String(s)) : [];
     const stats = await importBackupToDb({
       maxItems: Number.isFinite(maxItems) ? maxItems : 50000,
       dryRun,
-      since: Number.isFinite(hours) && hours > 0 ? new Date(Date.now() - hours * 60 * 60 * 1000) : undefined,
+      since: sinceRaw ? new Date(sinceRaw) : (Number.isFinite(hours) && hours > 0 ? new Date(Date.now() - hours * 60 * 60 * 1000) : undefined),
       sections,
     });
     res.json({ ok: true, dryRun, stats });
