@@ -367,9 +367,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         {/* ── Unified nav module (main nav + ecosystem) ── */}
         <div className="border-t border-slate-200/60 bg-white/70 backdrop-blur-md">
-          <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 pt-1 pb-2">
+          <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 pt-1 pb-2">
             {/* Main nav: left-aligned — same inset as ecosystem row + main content so rows line up */}
-            <div className="flex flex-nowrap items-center justify-start gap-x-0.5 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex w-max min-w-full flex-nowrap items-center justify-start gap-x-0.5 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {/* 7×24 主入口（回首页聚合）；顶部已有单独 Home 药丸，此处不再放第二个「主页」 */}
               <button
                 onClick={() => {
@@ -380,7 +380,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 }}
                 className={cn(
                   // 与首页「My Dashboard」同款尺寸与主色药丸样式（home.tsx）
-                  "relative inline-flex items-center justify-center shrink-0 px-4 py-2 rounded-full text-[15px] font-bold whitespace-nowrap transition-all duration-200 cursor-pointer",
+                  "relative inline-flex items-center justify-center shrink-0 px-3.5 py-2 rounded-full text-[15px] font-bold whitespace-nowrap transition-all duration-200 cursor-pointer",
                   activeHref === "/" && activeCategory === "全部"
                     ? "text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-300/50"
                     : "text-slate-800 hover:text-slate-900 hover:bg-slate-100",
@@ -404,7 +404,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           {/* Ecosystem strip: same module, separated by divider */}
           {showEcosystemStrip && (
             <div className="border-t border-slate-200/60">
-              <div className="max-w-7xl mx-auto px-10 sm:px-12 lg:px-20 pt-0 pb-2">
+              <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-2">
                 <HotEcosystemQuickEntry />
               </div>
             </div>
