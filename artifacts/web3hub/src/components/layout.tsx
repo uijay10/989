@@ -404,7 +404,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           {/* Ecosystem strip: same module, separated by divider */}
           {showEcosystemStrip && (
             <div className="border-t border-slate-200/60">
-              <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-0.5 flex justify-center">
+              <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-0.5 flex justify-start">
                 <HotEcosystemQuickEntry />
               </div>
             </div>
