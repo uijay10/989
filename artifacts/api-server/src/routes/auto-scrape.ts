@@ -138,9 +138,9 @@ router.post("/backfill-sections", checkScrapeAuth, async (_req, res) => {
         FROM posts
         WHERE created_at >= NOW() - INTERVAL '180 days'
           AND (
-            section IN ('defi', 'analytics', 'nft', 'research', 'htx', 'gateio', 'kucoin', 'bitget')
-            OR lower(title) ~ '(defi|dex|tvl|yield|liquidity|swap|amm|lending|perp|uniswap|aave|curve|gmx|dydx|nft|gamefi|opensea|magic eden|blur|immutable|metaverse|htx|huobi|gate\\.io|gateio|kucoin|bitget)'
-            OR lower(content) ~ '(defi|dex|tvl|yield|liquidity|swap|amm|lending|perp|uniswap|aave|curve|gmx|dydx|nft|gamefi|opensea|magic eden|blur|immutable|metaverse|htx|huobi|gate\\.io|gateio|kucoin|bitget)'
+            section IN ('defi', 'analytics', 'nft', 'research', 'bitget')
+            OR lower(title) ~ '(defi|dex|tvl|yield|liquidity|swap|amm|lending|perp|uniswap|aave|curve|gmx|dydx|nft|gamefi|opensea|magic eden|blur|immutable|metaverse|bitget)'
+            OR lower(content) ~ '(defi|dex|tvl|yield|liquidity|swap|amm|lending|perp|uniswap|aave|curve|gmx|dydx|nft|gamefi|opensea|magic eden|blur|immutable|metaverse|bitget)'
           )
       ),
       inserted AS (
@@ -154,9 +154,6 @@ router.post("/backfill-sections", checkScrapeAuth, async (_req, res) => {
           s.title,
           s.content,
           CASE
-            WHEN lower(s.title) ~ '(htx|huobi)' THEN 'htx'
-            WHEN lower(s.title) ~ '(gate\\.io|gateio)' THEN 'gateio'
-            WHEN lower(s.title) ~ '(kucoin)' THEN 'kucoin'
             WHEN lower(s.title) ~ '(bitget)' THEN 'bitget'
             WHEN lower(s.title) ~ '(defi|dex|tvl|yield|liquidity|swap|amm|lending|perp|uniswap|aave|curve|gmx|dydx)' THEN 'defi'
             WHEN lower(s.title) ~ '(nft|gamefi|opensea|magic eden|blur|immutable|metaverse)' THEN 'nft'

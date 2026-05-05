@@ -123,9 +123,6 @@ const FORCE_SUBSECTIONS = new Set(["defi", "analytics", "nft", "research"]);
 
 function normalizeSectionAlias(section: string): string {
   if (section === "flash") return "724news";
-  if (section === "htx") return "htx";
-  if (section === "gateio") return "gateio";
-  if (section === "kucoin") return "kucoin";
   return section;
 }
 
@@ -136,10 +133,7 @@ function ensureSectionCoverage(sections: string[], event: ProcessedEvent): strin
   if (/analytics|on-chain data|onchain data|data analysis|chain analysis|nansen|glassnode|dune|messari|coingecko|链上数据|数据分析|市场分析/.test(text)) merged.add("analytics");
   if (/nft|gamefi|play to earn|p2e|opensea|magic eden|blur|immutable|metaverse|链游|元宇宙|数字藏品|区块链游戏/.test(text)) merged.add("nft");
   if (/research report|market analysis|market outlook|sector report|研报|研究报告|深度研报|投研/.test(text)) merged.add("research");
-  if (/htx|huobi|gate\.io|gate io|gateio|kucoin|bitget|mexc/.test(text)) {
-    if (/htx|huobi/.test(text)) merged.add("htx");
-    if (/gate\.io|gate io|gateio/.test(text)) merged.add("gateio");
-    if (/kucoin/.test(text)) merged.add("kucoin");
+  if (/bitget|mexc/.test(text)) {
     if (/bitget/.test(text)) merged.add("bitget");
   }
   return [...merged];
@@ -427,13 +421,7 @@ export const DEFAULT_SOURCES = [
   { name: "Algorand Foundation", url: "https://algorand.foundation/news/feed", type: "rss", priority: 1 },
   { name: "Fantom Blog", url: "https://fantom.foundation/blog/rss/", type: "rss", priority: 1 },
 
-  // ── 更多 CEX 交易所 / More Exchanges ─────────────────────────────────────────
-  { name: "HTX Blog", url: "https://www.htx.com/en-us/blog/rss/", type: "rss", priority: 1 },
-  { name: "GNews HTX", url: "https://news.google.com/rss/search?q=HTX+Huobi+crypto+exchange&hl=en-US&gl=US&ceid=US:en", type: "rss", priority: 1 },
-  { name: "Gate.io Blog", url: "https://www.gate.io/en/blog/feed", type: "rss", priority: 1 },
-  { name: "GNews Gate.io", url: "https://news.google.com/rss/search?q=Gate.io+crypto+exchange&hl=en-US&gl=US&ceid=US:en", type: "rss", priority: 1 },
-  { name: "KuCoin Blog", url: "https://www.kucoin.com/blog/feed", type: "rss", priority: 1 },
-  { name: "GNews KuCoin", url: "https://news.google.com/rss/search?q=KuCoin+crypto+exchange&hl=en-US&gl=US&ceid=US:en", type: "rss", priority: 1 },
+  // ── More Exchanges ───────────────────────────────────────────────────────────
   { name: "Bitget Blog", url: "https://www.bitget.com/en/blog/feed", type: "rss", priority: 1 },
   { name: "GNews Bitget", url: "https://news.google.com/rss/search?q=Bitget+crypto+exchange&hl=en-US&gl=US&ceid=US:en", type: "rss", priority: 1 },
   { name: "Crypto.com Blog", url: "https://crypto.com/product-news/rss", type: "rss", priority: 1 },
@@ -523,10 +511,9 @@ export const DEFAULT_KEYWORDS = [
   "funding rates","open interest","liquidation data","exchange flows","stablecoin flows",
   "dashboard","metrics","trend","insights","report","analysis","heatmap","signals",
   "链上数据","数据分析","数据洞察","指标","统计","监控","鲸鱼监控","市场情绪","协议收入","活跃地址","交易量",
-  // HTX / Gate / KuCoin / Bitget keywords
-  "htx","huobi","gate.io","gate io","gateio","kucoin","bitget","mexc",
-  "htx listing","gate listing","kucoin listing","bitget listing",
-  "htx announcement","gate announcement","kucoin announcement",
+  // Bitget keywords
+  "bitget","mexc",
+  "bitget listing",
   "developer","engineer","ambassador","community","kol",
   "moderator","mod","discord mod","telegram mod","community manager",
   "marketing","growth","content creator","copywriter","analyst","researcher",

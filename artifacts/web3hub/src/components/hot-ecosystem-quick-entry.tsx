@@ -26,9 +26,6 @@ const EXCHANGES = [
   "Bybit",
   "Coinbase",
   "Kraken",
-  "HTX",
-  "Gate",
-  "KuCoin",
   "Bitget",
 ] as const;
 

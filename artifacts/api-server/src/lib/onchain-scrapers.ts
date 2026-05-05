@@ -166,7 +166,7 @@ Return a JSON array, up to 20 items:
 
 Rules:
 - "type" must be one of: IDO, IEO, TGE, Launchpool, Mainnet, Airdrop
-- "platform" = launchpad/exchange name if mentioned (Binance Launchpool, OKX Jumpstart, CoinList, KuCoin Spotlight, Bybit Launchpool, etc.)
+- "platform" = launchpad/exchange name if mentioned (Binance Launchpool, OKX Jumpstart, CoinList, Bybit Launchpool, etc.)
 - "date" in YYYY-MM-DD format if visible; null if not (do not invent)
 - "category" = main narrative (AI, DeFi, GameFi, Layer2, RWA, DePIN, Meme, etc.)
 - "raised" = funding raised in millions USD if visible; else null

@@ -7,7 +7,7 @@ export type ChainTag =
   | "Sui"
   | "Aptos";
 
-export type ExchangeTag = "Binance" | "OKX" | "Bybit" | "Coinbase" | "Kraken" | "HTX" | "Gate.io" | "KuCoin" | "Bitget";
+export type ExchangeTag = "Binance" | "OKX" | "Bybit" | "Coinbase" | "Kraken" | "Bitget";
 
 /**
  * 公链 / 交易所：导航展示名 + 常用代币符号。
@@ -32,9 +32,6 @@ export const EXCHANGE_KEYWORDS: Record<ExchangeTag, string[]> = {
   Bybit: ["Bybit"],
   Coinbase: ["Coinbase"],
   Kraken: ["Kraken"],
-  HTX: ["HTX", "Huobi"],
-  "Gate.io": ["Gate.io", "Gate io", "Gateio"],
-  KuCoin: ["KuCoin", "KCS"],
   Bitget: ["Bitget", "BGB"],
 };
 
