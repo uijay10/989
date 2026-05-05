@@ -367,7 +367,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         {/* ── Unified nav module (main nav + ecosystem) ── */}
         <div className="border-t border-slate-200/60 bg-white/70 backdrop-blur-md">
-          <div className="max-w-7xl mx-auto px-8 sm:px-10 lg:px-16 pt-1 pb-2">
+          <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 pt-1 pb-2">
             {/* Main nav: left-aligned — same inset as ecosystem row + main content so rows line up */}
             <div className="flex flex-nowrap items-center justify-start gap-x-0.5 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {/* 7×24 主入口（回首页聚合）；顶部已有单独 Home 药丸，此处不再放第二个「主页」 */}
