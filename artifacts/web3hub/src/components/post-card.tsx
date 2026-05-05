@@ -20,7 +20,7 @@ function useCountdown(targetIso: string | null | undefined) {
   return remaining;
 }
 import { createPortal } from "react-dom";
-import { Copy, Check, Pin, User, Eye, Clock, Globe, Twitter as TwitterIcon, X } from "lucide-react";
+import { Copy, Check, Pin, User, Eye, Clock, Globe, Twitter as TwitterIcon, X, Trash2 } from "lucide-react";
 import { getApiBase } from "@/lib/api-base";
 
 const SECTION_KEY_MAP: Record<string, string> = {
@@ -329,6 +329,8 @@ export function PostCard({ post, onRefresh, showPin, compact }: PostCardProps) {
   const [adminPinOpen, setAdminPinOpen] = useState(false);
   const [adminPinHours, setAdminPinHours] = useState<number | "">(72);
   const [adminPinCustom, setAdminPinCustom] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteMsg, setDeleteMsg] = useState("");
   const [expanded, setExpanded] = useState(false);
   const [userInfoOpen, setUserInfoOpen] = useState(false);
 
@@ -422,6 +424,28 @@ export function PostCard({ post, onRefresh, showPin, compact }: PostCardProps) {
     navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
   };
 
+  const handleDelete = async () => {
+    if (!admin || !address || deleting) return;
+    if (!window.confirm(t("confirmDelete"))) return;
+    setDeleting(true);
+    setDeleteMsg("");
+    try {
+      const res = await fetch(`${apiBase}/admin/posts/${post.id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+      const d = await res.json();
+      if (!res.ok) {
+        setDeleteMsg(`❌ ${d.error ?? "Delete failed"}`);
+        return;
+      }
+      setDeleteMsg("✅ 删除成功");
+      onRefresh?.();
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (compact) {
     return (
       <div className={`bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-all ${post.isPinned ? "ring-1 ring-violet-400/50 bg-violet-50/20 dark:bg-violet-950/10" : ""}`}>
@@ -489,8 +513,15 @@ export function PostCard({ post, onRefresh, showPin, compact }: PostCardProps) {
                 <Pin className="w-3.5 h-3.5" />
               </button>
             )}
+            {admin && (
+              <button onClick={handleDelete} disabled={deleting} title={t("deletePost")}
+                className="text-xs text-muted-foreground hover:text-red-500 transition-colors">
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
+        {deleteMsg && <p className="text-xs mt-2 text-red-500 font-medium">{deleteMsg}</p>}
         {/* Pin confirm modal – rendered via portal so it's never clipped */}
         {pinConfirmOpen && createPortal(
           <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setPinConfirmOpen(false)}>
@@ -616,12 +647,19 @@ export function PostCard({ post, onRefresh, showPin, compact }: PostCardProps) {
               <Pin className="w-4 h-4" />
             </button>
           )}
+          {admin && (
+            <button onClick={handleDelete} disabled={deleting} title={t("deletePost")}
+              className="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-muted-foreground hover:text-red-600 transition-colors">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
           <Link href={authorHref}
             className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" title="View profile">
             <User className="w-4 h-4" />
           </Link>
         </div>
       </div>
+      {deleteMsg && <p className="text-sm mt-2 text-red-500 font-medium">{deleteMsg}</p>}
 
       {/* Pin confirm modal – portal */}
       {pinConfirmOpen && createPortal(
