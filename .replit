@@ -1,6 +1,7 @@
 modules = ["nodejs-20", "web", "python-3.11", "postgresql-16"]
 [agent]
 expertMode = true
+stack = "BEST_EFFORT_FALLBACK"
 
 [nix]
 channel = "stable-25_05"
@@ -32,37 +33,29 @@ args = "Backend API"
 name = "Start application"
 author = "agent"
 
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "PORT=5000 BASE_PATH=/ pnpm --filter @workspace/web3hub run dev"
 waitForPort = 5000
 
-[workflows.workflow.metadata]
-outputType = "webview"
-
 [[workflows.workflow]]
 name = "Backend API"
 author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "PORT=8080 pnpm --filter @workspace/api-server run dev"
 waitForPort = 8080
 
-[workflows.workflow.metadata]
-outputType = "console"
-
 [[ports]]
 localPort = 5000
-externalPort = 5000
-
-[[ports]]
-localPort = 5001
-externalPort = 3000
-
-[[ports]]
-localPort = 5002
-externalPort = 3001
+externalPort = 80
 
 [[ports]]
 localPort = 5003
@@ -70,7 +63,7 @@ externalPort = 3002
 
 [[ports]]
 localPort = 8080
-externalPort = 80
+externalPort = 8080
 
 [deployment]
 deploymentTarget = "vm"
