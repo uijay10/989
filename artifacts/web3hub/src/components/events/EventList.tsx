@@ -245,7 +245,7 @@ function EventRow({
           <button
             onClick={() => onPinRequest(event.id!)}
             title={zh ? "置顶" : "Pin"}
-            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-violet-100 dark:hover:bg-violet-900/30 text-slate-400 hover:text-violet-500"
+            className="transition-opacity p-1 rounded hover:bg-violet-100 dark:hover:bg-violet-900/30 text-slate-400 hover:text-violet-500"
           >
             <Pin className="w-3.5 h-3.5" />
           </button>
@@ -254,7 +254,7 @@ function EventRow({
           <button
             onClick={() => onDeleteRequest(event.id!)}
             title={zh ? "删除此帖子" : "Delete post"}
-            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-slate-400 hover:text-red-500"
+            className="transition-opacity p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-slate-400 hover:text-red-500"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -974,7 +974,7 @@ export function EventList({
                 event={event}
                 lang={lang}
                 tFn={(k) => t(k as any)}
-                adminUser={showPinned && adminUser}
+                adminUser={adminUser}
                 currentWallet={address ?? undefined}
                 onPinRequest={(id) => {
                   setPinTargetId(id);

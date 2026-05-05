@@ -409,7 +409,7 @@ const Unified724Feed: React.FC = () => {
                   title={lang === "zh-CN" ? "置顶" : "Pin"}
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleAdminPin(String(item.id)); }}
                   disabled={pinningId === String(item.id)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 rounded-lg bg-slate-600/75 hover:bg-slate-700/90 flex items-center justify-center shadow-md disabled:opacity-40"
+                  className="transition-opacity w-8 h-8 rounded-lg bg-slate-600/75 hover:bg-slate-700/90 flex items-center justify-center shadow-md disabled:opacity-40"
                 >
                   <Pin className="w-4 h-4 text-white/90" />
                 </button>
@@ -429,7 +429,7 @@ const Unified724Feed: React.FC = () => {
                     type="button"
                     title={lang === "zh-CN" ? "删除" : "Delete"}
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmDeleteId(String(item.id)); }}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 rounded-lg bg-slate-600/75 hover:bg-slate-700/90 flex items-center justify-center shadow-md"
+                    className="transition-opacity w-8 h-8 rounded-lg bg-slate-600/75 hover:bg-slate-700/90 flex items-center justify-center shadow-md"
                   >
                     <Trash2 className="w-4 h-4 text-white/90" />
                   </button>
