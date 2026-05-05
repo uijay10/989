@@ -11,9 +11,6 @@ import { getApiBase } from "@/lib/api-base";
 import { useWeb3Auth } from "@/lib/web3";
 import { isAdmin } from "@/lib/admin";
 
-const ADMIN_ONLY_SECTIONS = new Set(["js"]);
-
-
 const SECTION_ICONS: Record<string, string> = {
   flash: "⚡",
   testnet: "🧪",
@@ -44,7 +41,6 @@ const SECTION_ICONS: Record<string, string> = {
   analytics: "📊",
   nft: "🎮",
   research: "📑",
-  js: "🏫",
 };
 
 const SECTION_COLORS: Record<string, string> = {
@@ -61,7 +57,6 @@ const SECTION_COLORS: Record<string, string> = {
   analytics:   "from-cyan-50 to-blue-50 border-cyan-100 dark:from-cyan-950/30 dark:to-blue-950/30 dark:border-cyan-900/50",
   nft:         "from-pink-50 to-rose-50 border-pink-100 dark:from-pink-950/30 dark:to-rose-950/30 dark:border-pink-900/50",
   research:    "from-indigo-50 to-slate-50 border-indigo-100 dark:from-indigo-950/30 dark:to-slate-900/30 dark:border-indigo-900/50",
-  js:          "from-red-50 to-orange-50 border-red-100 dark:from-red-950/30 dark:to-orange-950/30 dark:border-red-900/50",
   unlock:      "from-amber-50 to-orange-50 border-amber-100 dark:from-amber-950/30 dark:to-orange-950/30 dark:border-amber-900/50",
   quest:       "from-cyan-50 to-teal-50 border-cyan-100 dark:from-cyan-950/30 dark:to-teal-950/30 dark:border-cyan-900/50",
   developer:   "from-indigo-50 to-violet-50 border-indigo-100 dark:from-indigo-950/30 dark:to-violet-950/30 dark:border-indigo-900/50",
@@ -94,7 +89,6 @@ const SECTION_I18N_KEYS: Record<string, { label: string; desc: string }> = {
   analytics:   { label: "sAnalyticsLabel",  desc: "sAnalyticsDesc" },
   nft:         { label: "sNftLabel",        desc: "sNftDesc" },
   research:    { label: "sResearchLabel",   desc: "sResearchDesc" },
-  js:          { label: "sJsLabel",         desc: "sJsDesc" },
   unlock:      { label: "sUnlockLabel",      desc: "sUnlockDesc" },
   quest:       { label: "sQuestLabel",       desc: "sQuestDesc" },
   industry:    { label: "sIndustryLabel",    desc: "sIndustryDesc" },
@@ -248,23 +242,12 @@ export default function SectionPage() {
   const slug = params.slug ?? "";
   const { t } = useLang();
   const { address } = useWeb3Auth();
-  const adminUser = isAdmin(address);
 
   const keys = SECTION_I18N_KEYS[slug];
   const sectionLabel = keys ? t(keys.label) : slug;
   const icon = SECTION_ICONS[slug] ?? "📋";
 
   const isShowcase = slug === "showcase";
-
-  if (ADMIN_ONLY_SECTIONS.has(slug) && !adminUser) {
-    return (
-      <div className="max-w-3xl mx-auto flex flex-col items-center justify-center py-32 gap-4 text-center">
-        <span className="text-5xl">🔒</span>
-        <h2 className="text-xl font-bold text-foreground">访问受限</h2>
-        <p className="text-sm text-muted-foreground">此板块仅限管理员访问。</p>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">

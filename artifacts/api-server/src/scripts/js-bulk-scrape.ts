@@ -241,7 +241,6 @@ export async function runJsBulkScrape(windowDays = 180): Promise<JsBulkScrapeRes
           result.errors.push(`insert(js) "${title.slice(0, 40)}": ${msg}`);
         }
       }
-
     }
   }
 
