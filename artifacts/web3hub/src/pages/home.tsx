@@ -229,9 +229,12 @@ function ImportantNews({ lang }: { lang: string }) {
     refetchOnWindowFocus: true,
   });
   const raw = data?.posts ?? [];
+  const recentCutoff = Date.now() - 24 * 60 * 60 * 1000;
   const seen = new Set<string>();
   const posts: any[] = [];
   for (const p of raw) {
+    const createdAt = p?.createdAt ? new Date(p.createdAt).getTime() : 0;
+    if (createdAt && createdAt < recentCutoff) continue;
     const title = String((p as any).title ?? "").trim();
     // 重要动态：只按「标题语义指纹」折叠，不按域名（各站转载同标题仍只显示一条）
     const sem = semanticTitleKey(title);
