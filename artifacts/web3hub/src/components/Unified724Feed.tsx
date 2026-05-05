@@ -35,7 +35,6 @@ const SECTION_LABEL_ZH: Record<string, string> = {
   analytics:  "数据分析",
   nft:        "NFT/GameFi",
   research:   "研报精选",
-  js:         "教师对调",
   devbounty:  "开发者漏洞奖金",
   grant:      "捐赠/赞助",
 };
@@ -55,7 +54,6 @@ const SECTION_LABEL_EN: Record<string, string> = {
   analytics:  "Analytics",
   nft:        "NFT/GameFi",
   research:   "Research",
-  js:         "Teacher Exchange",
   devbounty:  "Dev & Bug Bounty",
   grant:      "Grants & Sponsorship",
 };

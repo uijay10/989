@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { EventList } from "@/components/events/EventList";
-import { Unified724Feed } from "@/components/Unified724Feed";
 import { useParams } from "wouter";
 import { useLang } from "@/lib/i18n";
 import { Link } from "wouter";
@@ -256,7 +255,6 @@ export default function SectionPage() {
   const icon = SECTION_ICONS[slug] ?? "📋";
 
   const isShowcase = slug === "showcase";
-  const is724news = slug === "724news" || slug === "flash";
 
   if (ADMIN_ONLY_SECTIONS.has(slug) && !adminUser) {
     return (
@@ -270,9 +268,7 @@ export default function SectionPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
-      {is724news ? (
-        <Unified724Feed />
-      ) : isShowcase ? (
+      {isShowcase ? (
         <ShowcaseDirectory />
       ) : (
         <EventList key={slug} sectionSlug={slug} sectionName={`${icon} ${sectionLabel}`} />

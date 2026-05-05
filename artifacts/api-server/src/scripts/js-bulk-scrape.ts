@@ -5,11 +5,9 @@
 
 import Parser from "rss-parser";
 import { db, postsTable } from "@workspace/db";
-import { sql } from "drizzle-orm";
 import { classifyChainExchangeTags } from "../lib/tag-classifier";
 
 const SECTION = "js";
-const SECONDARY_SECTION = "724news";
 const AI_SYSTEM_WALLET = "ai-system";
 const AI_SYSTEM_NAME = "AI精选";
 
@@ -244,19 +242,6 @@ export async function runJsBulkScrape(windowDays = 180): Promise<JsBulkScrapeRes
         }
       }
 
-      // 同步写一份到724news快讯（非致命）
-      if (savedToJs) {
-        try {
-          const dup724 = link
-            ? await db.execute(sql`SELECT id FROM posts WHERE source_url = ${link} AND section = ${SECONDARY_SECTION} LIMIT 1`)
-            : { rows: [] };
-          if ((dup724.rows as unknown[]).length === 0) {
-            const v724 = { ...baseValues, section: SECONDARY_SECTION };
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            await db.insert(postsTable).values(v724 as any).catch(() => {});
-          }
-        } catch { /* secondary insert failure is non-fatal */ }
-      }
     }
   }
 
