@@ -210,6 +210,8 @@ function EventRow({
     impLevel === "high" &&
     (!hide724Only || isVisuallyTruncated) &&
     (!!srcLabel || (!!event.source_url && event.source_url !== "#"));
+  const shouldForceShowSource = event._sections?.includes("js") ?? false;
+  const showSource = shouldShowSource || shouldForceShowSource;
 
   const isOwnPost = currentWallet && event.authorWallet &&
     currentWallet.toLowerCase() === event.authorWallet.toLowerCase();
@@ -310,7 +312,7 @@ function EventRow({
             <span className="text-xs px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-900/20 text-violet-500 dark:text-violet-400 border border-violet-200 dark:border-violet-800">
               {zh ? "用户发布" : "User Post"}
             </span>
-          ) : shouldShowSource && event.source_url && event.source_url !== "#" ? (
+          ) : showSource && event.source_url && event.source_url !== "#" ? (
             <a
               href={event.source_url}
               target="_blank"
@@ -320,7 +322,7 @@ function EventRow({
               <span>{zh ? "信息来源：" : "Source: "}{srcLabel}</span>
               <ExternalLink className="w-3 h-3" />
             </a>
-          ) : shouldShowSource && srcLabel ? (
+          ) : showSource && srcLabel ? (
             <span className="text-xs text-blue-600 dark:text-blue-400">
               {zh ? "信息来源：" : "Source: "}{srcLabel}
             </span>
