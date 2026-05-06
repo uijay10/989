@@ -30,6 +30,10 @@ const JS_SOURCES = [
   { name: "GNews 湖南教育局通知", url: "https://news.google.com/rss/search?q=湖南+教育局+通知+教师+调动&hl=zh-CN&gl=CN&ceid=CN:zh-Hans" },
   { name: "GNews 湖南教师流动", url: "https://news.google.com/rss/search?q=湖南+教师+流动+交流+轮岗+支教&hl=zh-CN&gl=CN&ceid=CN:zh-Hans" },
   { name: "GNews 湖南城乡教师", url: "https://news.google.com/rss/search?q=湖南+城乡+教师+交流+轮岗+支教&hl=zh-CN&gl=CN&ceid=CN:zh-Hans" },
+  { name: "GNews 湖南教师岗位调配", url: "https://news.google.com/rss/search?q=湖南+教师+岗位调配+转岗+交流&hl=zh-CN&gl=CN&ceid=CN:zh-Hans" },
+  { name: "GNews 湖南教师任职调整", url: "https://news.google.com/rss/search?q=湖南+教师+任职调整+岗位调整+通知&hl=zh-CN&gl=CN&ceid=CN:zh-Hans" },
+  { name: "GNews 湖南教育人事", url: "https://news.google.com/rss/search?q=湖南+教育+人事+调动+任免+交流&hl=zh-CN&gl=CN&ceid=CN:zh-Hans" },
+  { name: "GNews 湖南教师交流轮换", url: "https://news.google.com/rss/search?q=湖南+教师+交流轮换+轮岗+支教&hl=zh-CN&gl=CN&ceid=CN:zh-Hans" },
   { name: "GNews 义务教育流动", url: "https://news.google.com/rss/search?q=湖南+义务教育+教师+流动+政策&hl=zh-CN&gl=CN&ceid=CN:zh-Hans" },
   { name: "GNews 永州骨干教师", url: "https://news.google.com/rss/search?q=永州+骨干教师+援教+支教&hl=zh-CN&gl=CN&ceid=CN:zh-Hans" },
   // 权威媒体RSS
@@ -42,20 +46,20 @@ const JS_SOURCES = [
 const STANDALONE_TERMS = [
   "教师对调", "教师轮岗", "教师交流轮岗", "教师交流调动",
   "教师转岗", "教师调岗", "岗位调整", "岗位变动", "岗位交流",
-  "转岗通知", "调岗通知", "岗位调整通知", "教师岗位调整",
+  "转岗通知", "调岗通知", "岗位调整通知", "教师岗位调整", "岗位调配", "任职调整", "人事调动", "任免通知", "交流轮换",
   "永州市教育局", "永州教育局", "永州教师",
   "教师招聘", "教师编制", "教师交流", "教师调动", "教育局公告", "教育局通知",
 ];
 // 双重匹配：同时含永州地名 + 教师/教育相关词
 const YONGZHOU_TERMS = [
-  "永州", "永州市", "湖南永州",
+  "永州", "永州市", "湖南永州", "湖南",
   "零陵", "冷水滩", "祁阳", "道县", "东安",
   "宁远", "蓝山", "新田", "双牌", "江永", "江华",
 ];
 const EDU_TERMS = [
   "教师", "教育", "学校", "校长", "教职", "教学", "教龄",
   "对调", "轮岗", "交流", "调动", "调配", "转岗", "调岗", "岗位调整", "岗位交流",
-  "支教", "援教", "骨干教师", "轮换", "异动", "交流轮换", "岗位变动",
+  "支教", "援教", "骨干教师", "轮换", "异动", "交流轮换", "岗位变动", "人事", "任职", "任免",
   "编制", "招聘", "教育局", "教育厅", "中小学", "义务教育", "考编", "入编",
 ];
 
