@@ -620,14 +620,14 @@ export function PostCard({ post, onRefresh, showPin, compact }: PostCardProps) {
           {expanded ? collapseLabel : readMoreLabel}
         </button>
       )}
-      {post.authorType === "ai" && post.sourceUrl && (
+      {(post.authorType === "ai" || post.section === "js") && post.sourceUrl && (
         <a href={post.sourceUrl} target="_blank" rel="noopener noreferrer"
           onClick={e => e.stopPropagation()}
           className="mt-2 inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium">
           <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0 fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14 21 3"/>
           </svg>
-          查看原文
+          {post.section === "js" ? "信息来源" : "查看原文"}
         </a>
       )}
 
