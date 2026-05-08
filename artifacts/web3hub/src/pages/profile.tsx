@@ -32,16 +32,35 @@ type NavTab =
   | "settings"
   | "admin";
 
-const ALL_SECTIONS = [
-  "IDO/Launchpad","融资公告","链上奖励/空投",
-  "政策监管","测试网","节点招募",
-  "招聘","开发者漏洞奖金","项目捐赠/赞助",
+const HOME_SECTION_NAMES = [
+  "IDO/Launchpad",
+  "融资公告",
+  "VC",
+  "链上奖励/空投",
+  "DeFi",
+  "数据分析",
+  "NFT/GameFi",
+  "研报精选",
+  "政策监管",
+  "测试网",
+  "节点招募",
+  "开发者漏洞奖金",
+  "捐赠/赞助",
 ];
 const SECTION_EN: Record<string, string> = {
-  "IDO/Launchpad": "IDO/Launchpad", "融资公告": "Funding",
-  "链上奖励/空投": "Rewards & Airdrop", "政策监管": "Regulation",
-  "测试网": "Testnet", "节点招募": "Node Recruitment",
-  "招聘": "Hiring", "开发者漏洞奖金": "Dev & Bug Bounty", "项目捐赠/赞助": "Grants",
+  "IDO/Launchpad": "IDO/Launchpad",
+  "融资公告": "Funding",
+  "VC": "VC",
+  "链上奖励/空投": "Rewards & Airdrop",
+  "DeFi": "DeFi",
+  "数据分析": "Analytics",
+  "NFT/GameFi": "NFT/GameFi",
+  "研报精选": "Research",
+  "政策监管": "Regulation",
+  "测试网": "Testnet",
+  "节点招募": "Node Recruitment",
+  "开发者漏洞奖金": "Dev & Bug Bounty",
+  "捐赠/赞助": "Grants",
 };
 
 function NotifIcon({ type }: { type: string }) {
@@ -431,11 +450,10 @@ export default function Profile() {
             {zh ? "点击标签切换订阅状态，订阅后将收到该栏目的新内容推送。" : "Click to toggle subscription."}
           </p>
           <div className="space-y-4">
-            {/* Existing sections */}
             <div className="space-y-2">
               <div className="text-xs font-semibold text-muted-foreground">{zh ? "板块" : "Sections"}</div>
               <div className="flex flex-wrap gap-2">
-                {ALL_SECTIONS.map(s => {
+                {HOME_SECTION_NAMES.map(s => {
                   const active = subscriptions.includes(s);
                   return (
                     <button key={s} onClick={() => toggleSubscription(s)}
