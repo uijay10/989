@@ -252,6 +252,7 @@ export default function Profile() {
   const [subscriptions, setSubscriptions] = useState<string[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [notifUnread, setNotifUnread] = useState(0);
+  const [savingSubscriptions, setSavingSubscriptions] = useState(false);
 
   const [twitter, setTwitter]       = useState("");
   const [website, setWebsite]       = useState("");
@@ -324,10 +325,12 @@ export default function Profile() {
 
   const toggleSubscription = async (section: string) => {
     if (!address) return;
+    if (savingSubscriptions) return;
     const next = subscriptions.includes(section)
       ? subscriptions.filter(s => s !== section)
       : [...subscriptions, section];
     setSubscriptions(next);
+    setSavingSubscriptions(true);
     try {
       await fetch(`${apiBase}/users/upsert`, {
         method: "POST",
@@ -335,7 +338,11 @@ export default function Profile() {
         body: JSON.stringify({ wallet: address, subscriptions: next }),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/users/me"] });
-    } catch {}
+    } catch {
+      setSubscriptions((me as any)?.subscriptions ?? []);
+    } finally {
+      setSavingSubscriptions(false);
+    }
   };
 
   const handleSaveUsername = () => {
