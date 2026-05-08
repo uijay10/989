@@ -457,7 +457,7 @@ export default function Profile() {
                   const active = subscriptions.includes(s);
                   return (
                     <button key={s} onClick={() => toggleSubscription(s)}
-                      className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
+                      className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors duration-150 ${
                         active
                           ? "bg-primary text-primary-foreground border-primary shadow-sm"
                           : "bg-muted/50 text-muted-foreground border-border hover:border-primary hover:text-primary"
@@ -479,7 +479,7 @@ export default function Profile() {
                   const active = subscriptions.includes(id);
                   return (
                     <button key={id} onClick={() => toggleSubscription(id)}
-                      className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
+                      className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors duration-150 ${
                         active
                           ? "bg-primary text-primary-foreground border-primary shadow-sm"
                           : "bg-muted/50 text-muted-foreground border-border hover:border-primary hover:text-primary"
@@ -501,7 +501,7 @@ export default function Profile() {
                   const active = subscriptions.includes(id);
                   return (
                     <button key={id} onClick={() => toggleSubscription(id)}
-                      className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
+                      className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors duration-150 ${
                         active
                           ? "bg-primary text-primary-foreground border-primary shadow-sm"
                           : "bg-muted/50 text-muted-foreground border-border hover:border-primary hover:text-primary"
