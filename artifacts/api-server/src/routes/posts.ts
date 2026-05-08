@@ -530,6 +530,7 @@ router.post("/", async (req, res) => {
           postId: inserted[0].id,
           postTitle: inserted[0].title ?? null,
           postSection: sectionZh,
+          content: sectionZh,
         } as any))
       ).catch(() => {});
     }
