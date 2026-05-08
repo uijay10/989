@@ -326,9 +326,10 @@ export default function Profile() {
   const toggleSubscription = async (section: string) => {
     if (!address) return;
     if (savingSubscriptions) return;
-    const next = subscriptions.includes(section)
-      ? subscriptions.filter(s => s !== section)
-      : [...subscriptions, section];
+    const current = subscriptions;
+    const next = current.includes(section)
+      ? current.filter(s => s !== section)
+      : [...current, section];
     setSubscriptions(next);
     setSavingSubscriptions(true);
     try {
@@ -337,9 +338,8 @@ export default function Profile() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ wallet: address, subscriptions: next }),
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/users/me"] });
     } catch {
-      setSubscriptions((me as any)?.subscriptions ?? []);
+      setSubscriptions(current);
     } finally {
       setSavingSubscriptions(false);
     }
