@@ -383,10 +383,12 @@ export const DEFAULT_SOURCES = [
   { name: "NEAR Foundation Blog", url: "https://near.foundation/blog/rss/", type: "rss", priority: 1 },
   { name: "Filecoin Foundation Blog", url: "https://fil.org/blog/feed/", type: "rss", priority: 1 },
   { name: "Solana Foundation Blog", url: "https://solana.org/news/feed", type: "rss", priority: 1 },
+  { name: "GitHub Blog", url: "https://github.blog/feed/", type: "rss", priority: 2 },
   { name: "Optimism Blog", url: "https://optimism.mirror.xyz/feed/atom", type: "rss", priority: 1 },
   { name: "Uniswap Foundation", url: "https://uniswapfoundation.mirror.xyz/feed/atom", type: "rss", priority: 2 },
   { name: "Graph Protocol Blog", url: "https://thegraph.com/blog/rss.xml", type: "rss", priority: 2 },
   { name: "Protocol Labs Blog", url: "https://protocol.ai/blog/index.xml", type: "rss", priority: 2 },
+  { name: "Polygon Blog", url: "https://polygon.technology/blog/rss.xml", type: "rss", priority: 2 },
   { name: "Interchain Foundation Blog", url: "https://medium.com/feed/interchain-foundation", type: "rss", priority: 2 },
 
   // ── 政策监管 / Policy ─────────────────────────────────────────────────────────
@@ -1007,9 +1009,9 @@ const SECTION_KEYWORD_REQUIREMENTS: Record<string, string[]> = {
   vc:         ["vc", "venture capital", "风投", "investor", "fund", "portfolio", "backed by", "investment firm"],
   quest:      ["airdrop", "空投", "quest", "galxe", "layer3", "zealy", "intract", "points program", "xp program", "claim", "rewards program", "incentive program"],
   recruiting: ["hiring", " job ", "position", "career", "recruit", "招聘", "join our team", "open role", "we're hiring", "looking for a", "job opening"],
-  nodes:      ["node", "validator", "节点", "miner", "operator program", "run a node", "node operator"],
-  devbounty:  ["bug bounty", "hackathon", "漏洞", "audit", "immunefi", "ethglobal", "code4rena", "bounty program", "hackenproof", "security reward", "vulnerability"],
-  grant:      ["grant", "donate", "赞助", "捐赠", "gitcoin", "ecosystem fund", "accelerator", "incubator", "foundation grant", "rpgf"],
+  nodes:      ["node", "validator", "节点", "miner", "operator program", "run a node", "node operator", "staking", "staking node", "masternode", "node sale", "node launch", "node ecosystem", "节点计划", "节点招募", "节点活动"],
+  devbounty:  ["bug bounty", "hackathon", "漏洞", "audit", "immunefi", "ethglobal", "code4rena", "bounty program", "hackenproof", "security reward", "vulnerability", "black hat", "ctf", "capture the flag", "hack days", "devcon", "builder house"],
+  grant:      ["grant", "donate", "赞助", "捐赠", "sponsorship", "gitcoin", "ecosystem fund", "accelerator", "incubator", "foundation grant", "rpgf", "matching pool", "community fund", "builder grant", "funding program"],
   policy:     ["regulation", "regulatory", "政策", "监管", "sec", "cftc", "mica", " law ", "bill", "legislation", "compliance", "license", "crypto ban", "crypto tax", "etf approved", "etf rejected"],
 };
 
