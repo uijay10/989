@@ -196,7 +196,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   {lang === "en" ? "Home" : t("navHome")}
                 </button>
               </div>
-              <div className="flex items-center gap-2 ml-auto">
+              <div className="relative z-[60] flex items-center gap-2 ml-auto">
               {/* Admin-only JS entry ── only visible to admin wallets */}
               {admin && (
                 <a
@@ -209,7 +209,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </a>
               )}
               {/* Language selector */}
-              <div className="relative hidden sm:block">
+              <div className="relative hidden sm:block z-[60]">
                 <select
                   value={lang}
                   onChange={(e) => setLang(e.target.value as LangCode)}
@@ -223,7 +223,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </div>
               {/* ── Notification Bell ── */}
               {isConnected && (
-                <div className="relative" ref={bellRef}>
+                <div className="relative z-[60]" ref={bellRef}>
                   <button
                     onClick={openBell}
                     className="relative w-9 h-9 flex items-center justify-center rounded-full border border-border hover:bg-muted/50 transition-colors"
