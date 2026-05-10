@@ -149,12 +149,16 @@ router.get("/", async (req, res) => {
     if (total === 0 && rows.length === 0) {
       const backup = readArticlesBackupFile()
         .filter((a) => (a.author_type ?? "ai") === "ai")
-        .filter(
-          (a) =>
+        .filter((a) => {
+          const section = a.section ?? "other";
+          const normalizedCategory = category === "724news" ? "724news" : category;
+          return (
             category === "all" ||
-            (a.section ?? "other") === category ||
-            (category === "724news" && (a.section ?? "other") === "flash"),
-        )
+            section === normalizedCategory ||
+            (normalizedCategory === "724news" && section === "flash") ||
+            (normalizedCategory === "flash" && section === "724news")
+          );
+        })
         .sort((a, b) => {
           const at = a.created_at ? Date.parse(a.created_at) : 0;
           const bt = b.created_at ? Date.parse(b.created_at) : 0;
