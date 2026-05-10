@@ -807,8 +807,10 @@ export function EventList({
     // - expired events are removed
     // - semantic dedup merges multi-published stories
     // Therefore serverTotal (raw DB matches) will overcount what the user sees.
+    // While articles are still loading (shown===0), fall back to serverTotal so
+    // the count appears immediately from the fast count request.
     const isChainOrExchangeView = Boolean(chain?.trim()) || Boolean(exchange?.trim());
-    if (isChainOrExchangeView) return shown;
+    if (isChainOrExchangeView) return shown > 0 ? shown : total;
 
     if (total <= 0) return shown;
     return Math.max(total, shown);
