@@ -10,6 +10,7 @@ import { cn, truncateAddress, generateGradient } from "@/lib/utils";
 import { useState, useRef, useEffect } from "react";
 import { useEventFilter, NAV_KEY_TO_CATEGORY } from "@/lib/event-filter-context";
 import { HotEcosystemQuickEntry } from "@/components/hot-ecosystem-quick-entry";
+import PromoAd from "@/components/promo-ad";
 import { formatDistanceToNow } from "date-fns";
 import { enUS, zhCN } from "date-fns/locale";
 import { getApiBase } from "@/lib/api-base";
@@ -409,6 +410,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </div>
             </div>
           )}
+          <div className="px-4 sm:px-6 lg:px-8 py-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <PromoAd />
+            <PromoAd />
+          </div>
         </div>
         </div>
       </header>
