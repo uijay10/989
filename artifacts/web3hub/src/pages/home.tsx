@@ -9,6 +9,7 @@ import { useLang } from "@/lib/i18n";
 import { generateGradient } from "@/lib/utils";
 import { TagBadge } from "@/components/post-card";
 import { RoleBadge } from "@/components/role-badge";
+import PromoAd from "@/components/promo-ad";
 import { FEATURES } from "@/lib/feature-flags";
 import { formatDistanceToNow } from "date-fns";
 import { enUS, zhCN } from "date-fns/locale";
@@ -349,19 +350,27 @@ export default function Home() {
   return (
     <div className="space-y-6 pb-4">
       {/* Header */}
-      <div className="flex items-center justify-end gap-2 pt-2">
-        {FEATURES.dailyLucky && (
-          <DailyLuckyBtn lastSlotPull={me?.lastSlotPull ?? null} label={t("dailyLucky")} />
-        )}
-        {isConnected && address && (
-          <button
-            type="button"
-            onClick={() => { setLocation("/profile"); }}
-            className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-300/50 transition-all whitespace-nowrap"
-          >
-            {t("dashboard")}
-          </button>
-        )}
+      <div className="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)_320px] gap-3 items-start pt-2">
+        <div className="hidden lg:block">
+          <PromoAd />
+        </div>
+        <div className="flex items-center justify-end gap-2">
+          {FEATURES.dailyLucky && (
+            <DailyLuckyBtn lastSlotPull={me?.lastSlotPull ?? null} label={t("dailyLucky")} />
+          )}
+          {isConnected && address && (
+            <button
+              type="button"
+              onClick={() => { setLocation("/profile"); }}
+              className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-300/50 transition-all whitespace-nowrap"
+            >
+              {t("dashboard")}
+            </button>
+          )}
+        </div>
+        <div className="hidden lg:block">
+          <PromoAd />
+        </div>
       </div>
 
       {/* Encouragement + CTA */}
