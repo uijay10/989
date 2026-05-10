@@ -62,7 +62,7 @@ function TagLinksRow({ items }: { items: QuickItem[] }) {
 
   const isActiveHref = (href: string) => (optimisticHref ?? location) === href;
   return (
-    <div className="flex w-full flex-nowrap items-center justify-start gap-x-0.5 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="flex w-full flex-nowrap items-center justify-center gap-x-0.5 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {items.map((it) => (
         <button
           key={`${it.kind}:${it.label}`}
