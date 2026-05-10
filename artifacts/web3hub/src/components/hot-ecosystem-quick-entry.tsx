@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useEventFilter } from "@/lib/event-filter-context";
 import { exchangeSectionSlug } from "@/lib/ecosystem";
