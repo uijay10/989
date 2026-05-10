@@ -1,5 +1,3 @@
-import adImage from "@assets/a797492f-06e1-4a90-8060-124ce156c319_1778420888866.png";
-
 export default function PromoAd() {
   return (
     <a
@@ -10,7 +8,7 @@ export default function PromoAd() {
     >
       <div className="flex items-center gap-4 p-4">
         <img
-          src={adImage}
+          src="/hifastvpn-ad.png"
           alt="Hi快VPN"
           className="h-16 w-16 rounded-xl object-cover shrink-0"
         />
