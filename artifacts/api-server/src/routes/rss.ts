@@ -1,9 +1,35 @@
 import { Router, type IRouter } from "express";
 import { db, postsTable } from "@workspace/db";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { readArticlesBackupFile } from "../lib/articles-backup";
 
 const router: IRouter = Router();
+
+router.get("/ecosystem-counts", async (_req, res) => {
+  try {
+    const rows = await db
+      .select({
+        section: postsTable.section,
+        count: sql<number>`count(*)`,
+      })
+      .from(postsTable)
+      .where(eq(postsTable.authorType, "ai"))
+      .groupBy(postsTable.section);
+
+    const backup = readArticlesBackupFile().filter((a) => (a.author_type ?? "ai") === "ai");
+    const counts: Record<string, number> = {};
+    for (const row of rows) {
+      counts[row.section ?? "other"] = Number(row.count ?? 0);
+    }
+    for (const item of backup) {
+      const section = item.section ?? "other";
+      counts[section] = (counts[section] ?? 0) + 1;
+    }
+    res.json({ counts });
+  } catch (error) {
+    res.status(500).json({ error: String(error) });
+  }
+});
 
 router.get("/rss.xml", async (_req, res) => {
   try {
