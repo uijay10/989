@@ -13,6 +13,7 @@ import { formatDistanceToNow } from "date-fns";
 import { enUS, zhCN } from "date-fns/locale";
 import { getApiBase } from "@/lib/api-base";
 import { HotEcosystemQuickEntry } from "@/components/hot-ecosystem-quick-entry";
+import PromoAd from "@/components/promo-ad";
 
 const DATE_LOCALES_LAYOUT: Record<string, Locale> = {
   "en": enUS, "zh-CN": zhCN,
@@ -403,7 +404,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {showEcosystemStrip && <HotEcosystemQuickEntry />}
           </div>
 
-        </div>
         </div>
       </header>
 
