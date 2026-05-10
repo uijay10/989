@@ -150,7 +150,10 @@ router.get("/", async (req, res) => {
       const backup = readArticlesBackupFile()
         .filter((a) => (a.author_type ?? "ai") === "ai")
         .filter(
-          (a) => category === "all" || (a.section ?? "other") === category,
+          (a) =>
+            category === "all" ||
+            (a.section ?? "other") === category ||
+            (category === "724news" && (a.section ?? "other") === "flash"),
         )
         .sort((a, b) => {
           const at = a.created_at ? Date.parse(a.created_at) : 0;
