@@ -175,8 +175,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-50 w-full">
         <div className="glass-panel !border-l-0 !border-r-0 !border-t-0 border-b border-border/40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-3 items-center h-[70px]">
-            <div className="min-w-0">
+          <div className="grid grid-cols-[220px_minmax(0,1fr)_220px] items-center gap-3 h-[70px]">
+            <div className="w-[220px] h-[56px] overflow-hidden">
               <PromoAd />
             </div>
             {/* Logo — 1.5× bigger */}
@@ -366,7 +366,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </div>
               )}
             </div>
-            <div className="min-w-0 justify-self-end">
+            <div className="w-[220px] h-[56px] overflow-hidden justify-self-end">
               <PromoAd />
             </div>
           </div>
