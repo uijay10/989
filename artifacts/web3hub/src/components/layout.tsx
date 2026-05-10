@@ -410,10 +410,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </div>
             </div>
           )}
-          <div className="px-4 sm:px-6 lg:px-8 py-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <PromoAd />
-            <PromoAd />
-          </div>
         </div>
         </div>
       </header>
