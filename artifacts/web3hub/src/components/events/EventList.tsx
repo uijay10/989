@@ -803,14 +803,11 @@ export function EventList({
       (!sectionSlug && activeCategory && activeCategory !== "全部");
     if (hasClientFilter) return shown;
 
-    // Chain / exchange boards additionally apply client-side filters:
-    // - expired events are removed
-    // - semantic dedup merges multi-published stories
-    // Therefore serverTotal (raw DB matches) will overcount what the user sees.
-    // While articles are still loading (shown===0), fall back to serverTotal so
-    // the count appears immediately from the fast count request.
+    // Chain / exchange boards: always show serverTotal (from the fast limit=1 count
+    // request) so the full count is visible immediately without scrolling.
+    // Fall back to shown only while serverTotal hasn't arrived yet (total===0).
     const isChainOrExchangeView = Boolean(chain?.trim()) || Boolean(exchange?.trim());
-    if (isChainOrExchangeView) return shown > 0 ? shown : total;
+    if (isChainOrExchangeView) return total > 0 ? total : shown;
 
     if (total <= 0) return shown;
     return Math.max(total, shown);
