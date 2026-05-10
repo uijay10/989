@@ -1,15 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useLocation } from "wouter";
 import { useEventFilter } from "@/lib/event-filter-context";
 import { exchangeSectionSlug } from "@/lib/ecosystem";
-import { getApiBase } from "@/lib/api-base";
 
 type QuickItem = {
   label: string;
   kind: "chain" | "exchange";
   href: string;
   hint: string;
-  count: number;
 };
 
 const CHAINS = [
@@ -36,7 +34,6 @@ const CHAIN_ITEMS: QuickItem[] = CHAINS.map((name) => ({
   kind: "chain",
   href: `/chains/${name.trim().toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`,
   hint: `查看 ${name} 专栏 - Grants、Testnet、Airdrop 等机会`,
-  count: 0,
 }));
 
 const EXCHANGE_ITEMS: QuickItem[] = EXCHANGES.map((name) => ({
@@ -44,7 +41,6 @@ const EXCHANGE_ITEMS: QuickItem[] = EXCHANGES.map((name) => ({
   kind: "exchange",
   href: `/exchanges/${exchangeSectionSlug(name)}`,
   hint: `查看 ${name} 专栏 - Listing、公告与机会`,
-  count: 0,
 }));
 
 /** 与 layout 第一行主导航同字号（text-[14px] font-semibold） */
@@ -85,10 +81,7 @@ function TagLinksRow({ items }: { items: QuickItem[] }) {
               : ""
           }`}
         >
-          <span className="inline-flex items-center gap-1">
-            <span>{it.label}</span>
-            <span className="text-[11px] font-medium text-slate-500">共{it.count}条</span>
-          </span>
+          {it.label}
         </button>
       ))}
     </div>
@@ -96,31 +89,7 @@ function TagLinksRow({ items }: { items: QuickItem[] }) {
 }
 
 export function HotEcosystemQuickEntry() {
-  const apiBase = getApiBase();
-  const [counts, setCounts] = useState<Record<string, number>>({});
-  const all = useMemo(
-    () =>
-      [...CHAIN_ITEMS, ...EXCHANGE_ITEMS].map((item) => ({
-        ...item,
-        count: counts[item.label] ?? 0,
-      })),
-    [counts],
-  );
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch(`${apiBase}/ecosystem-counts`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (cancelled || !data?.counts) return;
-        setCounts(data.counts);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [apiBase]);
-
+  const all = useMemo(() => [...CHAIN_ITEMS, ...EXCHANGE_ITEMS], []);
   return (
     <div className="w-full">
       <div className="flex flex-col gap-1.5">

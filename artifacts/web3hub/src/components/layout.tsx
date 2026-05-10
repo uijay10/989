@@ -14,6 +14,7 @@ import { enUS, zhCN } from "date-fns/locale";
 import { getApiBase } from "@/lib/api-base";
 import { HotEcosystemQuickEntry } from "@/components/hot-ecosystem-quick-entry";
 import PromoAd from "@/components/promo-ad";
+import { useQuery } from "@tanstack/react-query";
 
 const DATE_LOCALES_LAYOUT: Record<string, Locale> = {
   "en": enUS, "zh-CN": zhCN,
@@ -66,7 +67,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [notifList, setNotifList] = useState<any[]>([]);
   const [unread, setUnread] = useState(0);
   const apiBase = getApiBase();
-
   useEffect(() => {
     if (!address) return;
     const fetchNotifs = async () => {
