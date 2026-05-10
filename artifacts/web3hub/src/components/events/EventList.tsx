@@ -886,6 +886,11 @@ export function EventList({
             ) : (
               <>🔥 {zh ? "事件聚合" : "Events"}</>
             )}
+            {!loading && displayTotal > 0 && (
+              <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+                {zh ? `共 ${displayTotal} 条` : `${displayTotal} posts`}
+              </span>
+            )}
           </h2>
           <div className="flex items-center gap-1">
             {(["time", "importance", "random"] as const).map(mode => (
