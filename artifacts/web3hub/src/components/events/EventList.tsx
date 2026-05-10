@@ -480,6 +480,8 @@ export function EventList({
       ? "quest,airdrop"
       : sectionSlug === "ido"
       ? "ido,mainnet,exchange,presale"
+      : sectionSlug === "flash"
+      ? "flash,724news"
       : sectionSlug
       ? sectionSlug
       : "all";
@@ -580,6 +582,8 @@ export function EventList({
         ? "quest,airdrop"
         : sectionSlug === "ido"
         ? "ido,mainnet,exchange,presale"
+        : sectionSlug === "flash"
+        ? "flash,724news"
         : sectionSlug
         ? sectionSlug
         : "all";
@@ -668,6 +672,8 @@ export function EventList({
         ? "quest,airdrop"
         : sectionSlug === "ido"
         ? "ido,mainnet,exchange,presale"
+        : sectionSlug === "flash"
+        ? "flash,724news"
         : sectionSlug
         ? sectionSlug
         : "all";
