@@ -175,9 +175,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-50 w-full">
         <div className="glass-panel !border-l-0 !border-r-0 !border-t-0 border-b border-border/40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-[70px]">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-3 items-center h-[70px]">
+            <div className="min-w-0">
+              <PromoAd />
+            </div>
             {/* Logo — 1.5× bigger */}
-            <div className="flex items-center gap-3 shrink-0 min-w-0">
+            <div className="flex items-center justify-center gap-3 shrink-0 min-w-0">
               <a href="/" onClick={e => { e.preventDefault(); clearEcosystem(); setActiveCategory("全部"); setOptimisticNavHref("/"); navigate("/"); }}
                 className="flex items-center gap-2.5 group cursor-pointer min-w-0">
                 <img src="/logo.png" alt="Web3 Release" className="w-10 h-10 object-contain shrink-0" />
@@ -198,7 +201,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </button>
             </div>
 
-            <div className="flex items-center gap-2 ml-auto">
+            <div className="flex items-center justify-end gap-2 ml-auto">
               {/* Admin-only JS entry ── only visible to admin wallets */}
               {admin && (
                 <a
@@ -363,6 +366,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </div>
               )}
             </div>
+            <div className="min-w-0 justify-self-end">
+              <PromoAd />
+            </div>
           </div>
         </div>
 
@@ -402,14 +408,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          {/* Ecosystem strip: same module, separated by divider */}
-          {showEcosystemStrip && (
-            <div className="border-t border-slate-200/60">
-              <div className="mx-auto w-fit max-w-full pl-8 pt-0 pb-0.5">
-                <HotEcosystemQuickEntry />
-              </div>
-            </div>
-          )}
         </div>
         </div>
       </header>
