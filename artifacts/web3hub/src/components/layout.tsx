@@ -361,15 +361,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </div>
               )}
             </div>
-            <div className="w-[220px] h-[56px] overflow-hidden justify-self-end">
-              <PromoAd />
-            </div>
-            <div className="w-[220px] h-[56px] overflow-hidden justify-self-end">
-              <PromoAd />
-            </div>
-            <div className="w-[220px] h-[56px] overflow-hidden justify-self-end">
-              <PromoAd />
-            </div>
           </div>
         </div>
 
