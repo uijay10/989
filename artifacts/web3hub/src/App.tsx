@@ -7,8 +7,6 @@ import { EventFilterProvider } from "@/lib/event-filter-context";
 import Home from "@/pages/home";
 import Showcase from "@/pages/showcase";
 import KOLZone from "@/pages/kol";
-import { useEffect } from "react";
-import { useLocation } from "wouter";
 import Community from "@/pages/community";
 import Profile from "@/pages/profile";
 import PublicProfile from "@/pages/profile-public";
@@ -31,7 +29,6 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/showcase" component={Showcase} />
       <Route path="/kol" component={KOLZone} />
-      <Route path="/developer" component={() => { const [, nav] = useLocation(); useEffect(() => { nav("/section/devbounty"); }, []); return null; }} />
       <Route path="/community" component={Community} />
       <Route path="/profile" component={Profile} />
       <Route path="/profile/:wallet" component={PublicProfile} />

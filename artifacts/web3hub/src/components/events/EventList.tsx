@@ -110,10 +110,8 @@ const CAT_I18N: Record<string, string> = {
   "教师交流":   "nav_js",
   "主网上线":   "nav_mainnet",
   "交易所上线": "nav_exchange",
-  "开发者专区": "nav_developer",
   "开发者漏洞奖金": "nav_devbounty",
   "项目捐赠/赞助": "nav_grant",
-  "漏洞赏金":     "nav_bugbounty",
 };
 
 /** Align with feed / DB: English + Chinese; anything else → no Hot·Normal badge & default title color. */

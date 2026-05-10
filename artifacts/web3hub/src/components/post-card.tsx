@@ -24,14 +24,12 @@ import { Copy, Check, Pin, User, Eye, Clock, Globe, Twitter as TwitterIcon, X, T
 import { getApiBase } from "@/lib/api-base";
 
 const SECTION_KEY_MAP: Record<string, string> = {
-  testnet: "sTestnetLabel", ido: "sIdoLabel", security: "sSecurityLabel",
-  integration: "sIntegrationLabel", airdrop: "sAirdropLabel", events: "sEventsLabel",
-  funding: "sFundingLabel", jobs: "sJobsLabel", nodes: "sNodesLabel",
+  testnet: "sTestnetLabel", ido: "sIdoLabel",
+  funding: "sFundingLabel", nodes: "sNodesLabel",
   defi: "sDefiLabel", analytics: "sAnalyticsLabel",
   nft: "sNftLabel", research: "sResearchLabel", js: "sJsLabel",
-  showcase: "sShowcaseLabel", ecosystem: "sEcosystemLabel", partners: "sPartnersLabel",
-  hackathon: "sHackathonLabel", ama: "sAmaLabel", bugbounty: "sBugbountyLabel",
-  community: "nav_community", kol: "nav_kol", developer: "nav_developer",
+  showcase: "sShowcaseLabel",
+  community: "nav_community", kol: "nav_kol",
   presale: "sIdoLabel", mainnet: "sIdoLabel", unlock: "sUnlockLabel",
   exchange: "sIdoLabel", quest: "sQuestLabel",
   meme: "sMemeLabel", policy: "sPolicyLabel",
