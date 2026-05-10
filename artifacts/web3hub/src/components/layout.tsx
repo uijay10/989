@@ -175,6 +175,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="glass-panel !border-l-0 !border-r-0 !border-t-0 border-b border-border/40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-[70px] gap-3">
+            <div className="hidden xl:block w-[220px] h-[72px] overflow-hidden shrink-0">
+              <PromoAd />
+            </div>
             {/* Logo — 1.5× bigger */}
             <div className="flex items-center justify-center gap-3 shrink-0 min-w-0">
               <a href="/" onClick={e => { e.preventDefault(); clearEcosystem(); setActiveCategory("全部"); setOptimisticNavHref("/"); navigate("/"); }}
