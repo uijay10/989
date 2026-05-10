@@ -12,12 +12,59 @@ import { useEventFilter, NAV_KEY_TO_CATEGORY } from "@/lib/event-filter-context"
 import { formatDistanceToNow } from "date-fns";
 import { enUS, zhCN } from "date-fns/locale";
 import { getApiBase } from "@/lib/api-base";
-import { HotEcosystemQuickEntry } from "@/components/hot-ecosystem-quick-entry";
+import { exchangeSectionSlug } from "@/lib/ecosystem";
 import PromoAd from "@/components/promo-ad";
 
 const DATE_LOCALES_LAYOUT: Record<string, Locale> = {
   "en": enUS, "zh-CN": zhCN,
 };
+
+// ── Ecosystem quick-entry (chains + exchanges) ──────────────────────────────
+type EcoItem = { label: string; kind: "chain" | "exchange"; href: string; hint: string };
+
+const CHAINS = ["Ethereum","Solana","BNB Chain","Arbitrum","Base","Sui","Aptos"] as const;
+const EXCHANGES = ["Binance","OKX","Bybit","Coinbase","Kraken","Bitget"] as const;
+
+const CHAIN_ITEMS: EcoItem[] = CHAINS.map((name) => ({
+  label: name, kind: "chain",
+  href: `/chains/${name.trim().toLowerCase().replace(/&/g,"and").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"")}`,
+  hint: `查看 ${name} 专栏 - Grants、Testnet、Airdrop 等机会`,
+}));
+const EXCHANGE_ITEMS: EcoItem[] = EXCHANGES.map((name) => ({
+  label: name, kind: "exchange",
+  href: `/exchanges/${exchangeSectionSlug(name)}`,
+  hint: `查看 ${name} 专栏 - Listing、公告与机会`,
+}));
+const ALL_ECOSYSTEM_ITEMS: EcoItem[] = [...CHAIN_ITEMS, ...EXCHANGE_ITEMS];
+
+const ecoLinkCls =
+  "relative px-3 py-1 rounded-full text-[14px] font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer " +
+  "text-slate-800 hover:text-slate-900 hover:bg-slate-100";
+
+function EcosystemRow({ items }: { items: EcoItem[] }) {
+  const [loc, nav] = useLocation();
+  const { clearEcosystem, setActiveCategory } = useEventFilter();
+  const [optimisticHref, setOptimisticHref] = useState<string | null>(null);
+  useEffect(() => {
+    if (optimisticHref && loc === optimisticHref) setOptimisticHref(null);
+  }, [loc, optimisticHref]);
+  const activeEco = optimisticHref ?? loc;
+  return (
+    <div className="flex w-full flex-nowrap items-center justify-center gap-x-0.5 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {items.map((it) => (
+        <button
+          key={`${it.kind}:${it.label}`}
+          type="button"
+          title={it.hint}
+          onClick={() => { setOptimisticHref(it.href); clearEcosystem(); setActiveCategory("全部"); nav(it.href); }}
+          className={`${ecoLinkCls} ${activeEco === it.href ? "text-white bg-blue-600 shadow-sm hover:bg-blue-700 hover:text-white" : ""}`}
+        >
+          {it.label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 const NAV_KEYS = [
   { key: "nav_ido",        href: "/section/ido" },
@@ -398,7 +445,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </a>
               ))}
             </div>
-            {showEcosystemStrip && <HotEcosystemQuickEntry />}
+            {showEcosystemStrip && <EcosystemRow items={ALL_ECOSYSTEM_ITEMS} />}
           </div>
 
         </div>
