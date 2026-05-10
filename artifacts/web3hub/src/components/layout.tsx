@@ -50,7 +50,7 @@ function EcosystemRow({ items }: { items: EcoItem[] }) {
   }, [loc, optimisticHref]);
   const activeEco = optimisticHref ?? loc;
   return (
-    <div className="flex w-full flex-nowrap items-center justify-center gap-x-0.5 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <>
       {items.map((it) => (
         <button
           key={`${it.kind}:${it.label}`}
@@ -62,7 +62,7 @@ function EcosystemRow({ items }: { items: EcoItem[] }) {
           {it.label}
         </button>
       ))}
-    </div>
+    </>
   );
 }
 
@@ -413,10 +413,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         {/* ── Unified nav module (main nav + ecosystem) ── */}
         <div className="border-t border-slate-200/60 bg-white/70 backdrop-blur-md">
-          <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 pt-0.5 pb-0.5">
-            {/* Main nav: left-aligned — same inset as ecosystem row + main content so rows line up */}
-            <div className="flex min-w-max flex-nowrap items-center justify-center gap-x-0.5 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {/* 7×24 主入口（回首页聚合）；顶部已有单独 Home 药丸，此处不再放第二个「主页」 */}
+          <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-0.5">
+            {/* Single unified nav: all section + chain/exchange buttons in one flex-wrap row */}
+            <div className="flex flex-wrap items-center justify-center gap-x-0.5 gap-y-0 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <button
                 onClick={() => {
                   clearEcosystem();
@@ -425,7 +424,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   navigate("/");
                 }}
                 className={cn(
-                  // 与首页「My Dashboard」同款尺寸与主色药丸样式（home.tsx）
                   "relative inline-flex items-center justify-center shrink-0 px-3.5 py-2 rounded-full text-[15px] font-bold whitespace-nowrap transition-all duration-200 cursor-pointer",
                   activeHref === "/" && activeCategory === "全部"
                     ? "text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-300/50"
@@ -444,8 +442,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <span className="relative z-10">{t(key)}</span>
                 </a>
               ))}
+              {showEcosystemStrip && <EcosystemRow items={ALL_ECOSYSTEM_ITEMS} />}
             </div>
-            {showEcosystemStrip && <EcosystemRow items={ALL_ECOSYSTEM_ITEMS} />}
           </div>
 
         </div>
