@@ -14,6 +14,7 @@ import { formatDistanceToNow } from "date-fns";
 import { enUS, zhCN } from "date-fns/locale";
 import { getApiBase } from "@/lib/api-base";
 import { semanticTitleKey } from "@/lib/semantic-title-key";
+import { isAdmin } from "@/lib/admin";
 
 
 const DATE_LOCALES: Record<string, Locale> = {
@@ -349,24 +350,30 @@ export default function Home() {
 
   return (
     <div className="space-y-6 pb-4">
-      {/* Header */}
-      <div className="flex items-center justify-end gap-2 pt-2">
-        {FEATURES.dailyLucky && (
-          <DailyLuckyBtn lastSlotPull={me?.lastSlotPull ?? null} label={t("dailyLucky")} />
-        )}
-        {isConnected && address && (
-          <button
-            type="button"
-            onClick={() => { setLocation("/profile"); }}
-            className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-300/50 transition-all whitespace-nowrap"
-          >
-            {t("dashboard")}
-          </button>
-        )}
-      </div>
+      {/* NMB — admin-only top banner slot */}
+      {isAdmin(address) && (
+        <div className="w-full rounded-xl border-2 border-dashed border-blue-300 bg-blue-50/60 flex items-center justify-center text-blue-500 font-bold text-sm select-none" style={{ height: 60 }}>
+          NMB — 顶部广告位（仅管理员可见，格子编号 NMB，为后续布局做准备）
+        </div>
+      )}
 
       {/* Encouragement + CTA */}
-      <div className="rounded-2xl px-6 py-6 border border-blue-200/60" style={{background: "linear-gradient(135deg, #dbeafe 0%, #eff6ff 50%, #e0f2fe 100%)"}}>
+      <div className="relative rounded-2xl px-6 py-6 border border-blue-200/60" style={{background: "linear-gradient(135deg, #dbeafe 0%, #eff6ff 50%, #e0f2fe 100%)"}}>
+        {/* Dashboard button — top-right of banner */}
+        {isConnected && address && (
+          <div className="absolute top-3 right-4 flex items-center gap-2">
+            {FEATURES.dailyLucky && (
+              <DailyLuckyBtn lastSlotPull={me?.lastSlotPull ?? null} label={t("dailyLucky")} />
+            )}
+            <button
+              type="button"
+              onClick={() => { setLocation("/profile"); }}
+              className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-300/50 transition-all whitespace-nowrap"
+            >
+              {t("dashboard")}
+            </button>
+          </div>
+        )}
         <p className="text-lg sm:text-xl font-bold leading-snug mb-4" style={{ color: "#FF69B4" }}>
           {t("encouragement")}
         </p>
