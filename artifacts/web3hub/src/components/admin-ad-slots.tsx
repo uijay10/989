@@ -4,9 +4,10 @@ import { isAdmin } from "@/lib/admin";
 import { cn } from "@/lib/utils";
 
 const SLOT_COUNT = 50;
-const SLOT_W = 576;   // 3× 192px
-const SLOT_H = 270;   // 3× 90px
-const GAP = 8;        // px between slots
+// Each slot: 200 px wide × 120 px tall — fits the visible margin at xl+ screens
+const SLOT_W = 200;
+const SLOT_H = 120;
+const GAP = 8;
 
 interface AdSlotProps {
   num: number;
@@ -22,9 +23,9 @@ function AdSlot({ num, side, selected, onSelect }: AdSlotProps) {
       type="button"
       title={label}
       onClick={onSelect}
-      style={{ width: SLOT_W, height: SLOT_H, flexShrink: 0 }}
+      style={{ width: SLOT_W, height: SLOT_H }}
       className={cn(
-        "flex items-center justify-center text-base font-bold border-2 rounded-lg transition-all cursor-pointer select-none",
+        "flex items-center justify-center text-sm font-bold border-2 rounded-lg transition-all cursor-pointer select-none shrink-0",
         selected
           ? "bg-blue-50 border-blue-500 text-blue-700 shadow-md"
           : "bg-white/80 border-slate-300 text-slate-500 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-600"
@@ -43,10 +44,7 @@ interface SlotColumnProps {
 
 function SlotColumn({ side, selected, onSelect }: SlotColumnProps) {
   return (
-    <div
-      className="flex flex-col shrink-0"
-      style={{ width: SLOT_W, gap: GAP }}
-    >
+    <div className="flex flex-col" style={{ gap: GAP, width: SLOT_W }}>
       {Array.from({ length: SLOT_COUNT }, (_, i) => {
         const num = i + 1;
         return (
@@ -77,8 +75,9 @@ export function AdminAdSlots({ children }: AdminAdSlotsProps) {
   }
 
   return (
-    <div className="flex items-start gap-2">
-      {/* Left ad column — hidden below xl */}
+    // outer wrapper — flex row, aligns tops, no gap so columns sit flush against content
+    <div className="flex items-start" style={{ gap: GAP }}>
+      {/* Left column — only rendered at wide screens */}
       <div className="hidden xl:block shrink-0" style={{ width: SLOT_W }}>
         <SlotColumn
           side="left"
@@ -87,12 +86,10 @@ export function AdminAdSlots({ children }: AdminAdSlotsProps) {
         />
       </div>
 
-      {/* Main content */}
-      <div className="flex-1 min-w-0">
-        {children}
-      </div>
+      {/* Main content — takes remaining space */}
+      <div className="flex-1 min-w-0">{children}</div>
 
-      {/* Right ad column — hidden below xl */}
+      {/* Right column */}
       <div className="hidden xl:block shrink-0" style={{ width: SLOT_W }}>
         <SlotColumn
           side="right"
