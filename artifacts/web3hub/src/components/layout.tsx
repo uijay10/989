@@ -412,7 +412,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* ── Unified nav module (main nav + ecosystem) ── */}
-        <div className="border-t border-slate-200/60 bg-white/70 backdrop-blur-md">
+        <div className="bg-white/70 backdrop-blur-md">
           <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-0.5">
             {/* Row 1: section nav */}
             <div className="flex flex-nowrap items-center justify-center gap-x-0.5 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
