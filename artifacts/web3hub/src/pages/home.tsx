@@ -352,9 +352,7 @@ export default function Home() {
     <div className="space-y-6 pb-4">
       {/* NMB — admin-only top banner slot */}
       {isAdmin(address) && (
-        <div className="w-full rounded-xl border-2 border-dashed border-blue-300 bg-blue-50/60 flex items-center justify-center text-blue-500 font-bold text-sm select-none" style={{ height: 130 }}>
-          NMB — 顶部广告位（仅管理员可见，格子编号 NMB，为后续布局做准备）
-        </div>
+        <div className="w-full rounded-xl border-2 border-blue-300 bg-blue-50/60" style={{ height: 130 }} />
       )}
 
       {/* Encouragement + CTA */}
