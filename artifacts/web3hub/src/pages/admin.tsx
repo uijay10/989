@@ -30,6 +30,9 @@ const SEED_RECORDS = [
   { wallet: "0xD6e9A2b5C8f1E4d7A0b3C6f9D2e5A8b1F4a7B0c3", ip_address: "172.105.38.44",   visited_at: "2026-05-12 07:08:44" },
 ];
 
+// Phase 1: until 2026-05-24  → +25~80/day   (i < 14)
+// Phase 2: 2026-05-25~06-05  → +80~268/day  (14 ≤ i < 26)
+// Phase 3: 2026-06-06 onward → +350~700/day (i ≥ 26)
 function getMemberCountAdmin(): number {
   const BASE_MS    = new Date("2026-05-11T00:00:00Z").getTime();
   const BASE_COUNT = 2006;
@@ -37,7 +40,10 @@ function getMemberCountAdmin(): number {
   let count = BASE_COUNT;
   for (let i = 0; i < days; i++) {
     const seed = (i + 1) * 1103515245 + 12345;
-    count += 25 + (Math.abs(seed) % 56);
+    const r    = Math.abs(seed);
+    if (i < 14)       count += 25  + (r % 56);
+    else if (i < 26)  count += 80  + (r % 189);
+    else              count += 350 + (r % 351);
   }
   return count;
 }
