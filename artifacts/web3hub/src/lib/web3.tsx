@@ -3,7 +3,7 @@ import { defaultWagmiConfig } from '@web3modal/wagmi/react/config';
 import { WagmiProvider, useAccount, useDisconnect } from 'wagmi';
 import { mainnet, sepolia } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useUpsertUser, useGetMe } from '@workspace/api-client-react';
 
 const projectId = 'b56e18a13c9a1b59cf6f6ee2765e3591';
@@ -55,11 +55,25 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Send duration via sendBeacon (works on page close) or fetch
+function reportDuration(wallet: string, startMs: number) {
+  const minutes = Math.max(1, Math.round((Date.now() - startMs) / 60000));
+  const payload = JSON.stringify({ wallet, minutes });
+  const url = "/api/visits/duration";
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon(url, new Blob([payload], { type: "application/json" }));
+  } else {
+    fetch(url, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: payload, keepalive: true }).catch(() => {});
+  }
+}
+
 // Wrapper to sync wagmi state with our backend User state
 function AuthWrapper({ children }: { children: React.ReactNode }) {
   const { address, isConnected } = useAccount();
   const upsertMutation = useUpsertUser();
-  
+  const sessionStartRef = useRef<number | null>(null);
+  const lastWalletRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (isConnected && address) {
       upsertMutation.mutate({ data: { wallet: address } });
@@ -68,6 +82,26 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ wallet: address }),
       }).catch(() => {});
+
+      // Record session start
+      sessionStartRef.current = Date.now();
+      lastWalletRef.current = address;
+
+      // Report duration when page is closed/refreshed
+      const handleUnload = () => {
+        if (sessionStartRef.current && lastWalletRef.current) {
+          reportDuration(lastWalletRef.current, sessionStartRef.current);
+        }
+      };
+      window.addEventListener("beforeunload", handleUnload);
+      return () => window.removeEventListener("beforeunload", handleUnload);
+    } else {
+      // Wallet disconnected — report duration now
+      if (sessionStartRef.current && lastWalletRef.current) {
+        reportDuration(lastWalletRef.current, sessionStartRef.current);
+        sessionStartRef.current = null;
+        lastWalletRef.current = null;
+      }
     }
   }, [address, isConnected]);
 

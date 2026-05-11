@@ -405,11 +405,14 @@ async function ensureTables() {
         id SERIAL PRIMARY KEY,
         wallet TEXT NOT NULL,
         ip_address TEXT,
-        visited_at TIMESTAMP DEFAULT NOW() NOT NULL
+        visited_at TIMESTAMP DEFAULT NOW() NOT NULL,
+        duration_minutes INTEGER
       )
     `);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_user_visit_logs_visited_at ON user_visit_logs(visited_at DESC)`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_user_visit_logs_wallet ON user_visit_logs(wallet)`);
+    // Add duration_minutes column to existing tables that were created before this column existed
+    await db.execute(sql`ALTER TABLE user_visit_logs ADD COLUMN IF NOT EXISTS duration_minutes INTEGER`);
 
     console.log("[db] ensureTables: OK");
   } catch (e) {

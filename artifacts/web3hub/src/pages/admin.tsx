@@ -39,7 +39,7 @@ const SEED_RECORDS = [
   { wallet: "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE", ip_address: "162.158.92.14",   visited_at: "2026-05-11 15:28:07", duration: 58  },
 ];
 
-interface VisitRow { wallet: string; ip_address: string; visited_at: string; duration?: number }
+interface VisitRow { wallet: string; ip_address: string; visited_at: string; duration?: number; duration_minutes?: number | null }
 
 const PAGE_SIZE = 20;
 
@@ -192,7 +192,8 @@ function VisitLogsPanel({ address }: { address: string }) {
               </thead>
               <tbody className="divide-y divide-blue-50">
                 {displayedRows.map((r, i) => {
-                  const dur = r.duration ?? seedDuration(r.wallet);
+                  // Prefer real DB duration_minutes, then seed duration field, then hash fallback
+                  const dur = r.duration_minutes ?? r.duration ?? seedDuration(r.wallet);
                   return (
                     <tr key={i} className="hover:bg-blue-50/60 transition-colors"
                       style={{ background: i % 2 === 0 ? "#fff" : "#f8fbff" }}>
