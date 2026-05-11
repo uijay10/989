@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useWeb3Auth } from "@/lib/web3";
 import { isAdmin } from "@/lib/admin";
 import { cn } from "@/lib/utils";
 
 const SLOT_COUNT = 50;
-const SLOT_W = 192;   // px — both sides identical
-const SLOT_H = 90;    // px — both sides identical
-const TOP_OFFSET = 116; // px — clear the two-row navbar
+const SLOT_W = 576;   // 3× 192px
+const SLOT_H = 270;   // 3× 90px
+const GAP = 8;        // px between slots
 
 interface AdSlotProps {
   num: number;
@@ -24,9 +24,9 @@ function AdSlot({ num, side, selected, onSelect }: AdSlotProps) {
       onClick={onSelect}
       style={{ width: SLOT_W, height: SLOT_H, flexShrink: 0 }}
       className={cn(
-        "flex items-center justify-center text-sm font-bold border-2 rounded transition-all cursor-pointer select-none",
+        "flex items-center justify-center text-base font-bold border-2 rounded-lg transition-all cursor-pointer select-none",
         selected
-          ? "bg-blue-50 border-blue-500 text-blue-700 shadow"
+          ? "bg-blue-50 border-blue-500 text-blue-700 shadow-md"
           : "bg-white/80 border-slate-300 text-slate-500 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-600"
       )}
     >
@@ -35,26 +35,17 @@ function AdSlot({ num, side, selected, onSelect }: AdSlotProps) {
   );
 }
 
-interface SidePanelProps {
+interface SlotColumnProps {
   side: "left" | "right";
   selected: number | null;
   onSelect: (n: number) => void;
 }
 
-function SidePanel({ side, selected, onSelect }: SidePanelProps) {
+function SlotColumn({ side, selected, onSelect }: SlotColumnProps) {
   return (
     <div
-      className={cn(
-        "fixed z-40 hidden xl:flex flex-col gap-2 overflow-y-auto",
-        side === "left" ? "left-0" : "right-0"
-      )}
-      style={{
-        top: TOP_OFFSET,
-        width: SLOT_W,
-        maxHeight: `calc(100vh - ${TOP_OFFSET}px)`,
-        paddingBottom: 8,
-        scrollbarWidth: "none",
-      }}
+      className="flex flex-col shrink-0"
+      style={{ width: SLOT_W, gap: GAP }}
     >
       {Array.from({ length: SLOT_COUNT }, (_, i) => {
         const num = i + 1;
@@ -72,25 +63,43 @@ function SidePanel({ side, selected, onSelect }: SidePanelProps) {
   );
 }
 
-export function AdminAdSlots() {
+interface AdminAdSlotsProps {
+  children: ReactNode;
+}
+
+export function AdminAdSlots({ children }: AdminAdSlotsProps) {
   const { address } = useWeb3Auth();
   const [leftSel, setLeftSel] = useState<number | null>(null);
   const [rightSel, setRightSel] = useState<number | null>(null);
 
-  if (!isAdmin(address)) return null;
+  if (!isAdmin(address)) {
+    return <>{children}</>;
+  }
 
   return (
-    <>
-      <SidePanel
-        side="left"
-        selected={leftSel}
-        onSelect={(n) => setLeftSel(n < 0 ? null : n)}
-      />
-      <SidePanel
-        side="right"
-        selected={rightSel}
-        onSelect={(n) => setRightSel(n < 0 ? null : n)}
-      />
-    </>
+    <div className="flex items-start gap-2">
+      {/* Left ad column — hidden below xl */}
+      <div className="hidden xl:block shrink-0" style={{ width: SLOT_W }}>
+        <SlotColumn
+          side="left"
+          selected={leftSel}
+          onSelect={(n) => setLeftSel(n < 0 ? null : n)}
+        />
+      </div>
+
+      {/* Main content */}
+      <div className="flex-1 min-w-0">
+        {children}
+      </div>
+
+      {/* Right ad column — hidden below xl */}
+      <div className="hidden xl:block shrink-0" style={{ width: SLOT_W }}>
+        <SlotColumn
+          side="right"
+          selected={rightSel}
+          onSelect={(n) => setRightSel(n < 0 ? null : n)}
+        />
+      </div>
+    </div>
   );
 }
