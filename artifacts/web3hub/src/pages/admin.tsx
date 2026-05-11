@@ -129,7 +129,6 @@ function VisitLogsPanel({ address }: { address: string }) {
           <p className="text-xs text-muted-foreground">
             真实用户将自动按照钱包地址、IP地址和登录时间记录
             &nbsp;|&nbsp; {loading ? "加载中…" : `显示第 1–${rows.length} 条 / 共 ${total.toLocaleString()} 条`}
-            &nbsp;|&nbsp; 从 2026 年 4 月 5 日开始持续增长
           </p>
           {!loading && !isReal && (
             <p className="text-[11px] text-amber-600 mt-1">
