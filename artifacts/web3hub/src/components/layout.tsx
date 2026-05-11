@@ -1,4 +1,5 @@
 import { Link, useLocation } from "wouter";
+import { AdminAdSlots } from "@/components/admin-ad-slots";
 import { useWeb3Auth } from "@/lib/web3";
 import { WalletPickerModal } from "@/components/wallet-modal";
 import { useGetMe } from "@workspace/api-client-react";
@@ -450,9 +451,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {children}
-      </main>
+      <AdminAdSlots>
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {children}
+        </main>
+      </AdminAdSlots>
 
       {/* ── Floating Right Panel: Social + Scroll ─── */}
       <div className="fixed right-4 bottom-8 z-50 flex flex-col gap-1.5">
