@@ -16,6 +16,20 @@ import { getApiBase } from "@/lib/api-base";
 import { exchangeSectionSlug } from "@/lib/ecosystem";
 import PromoAd from "@/components/promo-ad";
 
+// ── Member count: base 2006 on 2026-05-11, +25~80/day deterministically ──────
+function getMemberCount(): number {
+  const BASE_MS    = new Date("2026-05-11T00:00:00Z").getTime();
+  const BASE_COUNT = 2006;
+  const days       = Math.max(0, Math.floor((Date.now() - BASE_MS) / 86_400_000));
+  let count = BASE_COUNT;
+  for (let i = 0; i < days; i++) {
+    // LCG-style deterministic "random" in [25, 80]
+    const seed = (i + 1) * 1103515245 + 12345;
+    count += 25 + (Math.abs(seed) % 56);
+  }
+  return count;
+}
+
 const DATE_LOCALES_LAYOUT: Record<string, Locale> = {
   "en": enUS, "zh-CN": zhCN,
 };
@@ -223,7 +237,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-50 w-full">
         <div className="glass-panel !border-l-0 !border-r-0 !border-t-0 border-b border-border/40 relative z-[10]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-[70px] gap-3">
+            <div className="relative flex justify-between items-center h-[70px] gap-3">
+              {/* ── Member count — absolutely centered, non-intrusive ── */}
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center z-10">
+                <span className="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[13px] font-semibold select-none"
+                  style={{ color: "#2563eb", background: "rgba(37,99,235,0.07)", border: "1px solid rgba(37,99,235,0.18)" }}>
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                  {lang === "zh-CN"
+                    ? `已有 ${getMemberCount().toLocaleString()} 名成员，还在增长！`
+                    : `${getMemberCount().toLocaleString()} members & growing!`}
+                </span>
+              </div>
               {/* promo-ad placeholder — hidden */}
               <div className="flex items-center justify-center gap-3 shrink-0 min-w-0">
                 <a href="/" onClick={e => { e.preventDefault(); clearEcosystem(); setActiveCategory("全部"); setOptimisticNavHref("/"); navigate("/"); }}
