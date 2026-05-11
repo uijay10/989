@@ -459,7 +459,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </AdminAdSlots>
 
       {/* ── Floating Right Panel: Social + Scroll ─── */}
-      <div className="fixed right-4 bottom-8 z-50 flex flex-col gap-1.5">
+      <div className="fixed top-1/2 -translate-y-1/2 z-50 flex flex-col gap-1.5" style={{ right: "calc((100vw - 68rem) / 4)" }}>
         {/* RSS 订阅 */}
         <button
           type="button"
