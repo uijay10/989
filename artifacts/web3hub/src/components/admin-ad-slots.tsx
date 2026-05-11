@@ -4,9 +4,8 @@ import { isAdmin } from "@/lib/admin";
 import { cn } from "@/lib/utils";
 
 const SLOT_COUNT = 50;
-// Each slot: 200 px wide × 120 px tall — fits the visible margin at xl+ screens
 const SLOT_W = 200;
-const SLOT_H = 120;
+const SLOT_H = 150;
 const GAP = 8;
 
 interface AdSlotProps {
