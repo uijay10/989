@@ -219,7 +219,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex flex-col" style={{background: "#EEF5FF"}}>
       {/* ── Top Navbar (+ Home ecosystem strip) ──────────────────────────────── */}
       <header className="sticky top-0 z-50 w-full">
-        <div className="glass-panel !border-l-0 !border-r-0 !border-t-0 border-b border-border/40">
+        <div className="glass-panel !border-l-0 !border-r-0 !border-t-0 border-b border-border/40 relative z-[10]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-[70px] gap-3">
               {/* promo-ad placeholder — hidden */}
