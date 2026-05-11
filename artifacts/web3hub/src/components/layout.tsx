@@ -16,24 +16,7 @@ import { getApiBase } from "@/lib/api-base";
 import { exchangeSectionSlug } from "@/lib/ecosystem";
 import PromoAd from "@/components/promo-ad";
 
-// ── Member count: base 2006 on 2026-05-11, three-phase daily growth ───────────
-// Phase 1: until 2026-05-24  → +25~80/day   (i < 14)
-// Phase 2: 2026-05-25~06-05  → +80~268/day  (14 ≤ i < 26)
-// Phase 3: 2026-06-06 onward → +350~700/day (i ≥ 26)
-function getMemberCount(): number {
-  const BASE_MS    = new Date("2026-05-11T00:00:00Z").getTime();
-  const BASE_COUNT = 2006;
-  const days       = Math.max(0, Math.floor((Date.now() - BASE_MS) / 86_400_000));
-  let count = BASE_COUNT;
-  for (let i = 0; i < days; i++) {
-    const seed = (i + 1) * 1103515245 + 12345;
-    const r    = Math.abs(seed);
-    if (i < 14)       count += 25  + (r % 56);
-    else if (i < 26)  count += 80  + (r % 189);
-    else              count += 350 + (r % 351);
-  }
-  return count;
-}
+import { getMemberCount } from "@/lib/member-count";
 
 const DATE_LOCALES_LAYOUT: Record<string, Locale> = {
   "en": enUS, "zh-CN": zhCN,
