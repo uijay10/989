@@ -459,17 +459,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </AdminAdSlots>
 
       {/* ── Floating Right Panel: Social + Scroll ─── */}
-      <div className="fixed top-1/2 -translate-y-1/2 z-50 flex flex-col gap-1.5" style={{ right: "calc((100vw - 68rem) / 4)" }}>
+      <div className="fixed top-1/2 -translate-y-1/2 z-50 flex flex-col gap-1.5" style={{ right: "calc((100vw - 68rem) / 2 - 44px)" }}>
         {/* RSS 订阅 */}
         <button
           type="button"
           onClick={() => setRssOpen(true)}
           title="RSS订阅"
-          className="w-9 h-9 rounded-lg bg-orange-500/80 hover:bg-orange-600/90 flex items-center justify-center transition-all shadow-md backdrop-blur-sm group"
+          className="w-9 h-9 rounded-lg bg-slate-600/75 hover:bg-slate-700/90 flex items-center justify-center transition-all shadow-md backdrop-blur-sm group"
         >
-          <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white/90 group-hover:fill-white transition-colors">
-            <path d="M6.18 15.64a2.18 2.18 0 0 1 2.18 2.18C8.36 19.01 7.38 20 6.18 20C4.98 20 4 19.01 4 17.82a2.18 2.18 0 0 1 2.18-2.18M4 4.44A15.56 15.56 0 0 1 19.56 20h-2.83A12.73 12.73 0 0 0 4 7.27V4.44m0 5.66a9.9 9.9 0 0 1 9.9 9.9h-2.83A7.07 7.07 0 0 0 4 12.93V10.1z" />
-          </svg>
+          <span className="text-[10px] font-bold text-white/80 group-hover:text-white tracking-tight">RSS</span>
         </button>
 
         {/* Team */}
