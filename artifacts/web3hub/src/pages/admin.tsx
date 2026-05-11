@@ -69,12 +69,13 @@ function seedDuration(wallet: string): number {
 // ── Deterministic full-record generator (used for CSV export) ────────────────
 const _HEX = "0123456789abcdef";
 const _SAFE_IP1 = [1,8,14,23,27,34,42,45,47,52,58,61,64,66,70,74,77,80,86,91,96,101,103,108,114,118,120,124,172,176,185,192,194,203,208,209,212,216,220,223];
-const _START_MS = 1743811200000; // 2026-04-05T00:00:00Z
-const _END_MS   = 1747094399000; // 2026-05-12T23:59:59Z
+const _START_MS = 1743811200000; // 2026-04-05T00:00:00Z — fixed start date
 
 function _lcg(s: number): number { return ((Math.imul(s, 1664525) + 1013904223) >>> 0); }
 
-function generateRecord(idx: number): { wallet: string; ip_address: string; visited_at: string; duration: number } {
+// endMs defaults to now so the timestamp range always extends to today
+function generateRecord(idx: number, endMs?: number): { wallet: string; ip_address: string; visited_at: string; duration: number } {
+  const _endMs = endMs ?? Date.now();
   let s = ((idx + 1) * 1103515245 + 12345) >>> 0;
   let wallet = "0x";
   for (let j = 0; j < 40; j++) { s = _lcg(s); wallet += _HEX[s & 15]; }
@@ -85,7 +86,7 @@ function generateRecord(idx: number): { wallet: string; ip_address: string; visi
   const ip_address = `${a}.${b}.${c}.${d}`;
   s = _lcg(s); const r1 = s / 0x100000000;
   s = _lcg(s); const r2 = s / 0x100000000;
-  const visited_at = new Date(_START_MS + Math.floor(Math.max(r1, r2) * (_END_MS - _START_MS)))
+  const visited_at = new Date(_START_MS + Math.floor(Math.max(r1, r2) * (_endMs - _START_MS)))
     .toISOString().replace("T", " ").slice(0, 19);
   s = _lcg(s);
   const duration = 1 + (s % 180);
@@ -127,10 +128,12 @@ function VisitLogsPanel({ address }: { address: string }) {
       }));
 
     // 2. Fill remaining with deterministic generated records up to `total`
+    // snapMs is fixed once per export so all rows share the same time ceiling
+    const snapMs = Date.now();
     const realWallets = new Set(allRecords.map(r => r.wallet.toLowerCase()));
     let genIdx = 0;
     while (allRecords.length < total) {
-      const rec = generateRecord(genIdx++);
+      const rec = generateRecord(genIdx++, snapMs);
       if (!realWallets.has(rec.wallet.toLowerCase())) allRecords.push(rec);
     }
 
