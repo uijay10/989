@@ -50,7 +50,7 @@ function EcosystemRow({ items }: { items: EcoItem[] }) {
   }, [loc, optimisticHref]);
   const activeEco = optimisticHref ?? loc;
   return (
-    <>
+    <div className="flex flex-nowrap items-center justify-center gap-x-0.5 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {items.map((it) => (
         <button
           key={`${it.kind}:${it.label}`}
@@ -62,7 +62,7 @@ function EcosystemRow({ items }: { items: EcoItem[] }) {
           {it.label}
         </button>
       ))}
-    </>
+    </div>
   );
 }
 
@@ -414,8 +414,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {/* ── Unified nav module (main nav + ecosystem) ── */}
         <div className="border-t border-slate-200/60 bg-white/70 backdrop-blur-md">
           <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-0.5">
-            {/* Single unified nav: all section + chain/exchange buttons in one flex-wrap row */}
-            <div className="flex flex-wrap items-center justify-center gap-x-0.5 gap-y-0 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {/* Row 1: section nav */}
+            <div className="flex flex-nowrap items-center justify-center gap-x-0.5 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <button
                 onClick={() => {
                   clearEcosystem();
@@ -442,8 +442,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <span className="relative z-10">{t(key)}</span>
                 </a>
               ))}
-              {showEcosystemStrip && <EcosystemRow items={ALL_ECOSYSTEM_ITEMS} />}
             </div>
+            {/* Row 2: chains + exchanges — no gap, same container, no divider */}
+            {showEcosystemStrip && <EcosystemRow items={ALL_ECOSYSTEM_ITEMS} />}
           </div>
 
         </div>
