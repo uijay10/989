@@ -400,6 +400,17 @@ async function ensureTables() {
       }
     }
 
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS user_visit_logs (
+        id SERIAL PRIMARY KEY,
+        wallet TEXT NOT NULL,
+        ip_address TEXT,
+        visited_at TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_user_visit_logs_visited_at ON user_visit_logs(visited_at DESC)`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_user_visit_logs_wallet ON user_visit_logs(wallet)`);
+
     console.log("[db] ensureTables: OK");
   } catch (e) {
     console.error("[db] ensureTables error:", e);

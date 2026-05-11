@@ -13,6 +13,7 @@ import feedsRouter from "./feeds";
 import feedRouter from "./feed";
 import onchainRouter from "./onchain";
 import rssRouter from "./rss";
+import visitsRouter from "./visits";
 const router: IRouter = Router();
 
 router.use(healthRouter);
@@ -30,5 +31,6 @@ router.use("/feeds", feedsRouter);
 router.use("/feed", feedRouter);
 router.use("/onchain", onchainRouter);
 router.use(rssRouter);
+router.use(visitsRouter);
 
 export default router;

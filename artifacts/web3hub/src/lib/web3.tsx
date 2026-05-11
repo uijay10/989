@@ -63,6 +63,11 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isConnected && address) {
       upsertMutation.mutate({ data: { wallet: address } });
+      fetch("/api/visits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wallet: address }),
+      }).catch(() => {});
     }
   }, [address, isConnected]);
 
