@@ -45,7 +45,7 @@ router.get("/rss.xml", async (_req, res) => {
       .from(postsTable)
       .where(eq(postsTable.authorType, "ai"))
       .orderBy(desc(postsTable.createdAt))
-      .limit(30);
+      .limit(100);
 
     const items = rows.length > 0
       ? rows.map((r) => ({
@@ -58,7 +58,7 @@ router.get("/rss.xml", async (_req, res) => {
       : readArticlesBackupFile()
           .filter((a) => (a.author_type ?? "ai") === "ai")
           .sort((a, b) => (Date.parse(b.created_at ?? "") || 0) - (Date.parse(a.created_at ?? "") || 0))
-          .slice(0, 30)
+          .slice(0, 100)
           .map((r) => ({
             title: r.title,
             description: (r.content ?? r.title).slice(0, 300),
