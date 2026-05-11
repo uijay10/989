@@ -14,6 +14,7 @@ import { formatDistanceToNow } from "date-fns";
 import { enUS, zhCN } from "date-fns/locale";
 import { getApiBase } from "@/lib/api-base";
 import { semanticTitleKey } from "@/lib/semantic-title-key";
+import { AdminAdSlots } from "@/components/admin-ad-slots";
 
 const DATE_LOCALES: Record<string, Locale> = {
   "en": enUS, "zh-CN": zhCN,
@@ -348,6 +349,7 @@ export default function Home() {
 
   return (
     <div className="space-y-6 pb-4">
+      <AdminAdSlots />
       {/* Header */}
       <div className="flex items-center justify-end gap-2 pt-2">
         {FEATURES.dailyLucky && (
