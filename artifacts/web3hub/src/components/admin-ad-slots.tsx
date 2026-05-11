@@ -81,8 +81,8 @@ export function AdminAdSlots({ children }: AdminAdSlotsProps) {
     return <>{children}</>;
   }
 
-  // Side column width = the margin on each side of the max-w-7xl (80rem) container
-  const colWidth = "calc((100vw - 80rem) / 2)";
+  // Side column width = margin outside max-w-7xl (80rem) + 96px extra overlap into content area
+  const colWidth = "calc((100vw - 68rem) / 2)";
 
   return (
     <div className="flex items-start w-full">
