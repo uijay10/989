@@ -672,8 +672,15 @@ if (process.env.NODE_ENV !== "test") {
 // In production, serve the built frontend SPA
 if (process.env.NODE_ENV === "production") {
   const publicPath = path.resolve(process.cwd(), "artifacts/web3hub/dist/public");
-  app.use(express.static(publicPath));
+  // Hashed assets (JS/CSS/images) — cache aggressively; filename changes on every build
+  app.use(express.static(publicPath, { maxAge: "1y", immutable: true }));
+  // SPA fallback — always return the freshest index.html, never cache it
   app.use((_req, res) => {
+    res.set({
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      "Pragma": "no-cache",
+      "Expires": "0",
+    });
     res.sendFile(path.join(publicPath, "index.html"));
   });
 }
