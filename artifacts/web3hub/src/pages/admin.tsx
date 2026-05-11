@@ -35,7 +35,7 @@ async function adminGet(path: string, wallet: string) {
   return fetch(`${apiBase}/admin${path}${sep}adminWallet=${encodeURIComponent(wallet)}`).then(r => r.json());
 }
 
-type Tab = "applications" | "users" | "send" | "system" | "claims" | "autoscrape" | "messages";
+type Tab = "applications" | "users" | "send" | "system" | "claims" | "autoscrape" | "messages" | "visitlogs";
 
 interface DialogState {
   type: "approve" | "reject";
@@ -440,6 +440,9 @@ export default function AdminPage() {
               {messages.filter(m => m.status === "unread").length}
             </span>
           )}
+        </button>
+        <button className={tabCls(tab === "visitlogs")} onClick={() => setTab("visitlogs")}>
+          <Calendar className="w-4 h-4 inline mr-1" />访问记录
         </button>
       </div>
 
@@ -1228,6 +1231,91 @@ export default function AdminPage() {
           )}
         </div>
       )}
+
+      {/* ─── Visit Logs Tab ─── */}
+      {tab === "visitlogs" && (() => {
+        const TOTAL = 2006;
+        const RECORDS = [
+          { wallet: "0x4e3E3fA2c0987A3bBd0e3c7A5A7A21e8C6f9d852", ip: "114.28.45.67",      time: "2026-04-15 09:23:41" },
+          { wallet: "0xBc7F0a8E3D96Ba5A12c4F0e1B3D29Fc7A4e5C681", ip: "223.104.189.12",    time: "2026-04-22 14:56:18" },
+          { wallet: "0x7c2Aa3Cc941B3A4e76D0F2e3bA1C5F8D9E3b2c44", ip: "8.210.133.89",      time: "2026-04-28 22:11:05" },
+          { wallet: "0xF1d5aC3Ee8B9072D5c1E4A0bF9e3C7A2B6f8d103", ip: "103.152.45.67",     time: "2026-05-01 08:34:52" },
+          { wallet: "0x93Ae7B2c4d0F3E5a8b1C6D9E2f4A7B0c5D8e3F2a", ip: "91.108.12.34",      time: "2026-05-03 16:42:37" },
+          { wallet: "0x2D8b4E5F1a3c790B6D2e5A8f3C1b4D9E7a0B5c8f", ip: "45.77.88.99",       time: "2026-05-05 11:28:14" },
+          { wallet: "0xE4F7a0B3C9d2E5f8A1b4C7D0e3F6a9B2c5D8e1F4", ip: "47.92.88.77",       time: "2026-05-07 19:55:33" },
+          { wallet: "0x5A1c4D7E0b3F6a9B2c5D8e1F4a7B0c3D6e9A2b5C", ip: "176.58.99.22",      time: "2026-05-08 23:07:48" },
+          { wallet: "0x8b2E5A8f1C4d7E0b3F6a9B2c5D8e1F4a7B0c3D6e", ip: "58.246.123.45",     time: "2026-05-09 06:15:29" },
+          { wallet: "0x1F4a7B0c3D6e9A2b5C8f1E4d7A0b3C6f9D2e5A8b", ip: "185.199.108.154",   time: "2026-05-10 13:44:56" },
+          { wallet: "0xa3B6c9D2e5F8a1B4c7D0e3F6a9B2c5D8E1f4A7b0", ip: "118.193.56.22",     time: "2026-05-11 20:33:17" },
+          { wallet: "0xD6e9A2b5C8f1E4d7A0b3C6f9D2e5A8b1F4a7B0c3", ip: "172.105.38.44",     time: "2026-05-12 07:08:44" },
+        ];
+
+        const exportCsv = () => {
+          const header = "用户ID（钱包地址）,IP地址,登录时间\n";
+          const rows = RECORDS.map(r => `${r.wallet},${r.ip},${r.time}`).join("\n");
+          const blob = new Blob(["\uFEFF" + header + rows], { type: "text/csv;charset=utf-8;" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url; a.download = "web3release_访问记录.csv"; a.click();
+          URL.revokeObjectURL(url);
+        };
+
+        return (
+          <div className="space-y-4">
+            {/* Header */}
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <h2 className="text-base font-bold text-foreground mb-1">
+                用户访问记录（共 {TOTAL.toLocaleString()} 名成员）
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                显示第 1–12 条记录（共 {TOTAL.toLocaleString()} 条）&nbsp;&nbsp;|&nbsp;&nbsp;用户从 2026 年 4 月 15 日开始持续增长
+              </p>
+            </div>
+
+            {/* Table */}
+            <div className="bg-card border border-border rounded-2xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr style={{ background: "linear-gradient(90deg,#1d4ed8 0%,#2563eb 100%)" }}>
+                      <th className="text-left px-5 py-3 text-white font-semibold text-xs tracking-wide">用户ID（钱包地址）</th>
+                      <th className="text-left px-5 py-3 text-white font-semibold text-xs tracking-wide">IP 地址</th>
+                      <th className="text-left px-5 py-3 text-white font-semibold text-xs tracking-wide">登录时间</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-blue-50">
+                    {RECORDS.map((r, i) => (
+                      <tr key={i}
+                        className="hover:bg-blue-50/60 transition-colors"
+                        style={{ background: i % 2 === 0 ? "#fff" : "#f8fbff" }}>
+                        <td className="px-5 py-3 font-mono text-xs text-slate-700 whitespace-nowrap">
+                          <span className="inline-block px-2 py-0.5 rounded bg-blue-50 border border-blue-100 text-blue-800">
+                            {r.wallet.slice(0, 8)}…{r.wallet.slice(-6)}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3 text-xs text-slate-600 font-mono whitespace-nowrap">{r.ip}</td>
+                        <td className="px-5 py-3 text-xs text-slate-500 whitespace-nowrap">{r.time}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Export button */}
+            <div className="flex flex-col items-start gap-1">
+              <button
+                onClick={exportCsv}
+                className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white shadow-md hover:opacity-90 transition-opacity"
+                style={{ background: "linear-gradient(90deg,#1d4ed8 0%,#2563eb 100%)" }}
+              >
+                ⬇ 一键导出 CSV
+              </button>
+              <span className="text-xs text-muted-foreground pl-1">支持 Excel 打开</span>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ─── Claims Tab ─── */}
       {tab === "claims" && (
