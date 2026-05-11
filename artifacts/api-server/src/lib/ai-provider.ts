@@ -593,7 +593,7 @@ export async function callAiWithFallback(
 
   for (const provider of available) {
     // Groq 6-hour slot check — skip if current slot is full, try next Groq key (freeOnly has no DeepSeek).
-    if (provider.name === "groq" && isGroqSlotFull()) {
+    if (provider.name.startsWith("groq") && isGroqSlotFull()) {
       const slotUsed = groqSlotCounts.get(getGroqSlotStart()) ?? 0;
       console.log(`[ai-provider] Groq 当前6小时窗口已达上限 (${slotUsed}/${GROQ_MAX_PER_6H})，跳过本 key`);
       continue;
@@ -616,7 +616,7 @@ export async function callAiWithFallback(
           console.log(`[ai-provider] Used fallback provider: ${provider.name}`);
         }
         incrementDailyCount(provider);
-        if (provider.name === "groq") incrementGroqSlot();
+        if (provider.name.startsWith("groq")) incrementGroqSlot();
         if (provider.name === "deepseek" && completion.usage) {
           recordDeepSeekCost(category, completion.usage.prompt_tokens, completion.usage.completion_tokens);
         }
