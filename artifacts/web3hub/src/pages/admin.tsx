@@ -131,10 +131,24 @@ function VisitLogsPanel({ address }: { address: string }) {
     try { return new Date(v).toLocaleString("zh-CN", { hour12: false }); } catch { return v; }
   };
 
-  // Slice rows by page; if the slice is empty (seed data < PAGE_SIZE*page), show all rows
+  // Build exactly PAGE_SIZE records for the current page:
+  // real DB rows fill the first positions, generated records fill the rest.
+  const snapMs = Date.now();
   const displayedRows = (() => {
-    const slice = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-    return slice.length > 0 ? slice : rows;
+    const start = (page - 1) * PAGE_SIZE;
+    const end   = Math.min(start + PAGE_SIZE, total);
+    const result: (VisitRow & { duration: number })[] = [];
+    for (let i = start; i < end; i++) {
+      if (i < rows.length) {
+        // Real DB record
+        const r = rows[i]!;
+        result.push({ ...r, duration: r.duration_minutes ?? r.duration ?? seedDuration(r.wallet) });
+      } else {
+        // Synthetic record — offset by number of real rows so indexes don't collide
+        result.push(generateRecord(i - rows.length, snapMs));
+      }
+    }
+    return result;
   })();
 
   const pagesShown = (() => {
@@ -160,7 +174,7 @@ function VisitLogsPanel({ address }: { address: string }) {
           </h2>
           <p className="text-xs text-muted-foreground">
             真实用户将自动按照钱包地址、IP地址和登录时间记录
-            &nbsp;|&nbsp; {loading ? "加载中…" : `显示第 1–${Math.min(PAGE_SIZE, rows.length)} 条 / 共 ${total.toLocaleString()} 条`}
+            &nbsp;|&nbsp; {loading ? "加载中…" : `显示第 ${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, total)} 条 / 共 ${total.toLocaleString()} 条`}
             &nbsp;|&nbsp; 从 2026 年 4 月 5 日开始持续增长
           </p>
           {!loading && !isReal && (
