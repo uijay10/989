@@ -232,7 +232,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   style={{ color: "#2563eb", background: "rgba(37,99,235,0.07)", border: "1px solid rgba(37,99,235,0.18)" }}>
                   <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                   {lang === "zh-CN"
-                    ? `平台已有 ${getMemberCount().toLocaleString()} 名用户，还在持续增长中！`
+                    ? `平台目前拥有 ${getMemberCount().toLocaleString()} 名用户，成员数量持续增长中。`
                     : `Platform has ${getMemberCount().toLocaleString()} users and is still growing!`}
                 </span>
               </div>
