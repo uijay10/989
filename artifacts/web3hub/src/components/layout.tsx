@@ -385,7 +385,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   </button>
 
                   {isDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-52 rounded-xl shadow-2xl py-1 z-50 overflow-hidden"
+                    <div className="absolute right-0 mt-2 w-52 rounded-xl shadow-2xl py-1 z-[200] overflow-hidden"
                       style={{ background: "#2563eb", border: "1px solid #3b82f6" }}>
                       <Link href="/profile" onClick={() => setIsDropdownOpen(false)}
                         className="group flex items-center gap-2.5 px-4 py-3 text-sm text-white hover:bg-blue-700 transition-colors cursor-pointer">
