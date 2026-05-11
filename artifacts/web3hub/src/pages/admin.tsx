@@ -14,28 +14,28 @@ import { getApiBase } from "@/lib/api-base";
 
 const apiBase = getApiBase();
 
-// ── Static seed records shown when no real data yet ──────────────────────────
+// ── Static seed records — 20 rows, newest first, all May 11–12 ───────────────
 const SEED_RECORDS = [
-  { wallet: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045", ip_address: "209.9.201.34",    visited_at: "2026-05-12 19:42:07", duration: 23 },
-  { wallet: "0x4e3E3fA2c0987A3bBd0e3c7A5A7A21e8C6f9d852", ip_address: "114.28.45.67",    visited_at: "2026-05-12 17:15:33", duration: 67 },
-  { wallet: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B", ip_address: "47.102.88.155",   visited_at: "2026-05-12 14:08:52", duration: 134 },
-  { wallet: "0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0Be", ip_address: "185.199.108.153", visited_at: "2026-05-12 11:33:19", duration: 8 },
-  { wallet: "0xBc7F0a8E3D96Ba5A12c4F0e1B3D29Fc7A4e5C681", ip_address: "223.104.189.12",  visited_at: "2026-05-11 22:51:44", duration: 156 },
-  { wallet: "0x267be1C1D684F78cb4F6a176C4911b741E4Ffdc0", ip_address: "103.86.96.77",    visited_at: "2026-05-11 20:17:28", duration: 45 },
-  { wallet: "0x7c2Aa3Cc941B3A4e76D0F2e3bA1C5F8D9E3b2c44", ip_address: "8.210.133.89",    visited_at: "2026-05-11 16:44:03", duration: 92 },
-  { wallet: "0xF1d5aC3Ee8B9072D5c1E4A0bF9e3C7A2B6f8d103", ip_address: "103.152.45.67",   visited_at: "2026-05-10 23:09:37", duration: 18 },
-  { wallet: "0x93Ae7B2c4d0F3E5a8b1C6D9E2f4A7B0c5D8e3F2a", ip_address: "91.108.12.34",    visited_at: "2026-05-10 18:36:55", duration: 173 },
-  { wallet: "0x2D8b4E5F1a3c790B6D2e5A8f3C1b4D9E7a0B5c8f", ip_address: "45.77.88.99",     visited_at: "2026-05-10 11:22:14", duration: 37 },
-  { wallet: "0xE4F7a0B3C9d2E5f8A1b4C7D0e3F6a9B2c5D8e1F4", ip_address: "47.92.88.77",     visited_at: "2026-05-09 21:05:48", duration: 111 },
-  { wallet: "0x5A1c4D7E0b3F6a9B2c5D8e1F4a7B0c3D6e9A2b5C", ip_address: "176.58.99.22",    visited_at: "2026-05-09 14:50:29", duration: 56 },
-  { wallet: "0x8b2E5A8f1C4d7E0b3F6a9B2c5D8e1F4a7B0c3D6e", ip_address: "58.246.123.45",   visited_at: "2026-05-08 09:33:17", duration: 3 },
-  { wallet: "0x1F4a7B0c3D6e9A2b5C8f1E4d7A0b3C6f9D2e5A8b", ip_address: "185.199.108.154", visited_at: "2026-05-07 16:28:41", duration: 148 },
-  { wallet: "0xa3B6c9D2e5F8a1B4c7D0e3F6a9B2c5D8E1f4A7b0", ip_address: "118.193.56.22",   visited_at: "2026-05-06 07:14:06", duration: 79 },
-  { wallet: "0xD6e9A2b5C8f1E4d7A0b3C6f9D2e5A8b1F4a7B0c3", ip_address: "172.105.38.44",   visited_at: "2026-05-04 20:47:33", duration: 32 },
-  { wallet: "0x6B175474E89094C44Da98b954EedeAC495271d0F", ip_address: "61.135.169.125",   visited_at: "2026-05-02 13:19:58", duration: 167 },
-  { wallet: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", ip_address: "192.168.1.105",   visited_at: "2026-04-29 08:55:22", duration: 44 },
-  { wallet: "0xdAC17F958D2ee523a2206206994597C13D831ec7", ip_address: "74.125.200.88",    visited_at: "2026-04-21 17:31:09", duration: 121 },
-  { wallet: "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE", ip_address: "162.158.92.14",   visited_at: "2026-04-09 10:02:47", duration: 58 },
+  { wallet: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045", ip_address: "209.9.201.34",    visited_at: "2026-05-12 23:47:03", duration: 23  },
+  { wallet: "0x4e3E3fA2c0987A3bBd0e3c7A5A7A21e8C6f9d852", ip_address: "114.28.45.67",    visited_at: "2026-05-12 22:19:51", duration: 67  },
+  { wallet: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B", ip_address: "47.102.88.155",   visited_at: "2026-05-12 21:04:38", duration: 134 },
+  { wallet: "0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0Be", ip_address: "185.199.108.153", visited_at: "2026-05-12 19:42:07", duration: 8   },
+  { wallet: "0xBc7F0a8E3D96Ba5A12c4F0e1B3D29Fc7A4e5C681", ip_address: "223.104.189.12",  visited_at: "2026-05-12 18:30:25", duration: 156 },
+  { wallet: "0x267be1C1D684F78cb4F6a176C4911b741E4Ffdc0", ip_address: "103.86.96.77",    visited_at: "2026-05-12 17:15:44", duration: 45  },
+  { wallet: "0x7c2Aa3Cc941B3A4e76D0F2e3bA1C5F8D9E3b2c44", ip_address: "8.210.133.89",    visited_at: "2026-05-12 15:58:12", duration: 92  },
+  { wallet: "0xF1d5aC3Ee8B9072D5c1E4A0bF9e3C7A2B6f8d103", ip_address: "103.152.45.67",   visited_at: "2026-05-12 14:33:09", duration: 18  },
+  { wallet: "0x93Ae7B2c4d0F3E5a8b1C6D9E2f4A7B0c5D8e3F2a", ip_address: "91.108.12.34",    visited_at: "2026-05-12 13:07:55", duration: 173 },
+  { wallet: "0x2D8b4E5F1a3c790B6D2e5A8f3C1b4D9E7a0B5c8f", ip_address: "45.77.88.99",     visited_at: "2026-05-12 11:44:30", duration: 37  },
+  { wallet: "0xE4F7a0B3C9d2E5f8A1b4C7D0e3F6a9B2c5D8e1F4", ip_address: "47.92.88.77",     visited_at: "2026-05-12 09:52:18", duration: 111 },
+  { wallet: "0x5A1c4D7E0b3F6a9B2c5D8e1F4a7B0c3D6e9A2b5C", ip_address: "176.58.99.22",    visited_at: "2026-05-12 08:21:47", duration: 56  },
+  { wallet: "0x8b2E5A8f1C4d7E0b3F6a9B2c5D8e1F4a7B0c3D6e", ip_address: "58.246.123.45",   visited_at: "2026-05-12 06:38:02", duration: 3   },
+  { wallet: "0x1F4a7B0c3D6e9A2b5C8f1E4d7A0b3C6f9D2e5A8b", ip_address: "185.199.108.154", visited_at: "2026-05-11 23:55:29", duration: 148 },
+  { wallet: "0xa3B6c9D2e5F8a1B4c7D0e3F6a9B2c5D8E1f4A7b0", ip_address: "118.193.56.22",   visited_at: "2026-05-11 22:14:41", duration: 79  },
+  { wallet: "0xD6e9A2b5C8f1E4d7A0b3C6f9D2e5A8b1F4a7B0c3", ip_address: "172.105.38.44",   visited_at: "2026-05-11 20:57:08", duration: 32  },
+  { wallet: "0x6B175474E89094C44Da98b954EedeAC495271d0F", ip_address: "61.135.169.125",   visited_at: "2026-05-11 19:33:56", duration: 167 },
+  { wallet: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", ip_address: "103.235.46.77",   visited_at: "2026-05-11 18:09:14", duration: 44  },
+  { wallet: "0xdAC17F958D2ee523a2206206994597C13D831ec7", ip_address: "74.125.200.88",    visited_at: "2026-05-11 16:42:33", duration: 121 },
+  { wallet: "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE", ip_address: "162.158.92.14",   visited_at: "2026-05-11 15:28:07", duration: 58  },
 ];
 
 // Phase 1: until 2026-05-24  → +25~80/day   (i < 14)
@@ -177,7 +177,8 @@ function VisitLogsPanel({ address }: { address: string }) {
           </h2>
           <p className="text-xs text-muted-foreground">
             真实用户将自动按照钱包地址、IP地址和登录时间记录
-            &nbsp;|&nbsp; {loading ? "加载中…" : `显示第 1–${rows.length} 条 / 共 ${total.toLocaleString()} 条`}
+            &nbsp;|&nbsp; {loading ? "加载中…" : `显示第 1–${Math.min(PAGE_SIZE, rows.length)} 条 / 共 ${total.toLocaleString()} 条`}
+            &nbsp;|&nbsp; 从 2026 年 4 月 5 日开始持续增长
           </p>
           {!loading && !isReal && (
             <p className="text-[11px] text-amber-600 mt-1">
@@ -203,7 +204,7 @@ function VisitLogsPanel({ address }: { address: string }) {
                   <th className="text-left px-4 py-3 text-white font-semibold text-xs tracking-wide whitespace-nowrap">用户ID（钱包地址）</th>
                   <th className="text-left px-4 py-3 text-white font-semibold text-xs tracking-wide whitespace-nowrap">IP 地址</th>
                   <th className="text-left px-4 py-3 text-white font-semibold text-xs tracking-wide whitespace-nowrap">登录时间</th>
-                  <th className="text-left px-4 py-3 text-white font-semibold text-xs tracking-wide whitespace-nowrap">累计在线时长</th>
+                  <th className="text-left px-4 py-3 text-white font-semibold text-xs tracking-wide whitespace-nowrap">本次在线时长</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-blue-50">
