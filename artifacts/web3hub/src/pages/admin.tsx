@@ -89,6 +89,7 @@ function VisitLogsPanel({ address }: { address: string }) {
   useEffect(() => { doFetch(); }, [address]);
 
   const exportCsv = () => {
+    // Always export all rows (not just the current page slice)
     const header = "用户ID（钱包地址）,IP地址,登录时间,累计在线时长(分钟)\n";
     const body = rows.map(r => {
       const t = typeof r.visited_at === "string" ? r.visited_at : new Date(r.visited_at).toLocaleString("zh-CN");
