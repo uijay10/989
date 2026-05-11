@@ -348,8 +348,8 @@ export default function Home() {
   const pinnedSlots = Array.from({ length: PIN_SLOTS }, (_, i) => pinnedPosts[i] ?? null);
 
   return (
-    <AdminAdSlots>
     <div className="space-y-6 pb-4">
+      <AdminAdSlots />
       {/* Header */}
       <div className="flex items-center justify-end gap-2 pt-2">
         {FEATURES.dailyLucky && (
@@ -475,6 +475,5 @@ export default function Home() {
         </div>
       )}
     </div>
-    </AdminAdSlots>
   );
 }
