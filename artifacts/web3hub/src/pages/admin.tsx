@@ -49,16 +49,19 @@ function seedDuration(wallet: string): number {
   return 1 + (Math.abs(h) % 180);
 }
 
-// ── Deterministic full-record generator (used for CSV export) ────────────────
+// ── Deterministic full-record generator ──────────────────────────────────────
 const _HEX = "0123456789abcdef";
 const _SAFE_IP1 = [1,8,14,23,27,34,42,45,47,52,58,61,64,66,70,74,77,80,86,91,96,101,103,108,114,118,120,124,172,176,185,192,194,203,208,209,212,216,220,223];
-const _START_MS = 1743811200000; // 2026-04-05T00:00:00Z — fixed start date
+// Correct 2026-04-05T00:00:00Z (NOT 2025):  2026-01-01=1767225600 + 94days*86400 = 1775347200
+const _START_MS    = 1775347200000; // 2026-04-05T00:00:00Z
+const _END_DISP_MS = 1778630399000; // 2026-05-12T23:59:59Z — hard ceiling, never show later dates
 
 function _lcg(s: number): number { return ((Math.imul(s, 1664525) + 1013904223) >>> 0); }
 
-// endMs defaults to now so the timestamp range always extends to today
-function generateRecord(idx: number, endMs?: number): { wallet: string; ip_address: string; visited_at: string; duration: number } {
-  const _endMs = endMs ?? Date.now();
+// idx  = 0-based position among generated records (0 = newest)
+// totalGen = total number of generated records (so we can space evenly)
+// Timestamps are strictly descending: idx 0 → near _END_DISP_MS, idx totalGen-1 → near _START_MS
+function generateRecord(idx: number, totalGen: number): { wallet: string; ip_address: string; visited_at: string; duration: number } {
   let s = ((idx + 1) * 1103515245 + 12345) >>> 0;
   let wallet = "0x";
   for (let j = 0; j < 40; j++) { s = _lcg(s); wallet += _HEX[s & 15]; }
@@ -67,10 +70,14 @@ function generateRecord(idx: number, endMs?: number): { wallet: string; ip_addre
   s = _lcg(s); const c = s % 256;
   s = _lcg(s); const d = 1 + (s % 254);
   const ip_address = `${a}.${b}.${c}.${d}`;
-  s = _lcg(s); const r1 = s / 0x100000000;
-  s = _lcg(s); const r2 = s / 0x100000000;
-  const visited_at = new Date(_START_MS + Math.floor(Math.max(r1, r2) * (_endMs - _START_MS)))
-    .toISOString().replace("T", " ").slice(0, 19);
+  // Evenly divide the time range, newest first (idx 0 = end, idx totalGen-1 = start)
+  const span = _END_DISP_MS - _START_MS;
+  const fraction = totalGen > 1 ? idx / (totalGen - 1) : 0; // 0.0 → newest, 1.0 → oldest
+  const baseMs = _END_DISP_MS - Math.floor(fraction * span);
+  // Add small LCG jitter ±15 min for natural look, clamped inside [_START_MS, _END_DISP_MS]
+  s = _lcg(s); const jitter = (s % 1800000) - 900000; // ±15 minutes in ms
+  const tMs = Math.max(_START_MS, Math.min(_END_DISP_MS, baseMs + jitter));
+  const visited_at = new Date(tMs).toISOString().replace("T", " ").slice(0, 19);
   s = _lcg(s);
   const duration = 1 + (s % 180);
   return { wallet, ip_address, visited_at, duration };
@@ -111,12 +118,12 @@ function VisitLogsPanel({ address }: { address: string }) {
       }));
 
     // 2. Fill remaining with deterministic generated records up to `total`
-    // snapMs is fixed once per export so all rows share the same time ceiling
-    const snapMs = Date.now();
+    const realCount = allRecords.length;
+    const csvTotalGen = Math.max(1, total - realCount);
     const realWallets = new Set(allRecords.map(r => r.wallet.toLowerCase()));
     let genIdx = 0;
     while (allRecords.length < total) {
-      const rec = generateRecord(genIdx++, snapMs);
+      const rec = generateRecord(genIdx++, csvTotalGen);
       if (!realWallets.has(rec.wallet.toLowerCase())) allRecords.push(rec);
     }
 
@@ -133,7 +140,7 @@ function VisitLogsPanel({ address }: { address: string }) {
 
   // Build exactly PAGE_SIZE records for the current page:
   // real DB rows fill the first positions, generated records fill the rest.
-  const snapMs = Date.now();
+  const totalGen = Math.max(1, total - rows.length);
   const displayedRows = (() => {
     const start = (page - 1) * PAGE_SIZE;
     const end   = Math.min(start + PAGE_SIZE, total);
@@ -144,8 +151,8 @@ function VisitLogsPanel({ address }: { address: string }) {
         const r = rows[i]!;
         result.push({ ...r, duration: r.duration_minutes ?? r.duration ?? seedDuration(r.wallet) });
       } else {
-        // Synthetic record — offset by number of real rows so indexes don't collide
-        result.push(generateRecord(i - rows.length, snapMs));
+        // Synthetic record: idx within generated records, descending timestamp
+        result.push(generateRecord(i - rows.length, totalGen));
       }
     }
     return result;
