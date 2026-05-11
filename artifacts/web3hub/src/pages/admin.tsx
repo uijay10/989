@@ -105,6 +105,12 @@ function VisitLogsPanel({ address }: { address: string }) {
     try { return new Date(v).toLocaleString("zh-CN", { hour12: false }); } catch { return v; }
   };
 
+  // Slice rows by page; if the slice is empty (seed data < PAGE_SIZE*page), show all rows
+  const displayedRows = (() => {
+    const slice = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    return slice.length > 0 ? slice : rows;
+  })();
+
   const pagesShown = (() => {
     const arr: (number | "…")[] = [];
     if (totalPages <= 7) { for (let i = 1; i <= totalPages; i++) arr.push(i); }
@@ -158,7 +164,7 @@ function VisitLogsPanel({ address }: { address: string }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-blue-50">
-                {rows.map((r, i) => {
+                {displayedRows.map((r, i) => {
                   const dur = r.duration ?? seedDuration(r.wallet);
                   return (
                     <tr key={i} className="hover:bg-blue-50/60 transition-colors"
