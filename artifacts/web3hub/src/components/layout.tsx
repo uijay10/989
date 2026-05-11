@@ -101,6 +101,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [walletModalOpen, setWalletModalOpen] = useState(false);
   const [whitepaperOpen, setWhitepaperOpen] = useState(false);
   const [teamOpen, setTeamOpen] = useState(false);
+  const [rssOpen, setRssOpen] = useState(false);
   const { t, lang, setLang } = useLang();
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -459,6 +460,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {/* ── Floating Right Panel: Social + Scroll ─── */}
       <div className="fixed right-4 bottom-8 z-50 flex flex-col gap-1.5">
+        {/* RSS 订阅 */}
+        <button
+          type="button"
+          onClick={() => setRssOpen(true)}
+          title="RSS订阅"
+          className="w-9 h-9 rounded-lg bg-orange-500/80 hover:bg-orange-600/90 flex items-center justify-center transition-all shadow-md backdrop-blur-sm group"
+        >
+          <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white/90 group-hover:fill-white transition-colors">
+            <path d="M6.18 15.64a2.18 2.18 0 0 1 2.18 2.18C8.36 19.01 7.38 20 6.18 20C4.98 20 4 19.01 4 17.82a2.18 2.18 0 0 1 2.18-2.18M4 4.44A15.56 15.56 0 0 1 19.56 20h-2.83A12.73 12.73 0 0 0 4 7.27V4.44m0 5.66a9.9 9.9 0 0 1 9.9 9.9h-2.83A7.07 7.07 0 0 0 4 12.93V10.1z" />
+          </svg>
+        </button>
+
         {/* Team */}
         <button
           type="button"
@@ -545,6 +558,43 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </svg>
         </button>
       </div>
+
+      {/* ── RSS Modal ── */}
+      {rssOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setRssOpen(false)}>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm border border-border/50 dark:border-slate-800" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center shrink-0">
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 fill-orange-500">
+                    <path d="M6.18 15.64a2.18 2.18 0 0 1 2.18 2.18C8.36 19.01 7.38 20 6.18 20C4.98 20 4 19.01 4 17.82a2.18 2.18 0 0 1 2.18-2.18M4 4.44A15.56 15.56 0 0 1 19.56 20h-2.83A12.73 12.73 0 0 0 4 7.27V4.44m0 5.66a9.9 9.9 0 0 1 9.9 9.9h-2.83A7.07 7.07 0 0 0 4 12.93V10.1z" />
+                  </svg>
+                </div>
+                <p className="font-semibold text-sm text-foreground">RSS 订阅</p>
+              </div>
+              <button onClick={() => setRssOpen(false)} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-muted dark:hover:bg-slate-800 transition-colors text-muted-foreground hover:text-foreground">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="px-6 py-5">
+              <p className="text-xs text-muted-foreground mb-3">将以下地址添加到你的 RSS 阅读器即可订阅最新 Web3 资讯：</p>
+              <div className="flex items-center gap-2 bg-muted/60 dark:bg-slate-800/60 rounded-lg px-3 py-2.5 border border-border/40">
+                <span className="flex-1 text-xs font-mono text-foreground break-all select-all">https://web3release.com/api/rss.xml</span>
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard.writeText("https://web3release.com/api/rss.xml")}
+                  title="复制"
+                  className="shrink-0 w-7 h-7 rounded-md hover:bg-muted dark:hover:bg-slate-700 flex items-center justify-center transition-colors text-muted-foreground hover:text-foreground"
+                >
+                  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 stroke-current fill-none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Team Modal ── */}
       {teamOpen && (
