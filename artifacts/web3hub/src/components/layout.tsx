@@ -92,7 +92,6 @@ const LANGUAGES: { value: LangCode; label: string }[] = [
 
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const memberCount = useMemberCount();
   const { address, isConnected, user, disconnect } = useWeb3Auth();
   const { data: meData } = useGetMe({ wallet: address ?? "" }, { query: { enabled: !!address } });
   const [location, navigate] = useLocation();
@@ -233,8 +232,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   style={{ color: "#2563eb", background: "rgba(37,99,235,0.07)", border: "1px solid rgba(37,99,235,0.18)" }}>
                   <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                   {lang === "zh-CN"
-                    ? `平台目前拥有 ${memberCount.toLocaleString()} 名用户，成员数量持续增长中。`
-                    : `Platform has ${memberCount.toLocaleString()} users and is still growing!`}
+                    ? `平台目前拥有 ${getMemberCount().toLocaleString()} 名用户，成员数量持续增长中。`
+                    : `Platform has ${getMemberCount().toLocaleString()} users and is still growing!`}
                 </span>
               </div>
               {/* promo-ad placeholder — hidden */}

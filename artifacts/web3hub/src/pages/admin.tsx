@@ -88,7 +88,7 @@ function VisitLogsPanel({ address }: { address: string }) {
   const [loading, setLoading] = useState(true);
   const [isReal, setIsReal] = useState(false);
   const [page, setPage] = useState(1);
-  const total = useMemberCount();
+  const total = getMemberCountAdmin();
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   const doFetch = () => {
