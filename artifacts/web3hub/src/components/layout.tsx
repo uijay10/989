@@ -16,7 +16,7 @@ import { getApiBase } from "@/lib/api-base";
 import { exchangeSectionSlug } from "@/lib/ecosystem";
 import PromoAd from "@/components/promo-ad";
 
-import { useMemberCount } from "@/lib/member-count";
+import { getMemberCount } from "@/lib/member-count";
 
 const DATE_LOCALES_LAYOUT: Record<string, Locale> = {
   "en": enUS, "zh-CN": zhCN,

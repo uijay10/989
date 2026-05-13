@@ -14,7 +14,6 @@ import feedRouter from "./feed";
 import onchainRouter from "./onchain";
 import rssRouter from "./rss";
 import visitsRouter from "./visits";
-import statsRouter from "./stats";
 const router: IRouter = Router();
 
 router.use(healthRouter);
@@ -33,6 +32,5 @@ router.use("/feed", feedRouter);
 router.use("/onchain", onchainRouter);
 router.use(rssRouter);
 router.use(visitsRouter);
-router.use(statsRouter);
 
 export default router;

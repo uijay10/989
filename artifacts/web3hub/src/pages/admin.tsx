@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { ClaimsPanel } from "@/components/admin/ClaimsPanel";
 import { getApiBase } from "@/lib/api-base";
-import { useMemberCount } from "@/lib/member-count";
+import { getMemberCount as getMemberCountAdmin } from "@/lib/member-count";
 
 const apiBase = getApiBase();
 
