@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { ClaimsPanel } from "@/components/admin/ClaimsPanel";
 import { getApiBase } from "@/lib/api-base";
-import { getMemberCount as getMemberCountAdmin } from "@/lib/member-count";
+import { useMemberCount } from "@/lib/member-count";
 
 const apiBase = getApiBase();
 
@@ -88,7 +88,7 @@ function VisitLogsPanel({ address }: { address: string }) {
   const [loading, setLoading] = useState(true);
   const [isReal, setIsReal] = useState(false);
   const [page, setPage] = useState(1);
-  const total = getMemberCountAdmin();
+  const total = useMemberCount();
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   const doFetch = () => {
