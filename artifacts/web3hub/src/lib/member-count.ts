@@ -1,5 +1,5 @@
 const BASE_MS    = new Date("2026-05-11T00:00:00Z").getTime();
-const BASE_COUNT = 2006;
+const BASE_COUNT = 12006;
 
 export function getMemberCount(): number {
   const days = Math.max(0, Math.floor((Date.now() - BASE_MS) / 86_400_000));
