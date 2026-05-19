@@ -214,6 +214,119 @@ async function ensureTables() {
       )
     `);
     await db.execute(sql`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS post_section TEXT`);
+
+    // Ensure Drizzle-schema tables exist (needed when connecting to a fresh database)
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        wallet TEXT NOT NULL UNIQUE,
+        username TEXT,
+        avatar TEXT,
+        points INTEGER NOT NULL DEFAULT 0,
+        energy INTEGER NOT NULL DEFAULT 0,
+        space_status TEXT,
+        space_type TEXT,
+        invite_code TEXT,
+        invite_count INTEGER NOT NULL DEFAULT 0,
+        last_checkin TIMESTAMP,
+        twitter TEXT,
+        telegram TEXT,
+        discord TEXT,
+        language TEXT DEFAULT 'en',
+        is_banned BOOLEAN NOT NULL DEFAULT false,
+        pin_count INTEGER NOT NULL DEFAULT 0,
+        website TEXT,
+        space_rejected_at TIMESTAMP,
+        space_reject_reason TEXT,
+        daily_apply_count INTEGER NOT NULL DEFAULT 0,
+        last_apply_date TEXT,
+        invited_by TEXT,
+        daily_like_count INTEGER NOT NULL DEFAULT 0,
+        daily_comment_count INTEGER NOT NULL DEFAULT 0,
+        last_interaction_date TEXT,
+        tokens INTEGER NOT NULL DEFAULT 0,
+        last_slot_pull TIMESTAMP,
+        daily_tokens_earned INTEGER NOT NULL DEFAULT 0,
+        last_token_date TEXT,
+        last_post_at TIMESTAMP,
+        normal_daily_post_count INTEGER NOT NULL DEFAULT 0,
+        normal_daily_post_date TEXT,
+        whitepaper TEXT,
+        bio TEXT,
+        tags TEXT,
+        subscriptions TEXT,
+        contact TEXT,
+        contact_public BOOLEAN NOT NULL DEFAULT false,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `);
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS posts (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        section TEXT NOT NULL,
+        author_wallet TEXT NOT NULL,
+        author_name TEXT,
+        author_avatar TEXT,
+        author_type TEXT,
+        chain_tags TEXT[],
+        exchange_tags TEXT[],
+        views INTEGER NOT NULL DEFAULT 0,
+        likes INTEGER NOT NULL DEFAULT 0,
+        comments INTEGER NOT NULL DEFAULT 0,
+        kol_like_points INTEGER NOT NULL DEFAULT 0,
+        kol_comment_points INTEGER NOT NULL DEFAULT 0,
+        is_pinned BOOLEAN NOT NULL DEFAULT false,
+        pinned_until TIMESTAMP,
+        pin_queued BOOLEAN NOT NULL DEFAULT false,
+        pin_queued_at TIMESTAMP,
+        expires_at TIMESTAMP,
+        source_url TEXT,
+        ai_confidence REAL,
+        importance TEXT,
+        event_start_time TIMESTAMP,
+        event_end_time TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `);
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS projects (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        logo TEXT,
+        tagline TEXT,
+        chain TEXT,
+        tags TEXT,
+        website TEXT,
+        twitter TEXT,
+        owner_wallet TEXT NOT NULL,
+        is_pinned BOOLEAN NOT NULL DEFAULT false,
+        pinned_until TIMESTAMP,
+        status TEXT NOT NULL DEFAULT 'pending',
+        latest_post_title TEXT,
+        latest_post_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `);
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS space_applications (
+        id SERIAL PRIMARY KEY,
+        wallet TEXT NOT NULL,
+        type TEXT NOT NULL,
+        twitter TEXT,
+        tweet_link TEXT,
+        project_name TEXT,
+        project_twitter TEXT,
+        docs_link TEXT,
+        github TEXT,
+        linkedin TEXT,
+        status TEXT NOT NULL DEFAULT 'pending',
+        reject_reason TEXT,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `);
+
     await db.execute(sql`ALTER TABLE posts ADD COLUMN IF NOT EXISTS source_url TEXT`);
     await db.execute(sql`ALTER TABLE posts ADD COLUMN IF NOT EXISTS ai_confidence REAL`);
     await db.execute(sql`ALTER TABLE posts ADD COLUMN IF NOT EXISTS importance TEXT`);
