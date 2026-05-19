@@ -533,6 +533,10 @@ async function ensureTables() {
   }
 }
 
+const _dbUrlForLog = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL || "";
+const _dbHostLog = _dbUrlForLog.match(/@([^/]+)\//)?.[1] ?? "(unknown)";
+console.log(`[db] connecting to: ${_dbHostLog}`);
+
 ensureTables();
 initDeepSeekDailyBudget();
 

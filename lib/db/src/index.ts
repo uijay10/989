@@ -16,7 +16,9 @@ const isNeon = dbUrl.includes("neon.tech");
 export const pool = new Pool({
   connectionString: dbUrl,
   ssl: isNeon ? true : undefined,
-  max: isNeon ? 5 : 10,
+  max: isNeon ? 2 : 10,
+  idleTimeoutMillis: isNeon ? 10000 : 30000,
+  connectionTimeoutMillis: 10000,
 });
 export const db = drizzle(pool, { schema });
 
