@@ -1,17 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
-/* Hide Replit-injected badge (deployment watermark) */
-#replit-badge,
-[id^="replit-"],
-iframe[src*="replit.com"],
-a[href*="replit.com"][target="_blank"][style*="position:fixed"],
-a[href*="replit.com"][target="_blank"][style*="position: fixed"] {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
 
 @keyframes flashGreen {
   0%   { color: #10b981; }
