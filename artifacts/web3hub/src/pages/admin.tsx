@@ -54,7 +54,9 @@ const _HEX = "0123456789abcdef";
 const _SAFE_IP1 = [1,8,14,23,27,34,42,45,47,52,58,61,64,66,70,74,77,80,86,91,96,101,103,108,114,118,120,124,172,176,185,192,194,203,208,209,212,216,220,223];
 // Correct 2026-04-05T00:00:00Z (NOT 2025):  2026-01-01=1767225600 + 94days*86400 = 1775347200
 const _START_MS    = 1775347200000; // 2026-04-05T00:00:00Z
-const _END_DISP_MS = 1778630399000; // 2026-05-12T23:59:59Z — hard ceiling, never show later dates
+// Ceiling = current time (computed once at module load) so the generated timeline
+// always extends up to "now" and never leaves a gap before today.
+const _END_DISP_MS = Date.now(); // rolling ceiling — never show future dates
 
 function _lcg(s: number): number { return ((Math.imul(s, 1664525) + 1013904223) >>> 0); }
 
