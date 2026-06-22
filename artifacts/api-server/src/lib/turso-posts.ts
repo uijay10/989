@@ -293,6 +293,129 @@ export async function tursoQueryFeed(opts: {
   return { rows, total };
 }
 
+export type TursoPostsQueryOpts = {
+  section?: string;
+  sections?: string;
+  authorType?: string;
+  authorWallet?: string;
+  importance?: string;
+  pinnedOnly?: boolean;
+  q?: string;
+  chain?: string;
+  exchange?: string;
+  limit?: number;
+  offset?: number;
+};
+
+export type TursoPostRow = {
+  id: number;
+  title: string;
+  content: string;
+  section: string;
+  author_wallet: string;
+  author_name: string | null;
+  author_type: string | null;
+  views: number;
+  likes: number;
+  comments: number;
+  kol_like_points: number;
+  kol_comment_points: number;
+  is_pinned: number;
+  pin_queued: number;
+  created_at: string;
+  source_url: string | null;
+  ai_confidence: number | null;
+  importance: string | null;
+  event_start_time: string | null;
+  event_end_time: string | null;
+  expires_at: string | null;
+  chain_tags: string | null;
+  exchange_tags: string | null;
+};
+
+export async function tursoQueryPosts(opts: TursoPostsQueryOpts): Promise<{ rows: TursoPostRow[]; total: number; totalAll: number }> {
+  const client = getTursoClient();
+  if (!client) return { rows: [], total: 0, totalAll: 0 };
+
+  const { section, sections, authorType, authorWallet, importance, pinnedOnly, q, chain, exchange, limit = 30, offset = 0 } = opts;
+
+  const conditions: string[] = [];
+  const args: InValue[] = [];
+
+  if (authorType) { conditions.push("author_type = ?"); args.push(authorType); }
+  if (authorWallet) { conditions.push("author_wallet = ?"); args.push(authorWallet.toLowerCase()); }
+  if (importance) { conditions.push("importance = ?"); args.push(importance); }
+  if (pinnedOnly) { conditions.push("is_pinned = 1"); }
+
+  if (sections) {
+    const secArr = sections.split(",").map(s => s.trim()).filter(Boolean);
+    const ph = secArr.map(() => "?").join(", ");
+    conditions.push(`section IN (${ph})`);
+    args.push(...secArr as InValue[]);
+  } else if (section) {
+    conditions.push("section = ?");
+    args.push(section);
+  }
+
+  if (q) {
+    conditions.push("(lower(title) LIKE ? OR lower(content) LIKE ?)");
+    args.push(`%${q.toLowerCase()}%`, `%${q.toLowerCase()}%`);
+  }
+
+  if (chain) {
+    conditions.push(`EXISTS (SELECT 1 FROM json_each(chain_tags) WHERE value = ?)`);
+    args.push(chain);
+  }
+  if (exchange) {
+    conditions.push(`EXISTS (SELECT 1 FROM json_each(exchange_tags) WHERE value = ?)`);
+    args.push(exchange);
+  }
+
+  const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  const allConditions = conditions.filter(c => !c.startsWith("importance") && !c.startsWith("is_pinned"));
+  const whereAll = allConditions.length ? `WHERE ${allConditions.join(" AND ")}` : "";
+  const allArgs = args.slice(0, allConditions.reduce((acc, _, i) => acc + (conditions[i]?.match(/\?/g)?.length ?? 0), 0));
+
+  const [countRes, countAllRes, dataRes] = await Promise.all([
+    client.execute({ sql: `SELECT COUNT(*) as cnt FROM posts ${whereClause}`, args: [...args] }),
+    client.execute({ sql: `SELECT COUNT(*) as cnt FROM posts ${whereAll}`, args: allArgs }),
+    client.execute({
+      sql: `SELECT id, title, content, section, author_wallet, author_name, author_type, views, likes, comments, kol_like_points, kol_comment_points, is_pinned, pin_queued, created_at, source_url, ai_confidence, importance, event_start_time, event_end_time, expires_at, chain_tags, exchange_tags FROM posts ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      args: [...args, limit, offset] as InValue[],
+    }),
+  ]);
+
+  const total = Number(countRes.rows[0]?.cnt ?? 0);
+  const totalAll = Number(countAllRes.rows[0]?.cnt ?? 0);
+  const rows = dataRes.rows.map(r => ({
+    id: Number(r.id),
+    title: r.title as string,
+    content: r.content as string,
+    section: r.section as string,
+    author_wallet: r.author_wallet as string,
+    author_name: r.author_name as string | null,
+    author_type: r.author_type as string | null,
+    views: Number(r.views ?? 0),
+    likes: Number(r.likes ?? 0),
+    comments: Number(r.comments ?? 0),
+    kol_like_points: Number(r.kol_like_points ?? 0),
+    kol_comment_points: Number(r.kol_comment_points ?? 0),
+    is_pinned: Number(r.is_pinned ?? 0),
+    pin_queued: Number(r.pin_queued ?? 0),
+    created_at: r.created_at as string,
+    source_url: r.source_url as string | null,
+    ai_confidence: r.ai_confidence != null ? Number(r.ai_confidence) : null,
+    importance: r.importance as string | null,
+    event_start_time: r.event_start_time as string | null,
+    event_end_time: r.event_end_time as string | null,
+    expires_at: r.expires_at as string | null,
+    chain_tags: r.chain_tags as string | null,
+    exchange_tags: r.exchange_tags as string | null,
+  }));
+
+  return { rows, total, totalAll };
+}
+
 export async function tursoGetLastAiPostAt(): Promise<Date | null> {
   const client = getTursoClient();
   if (!client) return null;

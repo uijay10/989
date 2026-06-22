@@ -4,6 +4,7 @@ import { eq, and, desc, asc, sql, gte, or, ilike, inArray } from "drizzle-orm";
 import { checkContent, filterErrorMessage } from "../content-filter";
 import { awardInviterBonus } from "../lib/invite-bonus";
 import { classifyChainExchangeTags } from "../lib/tag-classifier";
+import { tursoQueryPosts } from "../lib/turso-posts";
 
 const router: IRouter = Router();
 
@@ -256,6 +257,49 @@ router.get("/", async (req, res) => {
     eventStartTime: postsTable.eventStartTime,
     eventEndTime: postsTable.eventEndTime,
   } as const;
+
+  // ── AI posts: served from Turso ─────────────────────────────────────────────
+  if (authorType === "ai") {
+    const { rows: tRows, total: tTotal, totalAll: tTotalAll } = await tursoQueryPosts({
+      section, sections, authorType, authorWallet, importance: importanceFilter, pinnedOnly,
+      q, chain, exchange, limit, offset,
+    });
+    return res.json({
+      posts: tRows.map(r => formatPost({
+        id: r.id,
+        title: r.title,
+        content: r.content,
+        section: r.section,
+        authorWallet: r.author_wallet,
+        authorName: r.author_name,
+        authorAvatar: null,
+        authorType: r.author_type,
+        views: r.views,
+        likes: r.likes,
+        comments: r.comments,
+        kolLikePoints: r.kol_like_points,
+        kolCommentPoints: r.kol_comment_points,
+        isPinned: r.is_pinned === 1,
+        pinnedUntil: r.is_pinned && r.expires_at ? new Date(r.expires_at) : null,
+        pinQueued: r.pin_queued === 1,
+        pinQueuedAt: null,
+        expiresAt: r.expires_at ? new Date(r.expires_at) : null,
+        createdAt: new Date(r.created_at),
+        sourceUrl: r.source_url,
+        aiConfidence: r.ai_confidence,
+        importance: r.importance,
+        eventStartTime: r.event_start_time ? new Date(r.event_start_time) : null,
+        eventEndTime: r.event_end_time ? new Date(r.event_end_time) : null,
+        chainTags: r.chain_tags ? JSON.parse(r.chain_tags) : [],
+        exchangeTags: r.exchange_tags ? JSON.parse(r.exchange_tags) : [],
+        authorNameLive: null, authorAvatarLive: null, authorTagsLive: [], authorTypeLive: null,
+      })),
+      total: tTotal,
+      totalAll: tTotalAll,
+      page,
+      totalPages: Math.ceil(tTotal / limit),
+    });
+  }
 
   let all: { count: number }[] = [];
   let allHistorical: { count: number }[] = [];
