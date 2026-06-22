@@ -190,7 +190,7 @@ export async function runJsBulkScrape(windowDays = 180): Promise<JsBulkScrapeRes
           sql`SELECT id FROM posts
               WHERE section = ${SECTION}
                 AND LOWER(TRIM(title)) = ${normTitle}
-                AND created_at > NOW() - INTERVAL '90 days'
+                AND created_at > ${Date.now() - 90 * 24 * 60 * 60 * 1000}
               LIMIT 1`
         );
         if ((titleDup.rows as unknown[]).length > 0) {

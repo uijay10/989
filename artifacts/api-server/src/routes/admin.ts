@@ -210,7 +210,7 @@ router.post("/users/all/points", requireAdmin, async (req, res) => {
     } else if (op === "add") {
       await db.execute(sql`UPDATE users SET points = points + ${Number(value ?? 0)}`);
     } else if (op === "sub") {
-      await db.execute(sql`UPDATE users SET points = GREATEST(0, points - ${Number(value ?? 0)})`);
+      await db.execute(sql`UPDATE users SET points = MAX(0, points - ${Number(value ?? 0)})`);
     }
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: String(e) }); }
