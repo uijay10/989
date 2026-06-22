@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, postsTable, usersTable, commentsTable, commentLikesTable, notificationsTable } from "@workspace/db";
-import { eq, and, desc, asc, sql, gte, or, ilike, inArray } from "drizzle-orm";
+import { eq, and, desc, asc, sql, gte, or, like, inArray } from "drizzle-orm";
 import { checkContent, filterErrorMessage } from "../content-filter";
 import { awardInviterBonus } from "../lib/invite-bonus";
 import { classifyChainExchangeTags } from "../lib/tag-classifier";
@@ -107,7 +107,7 @@ async function expireAndPromote() {
   // 1. Expire posts whose pinnedUntil has passed
   await db.update(postsTable)
     .set({ isPinned: false, pinnedUntil: null })
-    .where(and(eq(postsTable.isPinned, true), sql`${postsTable.pinnedUntil} < now()`));
+    .where(and(eq(postsTable.isPinned, true), sql`${postsTable.pinnedUntil} < ${Date.now()}`));
 
   // 2. Count currently pinned project posts
   const pinnedCount = await db.select({ count: sql<number>`count(*)` })
@@ -152,11 +152,55 @@ router.get("/", async (req, res) => {
   const rawOffset = req.query.offset !== undefined ? parseInt(req.query.offset as string) : NaN;
   const offset = !isNaN(rawOffset) ? rawOffset : (page - 1) * limit;
 
+  // ── AI posts: served from Turso, never touches Neon ─────────────────────────
+  if (authorType === "ai") {
+    const { rows: tRows, total: tTotal, totalAll: tTotalAll } = await tursoQueryPosts({
+      section, sections, authorType, authorWallet, importance: importanceFilter, pinnedOnly,
+      q, chain, exchange, limit, offset,
+    });
+    return res.json({
+      posts: tRows.map(r => formatPost({
+        id: r.id,
+        title: r.title,
+        content: r.content,
+        section: r.section,
+        authorWallet: r.author_wallet,
+        authorName: r.author_name,
+        authorAvatar: null,
+        authorType: r.author_type,
+        views: r.views,
+        likes: r.likes,
+        comments: r.comments,
+        kolLikePoints: r.kol_like_points,
+        kolCommentPoints: r.kol_comment_points,
+        isPinned: r.is_pinned === 1,
+        pinnedUntil: r.is_pinned && r.expires_at ? new Date(r.expires_at) : null,
+        pinQueued: r.pin_queued === 1,
+        pinQueuedAt: null,
+        expiresAt: r.expires_at ? new Date(r.expires_at) : null,
+        createdAt: new Date(r.created_at),
+        sourceUrl: r.source_url,
+        aiConfidence: r.ai_confidence,
+        importance: r.importance,
+        eventStartTime: r.event_start_time ? new Date(r.event_start_time) : null,
+        eventEndTime: r.event_end_time ? new Date(r.event_end_time) : null,
+        chainTags: r.chain_tags ? JSON.parse(r.chain_tags) : [],
+        exchangeTags: r.exchange_tags ? JSON.parse(r.exchange_tags) : [],
+        authorNameLive: null, authorAvatarLive: null, authorTagsLive: [], authorTypeLive: null,
+      })),
+      total: tTotal,
+      totalAll: tTotalAll,
+      page,
+      totalPages: Math.ceil(tTotal / limit),
+    });
+  }
+
   await expireAndPromote();
 
   const conditions = [];
   // Always filter out expired posts (may be missing on legacy DBs; guarded by fallback below)
-  const expiryCond = sql`(${postsTable.expiresAt} IS NULL OR ${postsTable.expiresAt} > now())`;
+  const nowMs = Date.now();
+  const expiryCond = sql`(${postsTable.expiresAt} IS NULL OR ${postsTable.expiresAt} > ${nowMs})`;
   conditions.push(expiryCond);
 
   // Historical conditions (no expiry filter) — for display count
@@ -184,22 +228,25 @@ router.get("/", async (req, res) => {
   }
   if (pinnedOnly) conditions.push(eq(postsTable.isPinned, true));
   if (importanceFilter) conditions.push(eq(postsTable.importance, importanceFilter));
-  if (q) conditions.push(
-    or(
-      ilike(postsTable.title, `%${q}%`),
-      ilike(postsTable.content, `%${q}%`),
-      ilike(postsTable.authorName, `%${q}%`),
-      ilike(postsTable.authorWallet, `%${q}%`)
-    )!
-  );
+  if (q) {
+    const ql = `%${q.toLowerCase()}%`;
+    conditions.push(
+      or(
+        like(sql`LOWER(${postsTable.title})`, ql),
+        like(sql`LOWER(${postsTable.content})`, ql),
+        like(sql`LOWER(${postsTable.authorName})`, ql),
+        like(sql`LOWER(${postsTable.authorWallet})`, ql)
+      )!
+    );
+  }
 
   // Column tag filters (require DB columns chain_tags / exchange_tags)
   // NOTE: keep the SQL explicit so it's easy to remove if schema isn't migrated.
   if (chain) {
-    conditions.push(sql`chain_tags @> ARRAY[${chain}]::text[]`);
+    conditions.push(sql`chain_tags LIKE ${'%"' + chain + '"%'}`);
   }
   if (exchange) {
-    conditions.push(sql`exchange_tags @> ARRAY[${exchange}]::text[]`);
+    conditions.push(sql`exchange_tags LIKE ${'%"' + exchange + '"%'}`);
   }
 
   // Optional tab → section mapping (lightweight, can be expanded later)
@@ -257,49 +304,6 @@ router.get("/", async (req, res) => {
     eventStartTime: postsTable.eventStartTime,
     eventEndTime: postsTable.eventEndTime,
   } as const;
-
-  // ── AI posts: served from Turso ─────────────────────────────────────────────
-  if (authorType === "ai") {
-    const { rows: tRows, total: tTotal, totalAll: tTotalAll } = await tursoQueryPosts({
-      section, sections, authorType, authorWallet, importance: importanceFilter, pinnedOnly,
-      q, chain, exchange, limit, offset,
-    });
-    return res.json({
-      posts: tRows.map(r => formatPost({
-        id: r.id,
-        title: r.title,
-        content: r.content,
-        section: r.section,
-        authorWallet: r.author_wallet,
-        authorName: r.author_name,
-        authorAvatar: null,
-        authorType: r.author_type,
-        views: r.views,
-        likes: r.likes,
-        comments: r.comments,
-        kolLikePoints: r.kol_like_points,
-        kolCommentPoints: r.kol_comment_points,
-        isPinned: r.is_pinned === 1,
-        pinnedUntil: r.is_pinned && r.expires_at ? new Date(r.expires_at) : null,
-        pinQueued: r.pin_queued === 1,
-        pinQueuedAt: null,
-        expiresAt: r.expires_at ? new Date(r.expires_at) : null,
-        createdAt: new Date(r.created_at),
-        sourceUrl: r.source_url,
-        aiConfidence: r.ai_confidence,
-        importance: r.importance,
-        eventStartTime: r.event_start_time ? new Date(r.event_start_time) : null,
-        eventEndTime: r.event_end_time ? new Date(r.event_end_time) : null,
-        chainTags: r.chain_tags ? JSON.parse(r.chain_tags) : [],
-        exchangeTags: r.exchange_tags ? JSON.parse(r.exchange_tags) : [],
-        authorNameLive: null, authorAvatarLive: null, authorTagsLive: [], authorTypeLive: null,
-      })),
-      total: tTotal,
-      totalAll: tTotalAll,
-      page,
-      totalPages: Math.ceil(tTotal / limit),
-    });
-  }
 
   let all: { count: number }[] = [];
   let allHistorical: { count: number }[] = [];
@@ -367,7 +371,7 @@ router.get("/", async (req, res) => {
   const wallets = [...new Set(posts.map(p => p.authorWallet))];
   const users = wallets.length
     ? await db.select({ wallet: usersTable.wallet, username: usersTable.username, avatar: usersTable.avatar, tags: (usersTable as any).tags, spaceType: usersTable.spaceType })
-        .from(usersTable).where(sql`${usersTable.wallet} = ANY(ARRAY[${sql.join(wallets.map(w => sql`${w}`), sql`, `)}]::text[])`)
+        .from(usersTable).where(inArray(usersTable.wallet, wallets))
     : [];
   const userMap = Object.fromEntries(users.map(u => {
     let parsedTags: string[] = [];
@@ -603,7 +607,7 @@ router.get("/:id/comments", async (req, res) => {
   const wallets = [...new Set(rows.map(r => r.wallet))];
   const users = wallets.length
     ? await db.select({ wallet: usersTable.wallet, username: usersTable.username, avatar: usersTable.avatar })
-        .from(usersTable).where(sql`${usersTable.wallet} = ANY(ARRAY[${sql.join(wallets.map(w => sql`${w}`), sql`, `)}]::text[])`)
+        .from(usersTable).where(inArray(usersTable.wallet, wallets))
     : [];
   const umap = Object.fromEntries(users.map(u => [u.wallet, u]));
 
@@ -615,7 +619,7 @@ router.get("/:id/comments", async (req, res) => {
       .from(commentLikesTable)
       .where(and(
         eq(commentLikesTable.wallet, viewerWallet),
-        sql`${commentLikesTable.commentId} = ANY(ARRAY[${sql.join(commentIds.map(id => sql`${id}`), sql`, `)}]::int[])`
+        inArray(commentLikesTable.commentId, commentIds)
       ));
     likedSet = new Set(likedRows.map(r => r.commentId));
   }
@@ -651,7 +655,7 @@ router.post("/:id/comments/:commentId/like", async (req, res) => {
     await db.delete(commentLikesTable)
       .where(and(eq(commentLikesTable.commentId, commentId), eq(commentLikesTable.wallet, lw)));
     const updated = await db.update(commentsTable)
-      .set({ likes: sql`GREATEST(${commentsTable.likes} - 1, 0)` })
+      .set({ likes: sql`MAX(0, ${commentsTable.likes} - 1)` })
       .where(eq(commentsTable.id, commentId))
       .returning({ likes: commentsTable.likes });
     return res.json({ liked: false, likes: updated[0]?.likes ?? 0 });

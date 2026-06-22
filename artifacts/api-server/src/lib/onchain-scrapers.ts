@@ -66,7 +66,7 @@ export async function ensureOnchainCacheTable(): Promise<void> {
       data_json TEXT NOT NULL,
       source TEXT NOT NULL,
       item_count INTEGER NOT NULL DEFAULT 0,
-      fetched_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      fetched_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
     )
   `);
 }
@@ -93,12 +93,12 @@ async function writeOnchainCache(kind: string, data: any, source: string): Promi
   const itemCount = Array.isArray(data) ? data.length : (Array.isArray(data?.items) ? data.items.length : 0);
   await db.execute(sql`
     INSERT INTO onchain_cache (kind, data_json, source, item_count, fetched_at)
-    VALUES (${kind}, ${json}, ${source}, ${itemCount}, NOW())
+    VALUES (${kind}, ${json}, ${source}, ${itemCount}, ${Date.now()})
     ON CONFLICT (kind) DO UPDATE SET
       data_json = EXCLUDED.data_json,
       source = EXCLUDED.source,
       item_count = EXCLUDED.item_count,
-      fetched_at = NOW()
+      fetched_at = ${Date.now()}
   `);
 }
 

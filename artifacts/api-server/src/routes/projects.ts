@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, projectsTable } from "@workspace/db";
-import { eq, ilike, and, desc, or } from "drizzle-orm";
+import { eq, like, and, desc, or, sql } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -43,7 +43,7 @@ router.get("/", async (req, res) => {
     and(
       eq(projectsTable.status, "active"),
       eq(projectsTable.isPinned, false),
-      search ? or(ilike(projectsTable.name, `%${search}%`), ilike(projectsTable.tagline, `%${search}%`)) : undefined
+      search ? or(like(sql`LOWER(${projectsTable.name})`, `%${search.toLowerCase()}%`), like(sql`LOWER(${projectsTable.tagline})`, `%${search.toLowerCase()}%`)) : undefined
     )
   );
 
@@ -51,7 +51,7 @@ router.get("/", async (req, res) => {
     and(
       eq(projectsTable.status, "active"),
       eq(projectsTable.isPinned, false),
-      search ? or(ilike(projectsTable.name, `%${search}%`), ilike(projectsTable.tagline, `%${search}%`)) : undefined
+      search ? or(like(sql`LOWER(${projectsTable.name})`, `%${search.toLowerCase()}%`), like(sql`LOWER(${projectsTable.tagline})`, `%${search.toLowerCase()}%`)) : undefined
     )
   );
 
@@ -59,7 +59,7 @@ router.get("/", async (req, res) => {
     .where(and(
       eq(projectsTable.status, "active"),
       eq(projectsTable.isPinned, false),
-      search ? or(ilike(projectsTable.name, `%${search}%`), ilike(projectsTable.tagline, `%${search}%`)) : undefined
+      search ? or(like(sql`LOWER(${projectsTable.name})`, `%${search.toLowerCase()}%`), like(sql`LOWER(${projectsTable.tagline})`, `%${search.toLowerCase()}%`)) : undefined
     ))
     .orderBy(desc(projectsTable.latestPostAt), desc(projectsTable.createdAt))
     .limit(limit)

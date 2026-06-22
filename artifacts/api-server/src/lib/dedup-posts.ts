@@ -1,4 +1,4 @@
-import { db } from "@workspace/db";
+import { db, client } from "@workspace/db";
 import { sql } from "drizzle-orm";
 import { createHash } from "node:crypto";
 
@@ -280,7 +280,13 @@ export async function dedupAiPosts(
     };
   }
 
-  await db.execute(sql`DELETE FROM posts WHERE id = ANY(${deleteIds}::int[])`);
+  // Delete in batches to avoid large IN() lists
+  const BATCH = 50;
+  for (let i = 0; i < deleteIds.length; i += BATCH) {
+    const batch = deleteIds.slice(i, i + BATCH);
+    const placeholders = batch.map(() => "?").join(",");
+    await client.execute({ sql: `DELETE FROM posts WHERE id IN (${placeholders})`, args: batch });
+  }
 
   return {
     scanned: posts.length,

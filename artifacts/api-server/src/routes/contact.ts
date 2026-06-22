@@ -158,7 +158,7 @@ router.post("/:id/reply", requireAdmin, async (req, res) => {
 
     await db.execute(sql`
       UPDATE contact_messages
-      SET reply = ${reply.trim()}, status = 'replied', replied_at = NOW()
+      SET reply = ${reply.trim()}, status = 'replied', replied_at = ${Date.now()}
       WHERE id = ${id}
     `);
 

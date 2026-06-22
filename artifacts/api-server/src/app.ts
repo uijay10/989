@@ -2,11 +2,22 @@ import express, { type Express } from "express";
 import cors from "cors";
 import path from "path";
 import router from "./routes";
-import { db } from "@workspace/db";
+import { db, client } from "@workspace/db";
 import { sql } from "drizzle-orm";
+
 import { DEFAULT_KEYWORDS } from "./lib/auto-scraper";
 import { initDeepSeekDailyBudget } from "./lib/ai-provider";
 import { ensureTursoPostsTable, tursoGetLastAiPostAt } from "./lib/turso-posts";
+
+/** ALTER TABLE ADD COLUMN — silently ignores "duplicate column" errors (SQLite has no IF NOT EXISTS) */
+async function safeAddCol(table: string, col: string, typeDef: string) {
+  try {
+    await client.execute(`ALTER TABLE ${table} ADD COLUMN ${col} ${typeDef}`);
+  } catch (e: unknown) {
+    const msg = String((e as Error)?.message ?? e).toLowerCase();
+    if (!msg.includes("duplicate column") && !msg.includes("already exists")) throw e;
+  }
+}
 
 const app: Express = express();
 
@@ -167,7 +178,7 @@ async function ensureTables() {
   try {
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS comments (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         post_id INTEGER NOT NULL,
         wallet TEXT NOT NULL,
         author_name TEXT,
@@ -175,39 +186,39 @@ async function ensureTables() {
         content TEXT NOT NULL,
         likes INTEGER NOT NULL DEFAULT 0,
         reply_to INTEGER,
-        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+        created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
       )
     `);
-    await db.execute(sql`ALTER TABLE comments ADD COLUMN IF NOT EXISTS likes INTEGER NOT NULL DEFAULT 0`);
-    await db.execute(sql`ALTER TABLE comments ADD COLUMN IF NOT EXISTS reply_to INTEGER`);
+    await safeAddCol("comments", "likes", "INTEGER NOT NULL DEFAULT 0");
+    await safeAddCol("comments", "reply_to", "INTEGER");
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS comment_likes (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         comment_id INTEGER NOT NULL,
         wallet TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+        created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
         UNIQUE(comment_id, wallet)
       )
     `);
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS notifications (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         recipient_wallet TEXT NOT NULL,
         type TEXT NOT NULL,
         from_wallet TEXT,
         from_name TEXT,
         post_id INTEGER,
         post_title TEXT,
-        is_read BOOLEAN DEFAULT FALSE NOT NULL,
-        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+        is_read INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
       )
     `);
-    await db.execute(sql`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS post_section TEXT`);
+    await safeAddCol("notifications", "post_section", "TEXT");
 
     // Ensure Drizzle-schema tables exist (needed when connecting to a fresh database)
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         wallet TEXT NOT NULL UNIQUE,
         username TEXT,
         avatar TEXT,
@@ -217,15 +228,15 @@ async function ensureTables() {
         space_type TEXT,
         invite_code TEXT,
         invite_count INTEGER NOT NULL DEFAULT 0,
-        last_checkin TIMESTAMP,
+        last_checkin INTEGER,
         twitter TEXT,
         telegram TEXT,
         discord TEXT,
         language TEXT DEFAULT 'en',
-        is_banned BOOLEAN NOT NULL DEFAULT false,
+        is_banned INTEGER NOT NULL DEFAULT 0,
         pin_count INTEGER NOT NULL DEFAULT 0,
         website TEXT,
-        space_rejected_at TIMESTAMP,
+        space_rejected_at INTEGER,
         space_reject_reason TEXT,
         daily_apply_count INTEGER NOT NULL DEFAULT 0,
         last_apply_date TEXT,
@@ -234,10 +245,10 @@ async function ensureTables() {
         daily_comment_count INTEGER NOT NULL DEFAULT 0,
         last_interaction_date TEXT,
         tokens INTEGER NOT NULL DEFAULT 0,
-        last_slot_pull TIMESTAMP,
+        last_slot_pull INTEGER,
         daily_tokens_earned INTEGER NOT NULL DEFAULT 0,
         last_token_date TEXT,
-        last_post_at TIMESTAMP,
+        last_post_at INTEGER,
         normal_daily_post_count INTEGER NOT NULL DEFAULT 0,
         normal_daily_post_date TEXT,
         whitepaper TEXT,
@@ -245,13 +256,13 @@ async function ensureTables() {
         tags TEXT,
         subscriptions TEXT,
         contact TEXT,
-        contact_public BOOLEAN NOT NULL DEFAULT false,
-        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+        contact_public INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
       )
     `);
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS posts (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
         content TEXT NOT NULL,
         section TEXT NOT NULL,
@@ -259,29 +270,29 @@ async function ensureTables() {
         author_name TEXT,
         author_avatar TEXT,
         author_type TEXT,
-        chain_tags TEXT[],
-        exchange_tags TEXT[],
+        chain_tags TEXT,
+        exchange_tags TEXT,
         views INTEGER NOT NULL DEFAULT 0,
         likes INTEGER NOT NULL DEFAULT 0,
         comments INTEGER NOT NULL DEFAULT 0,
         kol_like_points INTEGER NOT NULL DEFAULT 0,
         kol_comment_points INTEGER NOT NULL DEFAULT 0,
-        is_pinned BOOLEAN NOT NULL DEFAULT false,
-        pinned_until TIMESTAMP,
-        pin_queued BOOLEAN NOT NULL DEFAULT false,
-        pin_queued_at TIMESTAMP,
-        expires_at TIMESTAMP,
+        is_pinned INTEGER NOT NULL DEFAULT 0,
+        pinned_until INTEGER,
+        pin_queued INTEGER NOT NULL DEFAULT 0,
+        pin_queued_at INTEGER,
+        expires_at INTEGER,
         source_url TEXT,
         ai_confidence REAL,
         importance TEXT,
-        event_start_time TIMESTAMP,
-        event_end_time TIMESTAMP,
-        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+        event_start_time INTEGER,
+        event_end_time INTEGER,
+        created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
       )
     `);
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS projects (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         logo TEXT,
         tagline TEXT,
@@ -290,17 +301,17 @@ async function ensureTables() {
         website TEXT,
         twitter TEXT,
         owner_wallet TEXT NOT NULL,
-        is_pinned BOOLEAN NOT NULL DEFAULT false,
-        pinned_until TIMESTAMP,
+        is_pinned INTEGER NOT NULL DEFAULT 0,
+        pinned_until INTEGER,
         status TEXT NOT NULL DEFAULT 'pending',
         latest_post_title TEXT,
-        latest_post_at TIMESTAMP,
-        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+        latest_post_at INTEGER,
+        created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
       )
     `);
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS space_applications (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         wallet TEXT NOT NULL,
         type TEXT NOT NULL,
         twitter TEXT,
@@ -312,38 +323,38 @@ async function ensureTables() {
         linkedin TEXT,
         status TEXT NOT NULL DEFAULT 'pending',
         reject_reason TEXT,
-        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+        created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
       )
     `);
 
-    await db.execute(sql`ALTER TABLE posts ADD COLUMN IF NOT EXISTS source_url TEXT`);
-    await db.execute(sql`ALTER TABLE posts ADD COLUMN IF NOT EXISTS ai_confidence REAL`);
-    await db.execute(sql`ALTER TABLE posts ADD COLUMN IF NOT EXISTS importance TEXT`);
-    await db.execute(sql`ALTER TABLE posts ADD COLUMN IF NOT EXISTS event_start_time TIMESTAMP`);
-    await db.execute(sql`ALTER TABLE posts ADD COLUMN IF NOT EXISTS event_end_time TIMESTAMP`);
+    await safeAddCol("posts", "source_url", "TEXT");
+    await safeAddCol("posts", "ai_confidence", "REAL");
+    await safeAddCol("posts", "importance", "TEXT");
+    await safeAddCol("posts", "event_start_time", "INTEGER");
+    await safeAddCol("posts", "event_end_time", "INTEGER");
 
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS scrape_sources (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         url TEXT NOT NULL UNIQUE,
         type TEXT NOT NULL DEFAULT 'rss',
         priority INTEGER NOT NULL DEFAULT 2,
-        enabled BOOLEAN NOT NULL DEFAULT true,
-        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+        enabled INTEGER NOT NULL DEFAULT 1,
+        created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
       )
     `);
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS scrape_keywords (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         keyword TEXT NOT NULL UNIQUE,
-        enabled BOOLEAN NOT NULL DEFAULT true,
-        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+        enabled INTEGER NOT NULL DEFAULT 1,
+        created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
       )
     `);
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS scrape_logs (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         run_id TEXT NOT NULL,
         source_name TEXT NOT NULL,
         source_url TEXT NOT NULL,
@@ -351,46 +362,34 @@ async function ensureTables() {
         items_found INTEGER NOT NULL DEFAULT 0,
         items_saved INTEGER NOT NULL DEFAULT 0,
         error_msg TEXT,
-        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+        created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
       )
     `);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_scrape_logs_run_id ON scrape_logs(run_id)`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_scrape_logs_created_at ON scrape_logs(created_at DESC)`);
 
-    // Enable pg_trgm for fuzzy title similarity in the dedup guards.
-    // Extension creation is idempotent and is NOT tracked as a schema diff by the migration tool.
-    // Note: we intentionally do NOT create a GIN index here — indexes created outside of the
-    // ORM schema trigger deployment migration failures. The similarity() queries work fine
-    // without an index at our current data volume.
-    try {
-      await db.execute(sql`CREATE EXTENSION IF NOT EXISTS pg_trgm`);
-    } catch (extErr) {
-      console.warn("[db] pg_trgm extension not available on this database — fuzzy dedup disabled:", extErr instanceof Error ? extErr.message : extErr);
-    }
-
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS contact_messages (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         email TEXT NOT NULL,
         subject TEXT NOT NULL,
         message TEXT NOT NULL,
         status TEXT NOT NULL DEFAULT 'unread',
         reply TEXT,
-        replied_at TIMESTAMP,
-        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+        replied_at INTEGER,
+        created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
       )
     `);
 
-    // Remove duplicate AI posts: keep only the most recent per (section, normalized title)
+    // Remove duplicate AI posts: keep the highest id per (section, normalized title)
     await db.execute(sql`
       DELETE FROM posts
       WHERE author_type = 'ai'
         AND id NOT IN (
-          SELECT DISTINCT ON (section, LOWER(TRIM(title))) id
-          FROM posts
+          SELECT MAX(id) FROM posts
           WHERE author_type = 'ai'
-          ORDER BY section, LOWER(TRIM(title)), created_at DESC
+          GROUP BY section, LOWER(TRIM(title))
         )
     `);
 
@@ -398,18 +397,16 @@ async function ensureTables() {
     for (const kw of DEFAULT_KEYWORDS) {
       await db.execute(sql`
         INSERT INTO scrape_keywords (keyword, enabled)
-        VALUES (${kw}, true)
+        VALUES (${kw}, 1)
         ON CONFLICT (keyword) DO NOTHING
       `);
     }
 
     // ── Startup cleanup: remove stale AI-scraped articles ─────────────────────
-    // IMPORTANT: This is destructive (DELETE FROM posts). To avoid "articles
-    // occasionally disappearing" after a restart, this cleanup is opt-in.
-    // Enable only when you explicitly intend to purge historical AI posts.
     const enableStartupCleanup = process.env.ENABLE_STARTUP_AI_POST_CLEANUP === "true";
     if (enableStartupCleanup) {
       console.warn("[startup-cleanup] ENABLE_STARTUP_AI_POST_CLEANUP=true — destructive cleanup enabled");
+      const nowMs = Date.now();
 
       // 1. event_end_time already passed (event is over)
       await db.execute(sql`
@@ -417,8 +414,8 @@ async function ensureTables() {
         WHERE author_type = 'ai'
           AND title NOT LIKE '[archived]%'
           AND event_end_time IS NOT NULL
-          AND event_end_time < NOW() - INTERVAL '1 day'
-          AND expires_at > NOW()
+          AND event_end_time < ${nowMs - 86400000}
+          AND expires_at > ${nowMs}
       `);
 
       // 2. event_start_time exceeds per-section limits
@@ -426,62 +423,37 @@ async function ensureTables() {
         DELETE FROM posts
         WHERE author_type = 'ai'
           AND title NOT LIKE '[archived]%'
-          AND expires_at > NOW()
+          AND expires_at > ${nowMs}
           AND event_start_time IS NOT NULL
           AND (
-            (section IN ('quest','airdrop') AND event_start_time < NOW() - INTERVAL '7 days') OR
-            (section IN ('ido','testnet','nodes','devbounty','funding') AND event_start_time < NOW() - INTERVAL '30 days') OR
-            (section = 'grant'    AND event_start_time < NOW() - INTERVAL '60 days') OR
-            (section IN ('industry','policy') AND event_start_time < NOW() - INTERVAL '21 days') OR
-            (section IN ('724news','flash','meme') AND event_start_time < NOW() - INTERVAL '14 days')
+            (section IN ('quest','airdrop') AND event_start_time < ${nowMs - 7 * 86400000}) OR
+            (section IN ('ido','testnet','nodes','devbounty','funding') AND event_start_time < ${nowMs - 30 * 86400000}) OR
+            (section = 'grant' AND event_start_time < ${nowMs - 60 * 86400000}) OR
+            (section IN ('industry','policy') AND event_start_time < ${nowMs - 21 * 86400000}) OR
+            (section IN ('724news','flash','meme') AND event_start_time < ${nowMs - 14 * 86400000})
           )
       `);
 
-      // 2b. Fuzzy title duplicates — same section, within 7 days, similarity > 0.72
-      //     Keep the earliest published article (lowest id); delete later near-duplicates.
-      try {
-        await db.execute(sql`
-          DELETE FROM posts
-          WHERE author_type = 'ai'
-            AND title NOT LIKE '[archived]%'
-            AND expires_at > NOW()
-            AND id IN (
-              SELECT DISTINCT b.id
-              FROM posts a
-              JOIN posts b ON a.section = b.section
-                AND a.id < b.id
-                AND ABS(EXTRACT(EPOCH FROM (a.created_at - b.created_at))) < 604800
-                AND similarity(LOWER(a.title), LOWER(b.title)) > 0.72
-              WHERE a.expires_at > NOW()
-                AND b.expires_at > NOW()
-                AND a.title NOT LIKE '[archived]%'
-                AND b.title NOT LIKE '[archived]%'
-            )
-        `);
-      } catch {
-        // pg_trgm may not be ready yet on first boot — skip gracefully
-      }
-
-      // 3. URL contains an old year (/2024/ or earlier) for non-quest/airdrop sections
+      // 3. URL contains an old year (/2010/–/2025/(Jan-Nov)/) for non-quest/airdrop sections
       await db.execute(sql`
         DELETE FROM posts
         WHERE author_type = 'ai'
           AND title NOT LIKE '[archived]%'
-          AND expires_at > NOW()
+          AND expires_at > ${nowMs}
           AND section NOT IN ('quest','airdrop')
           AND (
-            source_url ~ '/201[0-9]/'
-            OR source_url ~ '/2020/'
-            OR source_url ~ '/2021/'
-            OR source_url ~ '/2022/'
-            OR source_url ~ '/2023/'
-            OR source_url ~ '/2024/'
-            OR source_url ~ '/2025/(0[1-9]|1[0-1])/'
+            source_url LIKE '%/2010/%' OR source_url LIKE '%/2011/%' OR
+            source_url LIKE '%/2012/%' OR source_url LIKE '%/2013/%' OR
+            source_url LIKE '%/2014/%' OR source_url LIKE '%/2015/%' OR
+            source_url LIKE '%/2016/%' OR source_url LIKE '%/2017/%' OR
+            source_url LIKE '%/2018/%' OR source_url LIKE '%/2019/%' OR
+            source_url LIKE '%/2020/%' OR source_url LIKE '%/2021/%' OR
+            source_url LIKE '%/2022/%' OR source_url LIKE '%/2023/%' OR
+            source_url LIKE '%/2024/%'
           )
       `);
 
-      // 4. Ensure tombstone records exist for known permanently-stale paragraph.com URLs.
-      //    These keep the source_url guard working even after manual deletions.
+      // 4. Tombstone records for known stale URLs
       const staleUrls = [
         { url: "https://paragraph.com/@blurdao/season-2-rewards-loyalty", title: "[archived] Blur Season 2 Rewards" },
         { url: "https://paragraph.com/@blurdao/season-3-rewards-loyalty", title: "[archived] Blur Season 3 Rewards" },
@@ -495,8 +467,8 @@ async function ensureTables() {
                              is_pinned, pin_queued)
           SELECT ${title}, '', 'quest',
                  '0x0000000000000000000000000000000000000000', 'AI System', 'ai',
-                 ${url}, 0.0, 'low', NOW() - INTERVAL '1 day',
-                 0, 0, 0, 0, 0, false, false
+                 ${url}, 0.0, 'low', ${nowMs - 86400000},
+                 0, 0, 0, 0, 0, 0, 0
           WHERE NOT EXISTS (SELECT 1 FROM posts WHERE source_url = ${url})
         `);
       }
@@ -504,27 +476,22 @@ async function ensureTables() {
 
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS user_visit_logs (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         wallet TEXT NOT NULL,
         ip_address TEXT,
-        visited_at TIMESTAMP DEFAULT NOW() NOT NULL,
+        visited_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
         duration_minutes INTEGER
       )
     `);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_user_visit_logs_visited_at ON user_visit_logs(visited_at DESC)`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_user_visit_logs_wallet ON user_visit_logs(wallet)`);
-    // Add duration_minutes column to existing tables that were created before this column existed
-    await db.execute(sql`ALTER TABLE user_visit_logs ADD COLUMN IF NOT EXISTS duration_minutes INTEGER`);
+    await safeAddCol("user_visit_logs", "duration_minutes", "INTEGER");
 
     console.log("[db] ensureTables: OK");
   } catch (e) {
     console.error("[db] ensureTables error:", e);
   }
 }
-
-const _dbUrlForLog = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL || "";
-const _dbHostLog = _dbUrlForLog.match(/@([^/]+)\//)?.[1] ?? "(unknown)";
-console.log(`[db] connecting to: ${_dbHostLog}`);
 
 ensureTables();
 ensureTursoPostsTable();
@@ -585,7 +552,7 @@ async function ensureCronLeaderTable(): Promise<void> {
     CREATE TABLE IF NOT EXISTS cron_leader (
       id INTEGER PRIMARY KEY DEFAULT 1,
       instance_id TEXT NOT NULL,
-      heartbeat TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      heartbeat INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
     )
   `);
 }
@@ -602,22 +569,25 @@ async function tryClaimCronLeaderLease(instanceId: string): Promise<boolean> {
     const staleEnv = Number(process.env.CRON_LEADER_STALE_MS);
     const staleMs = Number.isFinite(staleEnv) && staleEnv > 30_000 ? staleEnv : 300_000;
 
+    const nowMs = Date.now();
+    const staleThreshold = nowMs - staleMs;
+
     const res = await db.execute(sql`
-      INSERT INTO cron_leader (id, instance_id, heartbeat) VALUES (1, ${instanceId}, NOW())
+      INSERT INTO cron_leader (id, instance_id, heartbeat) VALUES (1, ${instanceId}, ${nowMs})
       ON CONFLICT (id) DO UPDATE SET
         instance_id = ${instanceId},
-        heartbeat = NOW()
+        heartbeat = ${nowMs}
       WHERE
-        cron_leader.heartbeat < NOW() - (${String(Math.floor(staleMs))}::bigint * INTERVAL '1 millisecond')
+        cron_leader.heartbeat < ${staleThreshold}
         OR cron_leader.instance_id = ${instanceId}
       RETURNING instance_id
     `);
     const rows = (res as { rows?: { instance_id: string }[] }).rows;
-    if (rows?.length) return rows[0]!.instance_id === instanceId;
+    if (rows?.length) return String(rows[0]!.instance_id) === instanceId;
 
     const sel = await db.execute(sql`SELECT instance_id FROM cron_leader WHERE id = 1`);
     const holder = (sel as { rows?: { instance_id: string }[] }).rows?.[0]?.instance_id;
-    return holder === instanceId;
+    return String(holder) === instanceId;
   } catch (e) {
     console.warn("[cron-leader] tryClaimCronLeaderLease failed; allowing tick to run:", e);
     return true;
@@ -663,7 +633,7 @@ if (process.env.NODE_ENV !== "test" && process.env.DISABLE_SCRAPE_CRON !== "true
 
   // Renew lease while this process holds it (long scrapes can exceed one tick interval).
   setInterval(() => {
-    void db.execute(sql`UPDATE cron_leader SET heartbeat = NOW() WHERE id = 1 AND instance_id = ${instanceId}`).catch(() => {});
+    void db.execute(sql`UPDATE cron_leader SET heartbeat = ${Date.now()} WHERE id = 1 AND instance_id = ${instanceId}`).catch(() => {});
   }, heartbeatMs);
 
   const tickGroq = async () => {
@@ -750,16 +720,17 @@ if (process.env.NODE_ENV !== "test") {
   const runDailyCleanup = async () => {
     try {
       // 1. Delete articles older than RETAIN_DAYS
+      const cutoffMs = Date.now() - RETAIN_DAYS * 86400 * 1000;
       const byAge = await db.execute(sql`
         DELETE FROM posts
         WHERE author_type = 'ai'
-          AND created_at < NOW() - (${String(RETAIN_DAYS)}::int * INTERVAL '1 day')
+          AND created_at < ${cutoffMs}
       `);
-      const deletedByAge = (byAge as unknown as { rowCount?: number }).rowCount ?? 0;
+      const deletedByAge = (byAge as unknown as { rowsAffected?: number }).rowsAffected ?? 0;
 
       // 2. If still over MAX_ROWS, delete oldest excess
       const countRes = await db.execute(sql`SELECT COUNT(*) AS cnt FROM posts WHERE author_type = 'ai'`);
-      const total = Number((countRes.rows[0] as { cnt: string }).cnt);
+      const total = Number((countRes.rows[0] as { cnt: string | number }).cnt);
       let deletedByCount = 0;
       if (total > MAX_ROWS) {
         const excess = total - MAX_ROWS;
@@ -769,10 +740,10 @@ if (process.env.NODE_ENV !== "test") {
             SELECT id FROM posts
             WHERE author_type = 'ai'
             ORDER BY created_at ASC
-            LIMIT ${String(excess)}
+            LIMIT ${excess}
           )
         `);
-        deletedByCount = (byCount as unknown as { rowCount?: number }).rowCount ?? 0;
+        deletedByCount = (byCount as unknown as { rowsAffected?: number }).rowsAffected ?? 0;
       }
 
       const remaining = total - deletedByCount;

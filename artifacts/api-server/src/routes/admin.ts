@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, usersTable, spaceApplicationsTable, postsTable } from "@workspace/db";
-import { eq, desc, asc, sql, and, gte, lte } from "drizzle-orm";
+import { eq, desc, asc, sql, and, gte, lte, inArray } from "drizzle-orm";
 import { ADMIN_WALLETS, requireAdmin } from "../lib/admin-check";
 import { resetDeepSeekBudgetNow } from "../lib/ai-provider";
 import { createChallenge, issueAdminToken, verifyChallenge } from "../lib/admin-token";
@@ -179,7 +179,7 @@ router.post("/users/all/tokens", requireAdmin, async (req, res) => {
     } else if (op === "add") {
       await db.execute(sql`UPDATE users SET tokens = tokens + ${Number(value ?? 0)}`);
     } else if (op === "sub") {
-      await db.execute(sql`UPDATE users SET tokens = GREATEST(0, tokens - ${Number(value ?? 0)})`);
+      await db.execute(sql`UPDATE users SET tokens = MAX(0, tokens - ${Number(value ?? 0)})`);
     }
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: String(e) }); }
@@ -335,7 +335,7 @@ router.delete("/posts/cleanup", requireAdmin, async (req, res) => {
           .limit(toDelete);
         const ids = oldest.map(r => r.id);
         if (ids.length > 0) {
-          await db.execute(sql`DELETE FROM posts WHERE id = ANY(ARRAY[${sql.join(ids.map(id => sql`${id}`), sql`, `)}]::int[])`);
+          await db.delete(postsTable).where(inArray(postsTable.id, ids));
           deletedCount = ids.length;
         }
       }
@@ -548,7 +548,7 @@ router.post("/bulk-sync", async (req, res) => {
             ${post.importance ?? null},
             ${post.eventStartTime ?? post.event_start_time ?? null},
             ${post.eventEndTime ?? post.event_end_time ?? null},
-            ${post.createdAt ?? post.created_at ?? sql`now()`}
+            ${post.createdAt ?? post.created_at ?? Date.now()}
           )
           ON CONFLICT DO NOTHING
         `);

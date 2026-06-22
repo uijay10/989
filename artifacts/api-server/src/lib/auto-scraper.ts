@@ -1439,7 +1439,7 @@ export async function getTodayArticlesProcessed(): Promise<number> {
       SELECT COALESCE(SUM(items_saved), 0) AS total
       FROM scrape_logs
       WHERE run_id LIKE ${"unified_%"}
-        AND created_at >= CURRENT_DATE
+        AND created_at >= ${new Date(new Date().toDateString()).getTime()}
     `);
     return Number((result.rows[0] as { total: string }).total);
   } catch { return 0; }

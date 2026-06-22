@@ -21,13 +21,14 @@ router.post("/visits", async (req, res) => {
     }
     const ip = getClientIp(req);
 
+    const nowMs = Date.now();
     await db.execute(sql`
       INSERT INTO user_visit_logs (wallet, ip_address, visited_at)
-      SELECT ${wallet}, ${ip}, NOW()
+      SELECT ${wallet}, ${ip}, ${nowMs}
       WHERE NOT EXISTS (
         SELECT 1 FROM user_visit_logs
         WHERE wallet = ${wallet}
-          AND visited_at > NOW() - INTERVAL '1 hour'
+          AND visited_at > ${nowMs - 3600000}
       )
     `);
 

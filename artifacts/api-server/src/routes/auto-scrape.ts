@@ -132,46 +132,53 @@ router.post("/backup/import", checkScrapeAuth, async (req, res) => {
 
 router.post("/backfill-sections", checkScrapeAuth, async (_req, res) => {
   try {
-    const result = await db.execute(sql`
-      WITH src AS (
-        SELECT *
-        FROM posts
-        WHERE created_at >= NOW() - INTERVAL '180 days'
-          AND (
-            section IN ('defi', 'analytics', 'nft', 'research', 'bitget')
-            OR lower(title) ~ '(defi|dex|tvl|yield|liquidity|swap|amm|lending|perp|uniswap|aave|curve|gmx|dydx|nft|gamefi|opensea|magic eden|blur|immutable|metaverse|bitget)'
-            OR lower(content) ~ '(defi|dex|tvl|yield|liquidity|swap|amm|lending|perp|uniswap|aave|curve|gmx|dydx|nft|gamefi|opensea|magic eden|blur|immutable|metaverse|bitget)'
-          )
-      ),
-      inserted AS (
-        INSERT INTO posts (
-          title, content, section, author_wallet, author_name, author_type,
-          views, likes, comments, kol_like_points, kol_comment_points,
-          is_pinned, pin_queued, expires_at, source_url, ai_confidence, importance,
-          event_start_time, event_end_time, created_at
-        )
-        SELECT
-          s.title,
-          s.content,
-          CASE
-            WHEN lower(s.title) ~ '(bitget)' THEN 'bitget'
-            WHEN lower(s.title) ~ '(defi|dex|tvl|yield|liquidity|swap|amm|lending|perp|uniswap|aave|curve|gmx|dydx)' THEN 'defi'
-            WHEN lower(s.title) ~ '(nft|gamefi|opensea|magic eden|blur|immutable|metaverse)' THEN 'nft'
-            WHEN lower(s.title) ~ '(analytics|on-chain data|onchain data|data analysis|chain analysis|nansen|glassnode|dune|messari|coingecko)' THEN 'analytics'
-            ELSE 'research'
-          END,
-          s.author_wallet, s.author_name, s.author_type,
-          s.views, s.likes, s.comments, s.kol_like_points, s.kol_comment_points,
-          s.is_pinned, s.pin_queued, s.expires_at, s.source_url, s.ai_confidence, s.importance,
-          s.event_start_time, s.event_end_time, s.created_at
-        FROM src s
-        ON CONFLICT DO NOTHING
-        RETURNING 1
-      )
-      SELECT COUNT(*)::int AS inserted FROM inserted
-    `);
+    const cutoffMs = Date.now() - 180 * 86400 * 1000;
+    const keywords = [
+      "defi","dex","tvl","yield","liquidity","swap","amm","lending","perp",
+      "uniswap","aave","curve","gmx","dydx","nft","gamefi","opensea","magic eden",
+      "blur","immutable","metaverse","bitget","analytics","on-chain data",
+      "onchain data","data analysis","chain analysis","nansen","glassnode",
+      "dune","messari","coingecko"
+    ];
+    const likeConds = keywords.map(kw =>
+      `LOWER(title) LIKE '%${kw}%' OR LOWER(content) LIKE '%${kw}%'`
+    ).join(" OR ");
 
-    const inserted = Number((result.rows?.[0] as { inserted?: string | number } | undefined)?.inserted ?? 0);
+    const src = await db.execute(sql`
+      SELECT * FROM posts
+      WHERE created_at >= ${cutoffMs}
+        AND (
+          section IN ('defi','analytics','nft','research','bitget')
+          OR ${sql.raw(likeConds)}
+        )
+    `);
+    const rows = src.rows as Record<string, unknown>[];
+
+    let inserted = 0;
+    for (const s of rows) {
+      const t = String(s.title ?? "").toLowerCase();
+      let section = "research";
+      if (t.includes("bitget")) section = "bitget";
+      else if (["defi","dex","tvl","yield","liquidity","swap","amm","lending","perp","uniswap","aave","curve","gmx","dydx"].some(k => t.includes(k))) section = "defi";
+      else if (["nft","gamefi","opensea","magic eden","blur","immutable","metaverse"].some(k => t.includes(k))) section = "nft";
+      else if (["analytics","on-chain data","onchain data","data analysis","nansen","glassnode","dune","messari","coingecko"].some(k => t.includes(k))) section = "analytics";
+
+      try {
+        await db.execute(sql`
+          INSERT INTO posts (title, content, section, author_wallet, author_name, author_type,
+            views, likes, comments, kol_like_points, kol_comment_points,
+            is_pinned, pin_queued, expires_at, source_url, ai_confidence, importance,
+            event_start_time, event_end_time, created_at)
+          SELECT ${s.title}, ${s.content}, ${section}, ${s.author_wallet}, ${s.author_name}, ${s.author_type},
+            ${s.views}, ${s.likes}, ${s.comments}, ${s.kol_like_points}, ${s.kol_comment_points},
+            ${s.is_pinned}, ${s.pin_queued}, ${s.expires_at}, ${s.source_url}, ${s.ai_confidence}, ${s.importance},
+            ${s.event_start_time}, ${s.event_end_time}, ${s.created_at}
+          WHERE NOT EXISTS (SELECT 1 FROM posts WHERE source_url = ${s.source_url} AND section = ${section})
+        `);
+        inserted++;
+      } catch { /* skip duplicate */ }
+    }
+
     res.json({ ok: true, inserted });
   } catch (e: unknown) {
     res.status(500).json({ ok: false, error: String(e) });
@@ -285,10 +292,10 @@ router.get("/runs", checkScrapeAuth, async (req, res) => {
     const rows = await db.execute(sql`
       SELECT run_id,
              MIN(created_at) AS started_at,
-             COUNT(*)::int AS total_sources,
-             SUM(items_found)::int AS total_found,
-             SUM(items_saved)::int AS total_saved,
-             COUNT(*) FILTER (WHERE status = 'error')::int AS errors
+             CAST(COUNT(*) AS INTEGER) AS total_sources,
+             CAST(SUM(items_found) AS INTEGER) AS total_found,
+             CAST(SUM(items_saved) AS INTEGER) AS total_saved,
+             CAST(SUM(CASE WHEN status = 'error' THEN 1 ELSE 0 END) AS INTEGER) AS errors
       FROM scrape_logs
       GROUP BY run_id
       ORDER BY started_at DESC
