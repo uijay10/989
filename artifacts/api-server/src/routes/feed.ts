@@ -1,8 +1,7 @@
 import { Router, type IRouter } from "express";
-import { db, postsTable } from "@workspace/db";
-import { eq, and, desc, sql, inArray, or } from "drizzle-orm";
 import { readArticlesBackupFile } from "../lib/articles-backup";
 import { classifyChainExchangeTags } from "../lib/tag-classifier";
+import { tursoQueryFeed } from "../lib/turso-posts";
 
 // ── Server-side response cache (avoids repeated Neon round-trips on tab switches) ──
 interface CacheEntry { data: unknown; expiresAt: number }
@@ -51,101 +50,10 @@ router.get("/", async (req, res) => {
       return res.json(cached);
     }
 
-    const conditions: any[] = [eq(postsTable.authorType, "ai")];
-    if (category !== "all") {
-      const cats = category.split(",").map(s => s.trim()).filter(Boolean);
-      if (cats.length > 1) {
-        conditions.push(inArray(postsTable.section, cats as any));
-      } else if (cats.length === 1) {
-        conditions.push(eq(postsTable.section, cats[0]!));
-      }
-    }
-    const whereBase = and(...conditions);
-
-    const wantsTagFilter = chainList.length > 0 || exchangeList.length > 0;
-
-    // ── Chain/exchange filter: SQL array-contains on stored tag columns ──────
-    // chain_tags / exchange_tags are set by the AI scraper at insert time.
-    // Using the DB columns avoids full-table scans and returns results instantly.
-    if (wantsTagFilter) {
-      const tagConditions: any[] = [...conditions];
-
-      if (chainList.length > 0) {
-        const chainClauses = chainList.map(c =>
-          sql`${postsTable.chainTags} @> ARRAY[${c}]::text[]`
-        );
-        tagConditions.push(chainClauses.length === 1 ? chainClauses[0] : or(...chainClauses));
-      }
-      if (exchangeList.length > 0) {
-        const exClauses = exchangeList.map(e =>
-          sql`${postsTable.exchangeTags} @> ARRAY[${e}]::text[]`
-        );
-        tagConditions.push(exClauses.length === 1 ? exClauses[0] : or(...exClauses));
-      }
-      const whereTagged = and(...tagConditions);
-
-      const [countRes, taggedRows] = await Promise.all([
-        db.select({ count: sql<number>`count(*)` }).from(postsTable).where(whereTagged),
-        db.select({
-          id: postsTable.id,
-          title: postsTable.title,
-          content: postsTable.content,
-          createdAt: postsTable.createdAt,
-          section: postsTable.section,
-          authorName: postsTable.authorName,
-          sourceUrl: postsTable.sourceUrl,
-          importance: postsTable.importance,
-        })
-          .from(postsTable)
-          .where(whereTagged)
-          .orderBy(desc(postsTable.createdAt))
-          .limit(limit)
-          .offset(offset),
-      ]);
-
-      const tagTotal = Number(countRes[0]?.count ?? 0);
-      const hasMore = offset + taggedRows.length < tagTotal;
-
-      return res.json({
-        items: taggedRows.map((r) => ({
-          id: String(r.id),
-          title: r.title,
-          summary: r.content ? r.content.slice(0, 200) : "",
-          time: r.createdAt.toISOString(),
-          category: r.section || "other",
-          source: r.authorName,
-          link: r.sourceUrl,
-          importance: r.importance ?? null,
-        })),
-        hasMore,
-        total: tagTotal,
-      });
-    }
-
-    // ── Normal feed (no chain/exchange) — parallel count + data queries ─────
-    const [countResult, rows] = await Promise.all([
-      db.select({ count: sql<number>`count(*)` }).from(postsTable).where(whereBase),
-      db.select({
-        id: postsTable.id,
-        title: postsTable.title,
-        content: postsTable.content,
-        createdAt: postsTable.createdAt,
-        section: postsTable.section,
-        authorName: postsTable.authorName,
-        sourceUrl: postsTable.sourceUrl,
-        importance: postsTable.importance,
-      })
-        .from(postsTable)
-        .where(whereBase)
-        .orderBy(desc(postsTable.createdAt))
-        .limit(limit)
-        .offset(offset),
-    ]);
-
-    const total = Number(countResult[0]?.count ?? 0);
+    // ── Query Turso for AI articles ───────────────────────────────────────────
+    const { rows, total } = await tursoQueryFeed({ category, limit, offset, chainList, exchangeList });
     const hasMore = offset + rows.length < total;
 
-    // Fallback: when DB is empty/unavailable, serve from local JSONL backup (best-effort).
     if (total === 0 && rows.length === 0) {
       const backup = readArticlesBackupFile()
         .filter((a) => (a.author_type ?? "ai") === "ai")
@@ -206,10 +114,10 @@ router.get("/", async (req, res) => {
         id: String(r.id),
         title: r.title,
         summary: r.content ? r.content.slice(0, 200) : "",
-        time: r.createdAt.toISOString(),
+        time: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
         category: r.section || "other",
-        source: r.authorName,
-        link: r.sourceUrl,
+        source: r.author_name,
+        link: r.source_url,
         importance: r.importance ?? null,
       })),
       hasMore,

@@ -4,8 +4,17 @@
 // Groq quota: wait for next run/day reset; DeepSeek: own schedule; optional app cap via DEEPSEEK_HOURLY_BUDGET_USD (omit = no app cap).
 
 import Parser from "rss-parser";
-import { db, postsTable } from "@workspace/db";
+import { db } from "@workspace/db";
 import { sql } from "drizzle-orm";
+import {
+  tursoInsertPost,
+  tursoCheckUrlExists,
+  tursoGetExistingUrls,
+  tursoGetExistingTitles,
+  tursoExactTitleDup,
+  tursoRecentTitles,
+  tursoProjectBurstDup,
+} from "./turso-posts";
 import { appendFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
@@ -1105,24 +1114,11 @@ async function processBatch(
 
 // ── DB helpers ─────────────────────────────────────────────────────────────────
 async function getExistingUrls(urls: string[]): Promise<Set<string>> {
-  if (urls.length === 0) return new Set();
-  try {
-    const rows = await db.execute(sql`SELECT source_url FROM posts WHERE source_url = ANY(${urls})`);
-    return new Set((rows.rows as Array<{ source_url: string }>).map(r => r.source_url));
-  } catch { return new Set(); }
+  return tursoGetExistingUrls(urls);
 }
 
 async function getExistingTitles(titles: string[]): Promise<Set<string>> {
-  if (titles.length === 0) return new Set();
-  try {
-    const normalized = titles.map(t => t.toLowerCase().trim());
-    const rows = await db.execute(
-      sql`SELECT LOWER(TRIM(title)) AS norm_title FROM posts
-          WHERE LOWER(TRIM(title)) = ANY(${normalized})
-            AND created_at > NOW() - INTERVAL '30 days'`
-    );
-    return new Set((rows.rows as Array<{ norm_title: string }>).map(r => r.norm_title));
-  } catch { return new Set(); }
+  return tursoGetExistingTitles(titles);
 }
 
 /** Merge DB keywords with code DEFAULT_KEYWORDS (dedupe). If DB has any rows but only supplements new plates, we still keep the full base list — previously we returned ONLY DB rows and dropped DEFAULT_KEYWORDS. */
@@ -1278,10 +1274,7 @@ async function insertPost(ev: ProcessedEvent, section: string): Promise<boolean>
 
     // Guard 0-A: URL dedup (global, any section)
     if (sourceUrl) {
-      const urlDup = await db.execute(
-        sql`SELECT id FROM posts WHERE source_url = ${sourceUrl} AND section = ${section} LIMIT 1`
-      );
-      if ((urlDup.rows as Array<unknown>).length > 0) return false;
+      if (await tursoCheckUrlExists(sourceUrl, section)) return false;
     }
 
     // Guard 0-B: event_end_time expired
@@ -1313,34 +1306,15 @@ async function insertPost(ev: ProcessedEvent, section: string): Promise<boolean>
 
     // Guard 1: exact title match (same section, 30 days)
     const normTitle = ev.title.toLowerCase().trim();
-    const dup = await db.execute(
-      sql`SELECT id FROM posts WHERE section = ${section} AND LOWER(TRIM(title)) = ${normTitle}
-          AND created_at > NOW() - INTERVAL '30 days' LIMIT 1`
-    );
-    if ((dup.rows as Array<unknown>).length > 0) return false;
+    if (await tursoExactTitleDup(section, normTitle)) return false;
 
-    // Guard 2: fuzzy title similarity
-    try {
-      const fuzzyDup = await db.execute(
-        sql`SELECT id FROM posts WHERE section = ${section}
-            AND created_at > NOW() - INTERVAL '7 days'
-            AND similarity(LOWER(title), ${normTitle}) > 0.60 LIMIT 1`
-      );
-      if ((fuzzyDup.rows as Array<unknown>).length > 0) return false;
-    } catch { /* pg_trgm not available */ }
+    // Guard 2: fuzzy title similarity (skipped — pg_trgm not available in Turso)
 
     // Guard 2.5: semantic-key dedup (timeline sections, cross-outlet)
     if (NEWS_TIMELINE_SECTIONS.has(section)) {
       const sem = semanticTitleKeyLite(ev.title);
       if (sem) {
-        const recent = await db.execute(
-          sql`SELECT title FROM posts
-              WHERE section = ${section}
-                AND created_at > NOW() - INTERVAL '14 days'
-              ORDER BY created_at DESC
-              LIMIT 400`
-        );
-        const titles = (recent.rows as Array<{ title?: string | null }>).map(r => String(r.title ?? ""));
+        const titles = await tursoRecentTitles(section, 14);
         for (const t of titles) {
           if (semanticTitleKeyLite(t) === sem) return false;
         }
@@ -1356,12 +1330,7 @@ async function insertPost(ev: ProcessedEvent, section: string): Promise<boolean>
       projectName.length >= 3 &&
       !GENERIC_NAMES.has(projectName)
     ) {
-      const burstDup = await db.execute(
-        sql`SELECT id FROM posts WHERE section = ${section}
-            AND LOWER(TRIM(author_name)) = ${projectName.toLowerCase().trim()}
-            AND created_at > NOW() - INTERVAL '3 hours' LIMIT 1`
-      );
-      if ((burstDup.rows as Array<unknown>).length > 0) return false;
+      if (await tursoProjectBurstDup(section, projectName)) return false;
     }
 
     const now = new Date();
@@ -1387,21 +1356,9 @@ async function insertPost(ev: ProcessedEvent, section: string): Promise<boolean>
       isPinned: false, pinQueued: false,
     };
 
-    let inserted: any;
-    try {
-      [inserted] = await db.insert(postsTable).values(insertValues).returning();
-    } catch (e: any) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (/chain_tags|exchange_tags/i.test(msg)) {
-        delete insertValues.chainTags;
-        delete insertValues.exchangeTags;
-        [inserted] = await db.insert(postsTable).values(insertValues).returning();
-      } else {
-        throw e;
-      }
-    }
+    const inserted = await tursoInsertPost(insertValues);
 
-    if (inserted) appendToBackupFile(inserted as unknown as Record<string, unknown>);
+    if (inserted) appendToBackupFile({ ...insertValues, id: inserted.id } as unknown as Record<string, unknown>);
     return true;
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);

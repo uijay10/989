@@ -6,6 +6,7 @@ import { db } from "@workspace/db";
 import { sql } from "drizzle-orm";
 import { DEFAULT_KEYWORDS } from "./lib/auto-scraper";
 import { initDeepSeekDailyBudget } from "./lib/ai-provider";
+import { ensureTursoPostsTable, tursoGetLastAiPostAt } from "./lib/turso-posts";
 
 const app: Express = express();
 
@@ -38,19 +39,7 @@ async function readLastUnifiedScrapeAt(): Promise<Date | null> {
 }
 
 async function readLastAiPostAt(): Promise<Date | null> {
-  try {
-    const r = await db.execute(sql`
-      SELECT created_at
-      FROM posts
-      WHERE author_type = 'ai'
-      ORDER BY created_at DESC
-      LIMIT 1
-    `);
-    const last = (r as { rows?: Array<{ created_at?: string | Date }> }).rows?.[0]?.created_at;
-    return last ? new Date(last) : null;
-  } catch {
-    return null;
-  }
+  return tursoGetLastAiPostAt();
 }
 
 async function logStaleKickEvent(status: "skip" | "error" | "ok", message: string): Promise<void> {
@@ -538,6 +527,7 @@ const _dbHostLog = _dbUrlForLog.match(/@([^/]+)\//)?.[1] ?? "(unknown)";
 console.log(`[db] connecting to: ${_dbHostLog}`);
 
 ensureTables();
+ensureTursoPostsTable();
 initDeepSeekDailyBudget();
 
 // ── Onchain data scrapers (route B: scrape + DeepSeek extract) ───────────────
