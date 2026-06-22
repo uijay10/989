@@ -1,25 +1,37 @@
-import { drizzle } from "drizzle-orm/node-postgres";
-import pg from "pg";
+import { createClient } from "@libsql/client";
+import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "./schema";
 
-const { Pool } = pg;
+function resolveTursoConfig(): { url: string; authToken?: string } {
+  const candidates = [
+    process.env.TURSO,
+    process.env.TURSO_DATABASE_URL,
+    process.env.TURSO_URL,
+    process.env.LIBSQL_URL,
+  ].filter(Boolean) as string[];
 
-const dbUrl = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
+  let url: string | undefined;
+  let authToken: string | undefined;
 
-if (!dbUrl) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
-  );
+  for (const c of candidates) {
+    if (c.startsWith("libsql://") || c.startsWith("http://") || c.startsWith("https://")) {
+      url = url ?? c;
+    } else if (c.startsWith("eyJ") || c.startsWith("ey")) {
+      authToken = authToken ?? c;
+    }
+  }
+
+  if (!url) {
+    throw new Error(
+      "Turso URL not found. Set TURSO (libsql://...) and TURSO_DATABASE_URL (eyJ... token) env vars."
+    );
+  }
+
+  return { url, authToken };
 }
 
-const isNeon = dbUrl.includes("neon.tech");
-export const pool = new Pool({
-  connectionString: dbUrl,
-  ssl: isNeon ? true : undefined,
-  max: isNeon ? 2 : 10,
-  idleTimeoutMillis: isNeon ? 10000 : 30000,
-  connectionTimeoutMillis: 10000,
-});
-export const db = drizzle(pool, { schema });
+const { url, authToken } = resolveTursoConfig();
+export const client = createClient({ url, authToken });
+export const db = drizzle(client, { schema });
 
 export * from "./schema";
